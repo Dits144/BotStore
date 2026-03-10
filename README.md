@@ -1,43 +1,56 @@
-# Bot WhatsApp Store (Go + whatsmeow)
+# Bot WhatsApp Store (Node.js + Baileys)
 
-Bot WhatsApp modular untuk kebutuhan store per-grup, dengan sistem sewa grup, role owner/admin, katalog produk, dan login QR.
+Project ini adalah bot WhatsApp Store berbasis **Node.js (JavaScript murni)** dengan login QR, session persisten, sistem owner, sistem sewa per grup, dan katalog produk per grup.
 
-## Fitur Utama
-- Login WhatsApp via QR di terminal.
-- Reconnect otomatis jika session sudah tersimpan.
-- Sistem owner bot (owner utama + owner tambahan via claim code).
-- Sistem sewa grup (`addsewa`, `renewsewa`, `delsewa`, dll).
-- Middleware validasi sewa untuk command umum grup.
-- Command `infogrup` dengan fallback aman.
-- Katalog produk per grup (`list`, `addlist`, `dellist`, `updatelist`, detail by name).
-- SQLite + auto migration saat start.
-- Struktur modular siap dikembangkan.
+## Stack
+- Node.js LTS (disarankan Node 20)
+- `@whiskeysockets/baileys`
+- `better-sqlite3`
+- `dotenv`
+- `pino`
+- `dayjs`
+- `qrcode-terminal`
 
 ## Struktur Folder
 
 ```bash
-cmd/
-  bot/main.go
-internal/
-  app/
-  bot/
+src/
   config/
   database/
-  middleware/
   handlers/
+  commands/
+    owner/
+    rental/
+    group/
+    catalogue/
   services/
   repositories/
-  models/
+  middlewares/
   utils/
+  events/
+sessions/
 data/
-main.go
+.env.example
+package.json
+README.md
+index.js
 ```
 
-## Setup Lokal
-1. Install Go (disarankan >= 1.22).
-2. Clone repo lalu install dependency:
+## Fitur
+- Login WhatsApp via QR di terminal
+- Session tersimpan (tidak perlu scan ulang setiap restart)
+- Auto reconnect dengan delay agar tidak spam reconnect
+- Owner utama + owner tambahan (claim via chat personal)
+- Sistem sewa grup (`addsewa`, `renewsewa`, `delsewa`, `listsewa`, `ceksewa`)
+- Middleware validasi sewa untuk command grup
+- `infogrup` dengan fallback field metadata aman
+- Katalog produk per grup (`list`, `addlist`, `dellist`, `updatelist`, trigger nama produk)
+
+## Instalasi Local
+1. Install Node.js LTS
+2. Install dependency:
    ```bash
-   go mod tidy
+   npm install
    ```
 3. Copy env:
    ```bash
@@ -45,74 +58,92 @@ main.go
    ```
 4. Jalankan bot:
    ```bash
-   go run .
-   ```
-   atau:
-   ```bash
-   go run ./cmd/bot
+   npm start
    ```
 
-## Scan QR & Session
-- Saat pertama run, terminal menampilkan `qr generated` + string QR.
-- Scan QR dengan WhatsApp (Linked Devices).
-- Session tersimpan di `data/session.db`.
-- Run berikutnya akan reconnect tanpa scan ulang jika session valid.
-
-## Build Binary
-```bash
-go build -o botstore ./cmd/bot
-```
-
-## Role & Akses
-- **Owner utama (tetap):** `6282120196167@s.whatsapp.net`.
-- **Owner tambahan:** bisa ditambah via command owner atau claim personal chat (`Ditsanalah144`, sesuai env).
-- **Admin grup:** diambil dari metadata WhatsApp group participants.
-- **User biasa:** akses command umum di grup aktif.
+## Cara Scan QR
+- Saat start pertama, bot akan log `qr generated`
+- QR tampil di terminal
+- Scan dari WhatsApp > Linked devices > Link a device
+- Session akan tersimpan di folder `sessions/`
 
 ## Daftar Command
 
 ### Owner Bot
 - `owner 62xxxx@s.whatsapp.net`
-- `delowner 62xxxx@s.whatsapp.net` (owner utama tidak bisa dihapus)
+- `delowner 62xxxx@s.whatsapp.net`
 - `listowner`
-- `addsewa (idgroup) (hari)`
-- `renewsewa (idgroup) (hari)`
-- `delsewa (idgroup)`
+- `addsewa 1203630xxxx@g.us 90`
+- `renewsewa 1203630xxxx@g.us 30`
+- `delsewa 1203630xxxx@g.us`
 - `listsewa`
-- `ceksewa (idgroup)`
+- `ceksewa 1203630xxxx@g.us`
 
-### Grup Aktif (Semua User)
+### Grup Aktif (semua user)
 - `infogrup`
 - `list`
-- `nama_produk` (contoh: `capcut`)
+- `nama produk` (contoh: `capcut`)
 
 ### Admin Grup / Owner Bot
-- `addlist nama@deskripsi`
-- `dellist nama`
-- `updatelist nama@deskripsi`
+- `addlist capcut@1 bulan harga 50.000`
+- `dellist capcut`
+- `updatelist capcut@1 bulan harga 45.000 promo`
 
-## Cara Kerja Sewa Grup
-- Command umum grup hanya berjalan jika grup terdaftar dan status sewanya aktif.
-- Owner bot tetap bisa menjalankan command owner saat grup tidak aktif.
-- Scheduler tiap 1 menit memperbarui flag aktif/expired di database.
+## Role
+- **Owner bot**: semua command
+- **Admin grup**: addlist/dellist/updatelist
+- **User biasa**: list + lihat detail produk
 
-## Contoh Format Balasan
-- `addsewa` sukses:
-  - 📦 Group
-  - 🆔 Group ID
-  - ⏳ Durasi
-  - 📅 Expired
-  - ✅ status sukses
-- `list`:
-  - box judul grup
-  - waktu/tanggal Indonesia
-  - katalog produk estetik
-- `infogrup`:
-  - nama, link (fallback), owner (fallback), tanggal dibuat (fallback), total member, total admin.
+## Sistem Sewa Grup
+- Command umum hanya jalan di grup dengan sewa aktif
+- Grup expired/tidak terdaftar: command umum ditolak
+- Command owner tetap bisa dijalankan
+- Scheduler update status sewa berkala sesuai `RENTAL_REFRESH_SECONDS`
+- Semua waktu timezone `Asia/Jakarta`
 
-## Catatan Pengembangan Lanjutan
-- Tambah unit test per service/repository.
-- Tambah rate-limit antispam di grup tidak aktif.
-- Tambah command transaksi/order.
-- Tambah panel web admin.
-- Encrypt sensitif config/secret jika deploy production.
+## Contoh Output
+### Error format
+```text
+❌ Format salah
+Contoh:
+addsewa 1203630xxxx@g.us 90
+```
+
+### Detail produk
+```text
+┏━━〔 📦 DETAIL PRODUK 〕━━┓
+┗━━━━━━━━━━━━━━━━━━━━┛
+
+💎 Nama : capcut
+📝 Deskripsi : 1 bulan harga 50.000
+
+📌 Hubungi admin untuk order.
+```
+
+## Deploy VPS Ubuntu
+```bash
+sudo apt update
+sudo apt install -y git build-essential python3
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+git clone <repo-kamu>
+cd BotStore
+npm install
+cp .env.example .env
+npm start
+```
+
+## Jalankan dengan PM2 (24 jam)
+```bash
+npm install -g pm2
+pm2 start index.js --name botstore
+pm2 save
+pm2 startup
+```
+
+## Catatan Penting
+- Owner utama default: `6282120196167@s.whatsapp.net`
+- Owner utama tidak bisa dihapus
+- Claim owner via `Ditsanalah144` **hanya** di personal chat
+- Tidak menggunakan TypeScript

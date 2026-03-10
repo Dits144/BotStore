@@ -1,0 +1,23 @@
+{
+  "name": "botstore-baileys",
+  "version": "1.0.0",
+  "description": "Bot WhatsApp Store Node.js + Baileys dengan sistem sewa grup dan katalog per grup",
+  "main": "index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "lint": "node --check index.js && node --check src/events/connection.js && node --check src/events/message.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.18",
+    "better-sqlite3": "^11.7.0",
+    "dayjs": "^1.11.13",
+    "dotenv": "^16.4.7",
+    "pino": "^9.6.0",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
