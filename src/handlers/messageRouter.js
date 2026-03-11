@@ -68,7 +68,7 @@ async function routeMessage(sock, msg) {
     return;
   }
 
-  if (['welcome', 'setwelcome', 'h', 'p', 'd', 'r', 'b'].includes(parsed.command)) {
+  if (['welcome', 'setwelcome', 'h', 'hall', 'p', 'd', 'r', 'b'].includes(parsed.command)) {
     await adminCommands.handle(context, parsed);
     return;
   }

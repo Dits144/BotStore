@@ -7,6 +7,7 @@ const { formatWrongExample } = require('../../utils/messageFormatter');
 const { normalizeText } = require('../../utils/parser');
 const { nowJakarta, formatDate, formatTime } = require('../../utils/time');
 const { deleteMessageForEveryone } = require('../../utils/admin');
+const { reactLoading, reactSuccess, reactError, sendMinimalSuccess, sendMinimalError } = require('../../utils/chatUx');
 const { suggestClosest } = require('../../utils/typo');
 const config = require('../../config/env');
 
@@ -68,42 +69,37 @@ async function addList(ctx, parsed) {
   const [nameRaw, descRaw] = raw.split('@');
 
   if (!nameRaw || !descRaw) {
-    await ctx.send(formatWrongExample('addlist capcut@1 bulan harga 50.000'));
+    await sendMinimalError(ctx.sock, ctx.from, formatWrongExample('addlist capcut@1 bulan harga 50.000'));
     return;
   }
 
   const name = normalizeText(nameRaw);
   const description = descRaw.trim();
   const hasImage = Boolean(ctx.msg?.message?.imageMessage);
-  if (hasImage) await react(ctx, '⏳');
+  await reactLoading(ctx.sock, ctx.msg);
 
   const media = await maybeSaveMedia(ctx, name);
 
   if (media?.error) {
-    if (hasImage) await react(ctx, '❌');
-    await ctx.send('❌ Gagal menyimpan media payment. Coba kirim ulang gambarnya.');
+    await reactError(ctx.sock, ctx.msg);
+    await sendMinimalError(ctx.sock, ctx.from, '❌ Gagal menyimpan media.');
     return;
   }
 
   try {
     await catalogueRepository.addItem(ctx.from, name, description, ctx.sender, media || {});
     await deleteMessageForEveryone(ctx.sock, ctx.msg);
-    if (hasImage) await react(ctx, '✅');
-    await ctx.send(
-      `✅ List berhasil ditambahkan\n` +
-      `📦 Nama : ${name}\n` +
-      `📝 Deskripsi : ${description}` +
-      `${media?.path ? '\n🖼️ Media : tersimpan' : ''}`
-    );
+    await reactSuccess(ctx.sock, ctx.msg);
+    await sendMinimalSuccess(ctx.sock, ctx.from, media?.path ? '✅ List + media berhasil ditambahkan.' : '✅ List ditambahkan.');
   } catch {
-    if (hasImage) await react(ctx, '❌');
-    await ctx.send('❌ Gagal menambahkan list. Pastikan nama item unik per grup.');
+    await reactError(ctx.sock, ctx.msg);
+    await sendMinimalError(ctx.sock, ctx.from, '❌ Gagal menambahkan list.');
   }
 }
 
 async function delList(ctx, parsed) {
   if (!parsed.args.length) {
-    await ctx.send(formatWrongExample('dellist capcut'));
+    await sendMinimalError(ctx.sock, ctx.from, formatWrongExample('dellist capcut'));
     return;
   }
 
@@ -111,13 +107,15 @@ async function delList(ctx, parsed) {
   const item = await catalogueRepository.getItem(ctx.from, name);
   const result = await catalogueRepository.deleteItem(ctx.from, name);
   if (!result.changes) {
-    await ctx.send('❌ Item tidak ditemukan di katalog grup ini.');
+    await sendMinimalError(ctx.sock, ctx.from, '❌ Item tidak ditemukan.');
     return;
   }
 
   if (item?.media_path && fs.existsSync(item.media_path)) fs.unlinkSync(item.media_path);
+  await reactLoading(ctx.sock, ctx.msg);
   await deleteMessageForEveryone(ctx.sock, ctx.msg);
-  await ctx.send(`🗑️ List berhasil dihapus\n📦 Nama : ${name}`);
+  await reactSuccess(ctx.sock, ctx.msg);
+  await sendMinimalSuccess(ctx.sock, ctx.from, '✅ List dihapus.');
 }
 
 async function updateList(ctx, parsed) {
@@ -125,7 +123,7 @@ async function updateList(ctx, parsed) {
   const [nameRaw, descRaw] = raw.split('@');
 
   if (!nameRaw || !descRaw) {
-    await ctx.send(formatWrongExample('updatelist capcut@1 bulan harga 45.000 promo'));
+    await sendMinimalError(ctx.sock, ctx.from, formatWrongExample('updatelist capcut@1 bulan harga 45.000 promo'));
     return;
   }
 
@@ -134,12 +132,14 @@ async function updateList(ctx, parsed) {
   const result = await catalogueRepository.updateItem(ctx.from, name, description);
 
   if (!result.changes) {
-    await ctx.send('❌ Item tidak ditemukan, gagal memperbarui katalog.');
+    await sendMinimalError(ctx.sock, ctx.from, '❌ Item tidak ditemukan.');
     return;
   }
 
+  await reactLoading(ctx.sock, ctx.msg);
   await deleteMessageForEveryone(ctx.sock, ctx.msg);
-  await ctx.send(`♻️ List berhasil diperbarui\n📦 Nama : ${name}\n📝 Deskripsi Baru : ${description}`);
+  await reactSuccess(ctx.sock, ctx.msg);
+  await sendMinimalSuccess(ctx.sock, ctx.from, '✅ List diperbarui.');
 }
 
 async function productTrigger(ctx, rawText) {
@@ -210,14 +210,6 @@ async function maybeSaveMedia(ctx, name) {
     return { path: filePath, type: 'image' };
   } catch {
     return { error: true };
-  }
-}
-
-async function react(ctx, emoji) {
-  try {
-    await ctx.sock.sendMessage(ctx.from, { react: { text: emoji, key: ctx.msg.key } });
-  } catch {
-    // noop
   }
 }
 
