@@ -16,7 +16,7 @@ async function claimOwner(ctx) {
   }
 
   if (await isBotOwner(senderJid)) {
-    await ctx.send('✅ Kamu sudah terdaftar sebagai Owner Bot.');
+    await ctx.send('ℹ️ Kamu sudah terdaftar sebagai Owner Bot.');
     return;
   }
 
@@ -24,10 +24,16 @@ async function claimOwner(ctx) {
   logger.info({ senderJid }, 'owner claimed from private chat');
 
   await ctx.send(
-    `✅ Owner bot berhasil diklaim\n` +
-    `👤 Nomor : ${toPhoneNumber(senderJid)}\n` +
-    `🛡️ Role : Owner Bot\n` +
-    `📌 Sekarang kamu bisa memakai command owner.`
+    `┏━━〔 🛡️ OWNER BOT 〕━━┓\n` +
+    `┗━━━━━━━━━━━━━━━━━━┛\n` +
+    `✅ Owner Bot berhasil diklaim\n\n` +
+    `📱 Nomor : ${toPhoneNumber(senderJid)}\n` +
+    `🆔 Role : Owner Bot\n\n` +
+    `Sekarang kamu bisa memakai command owner seperti:\n` +
+    `• addsewa\n` +
+    `• renewsewa\n` +
+    `• delsewa\n` +
+    `• listsewa`
   );
 }
 

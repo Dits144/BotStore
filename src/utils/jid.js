@@ -3,10 +3,13 @@ function normalizeJid(input = '') {
   if (!raw) return '';
 
   if (raw.includes('@')) {
-    const [userPart, server] = raw.split('@');
+    const [userPart, serverPart] = raw.split('@');
     const user = userPart.split(':')[0].replace(/[^0-9]/g, '');
     if (!user) return '';
-    return `${user}@${server}`;
+
+    const server = String(serverPart || '').trim();
+    if (server === 'g.us') return `${user}@g.us`;
+    return `${user}@s.whatsapp.net`;
   }
 
   const digits = raw.replace(/[^0-9]/g, '');
@@ -21,13 +24,12 @@ function toPhoneNumber(jid = '') {
 function getSenderJid(msg = {}) {
   const key = msg.key || {};
   const from = normalizeJid(key.remoteJid || '');
-  const participant = normalizeJid(key.participant || '');
 
   if (from.endsWith('@g.us')) {
-    return participant || from;
+    return normalizeJid(key.participant || '');
   }
 
-  return participant || from;
+  return from;
 }
 
 module.exports = { normalizeJid, toPhoneNumber, getSenderJid };

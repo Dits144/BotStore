@@ -31,7 +31,13 @@ async function routeMessage(sock, msg) {
     send: async (text, options = {}) => sock.sendMessage(from, { text, ...options }, { quoted: msg })
   };
 
-  if (!isGroup && normalizeText(body) === normalizeText(config.ownerClaimCode)) {
+  const isClaimOwnerText = normalizeText(body) === normalizeText(config.ownerClaimCode);
+  if (isClaimOwnerText) {
+    if (isGroup) {
+      await context.send('❌ Claim Owner hanya bisa dilakukan di chat pribadi bot.');
+      return;
+    }
+
     await ownerCommands.claimOwner(context);
     return;
   }
