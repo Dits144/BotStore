@@ -3,10 +3,16 @@ const { formatWrongExample } = require('../../utils/messageFormatter');
 const { dayjs, nowJakarta, formatDateTime } = require('../../utils/time');
 const { computeRenewalExpiry, refreshRentalStatus } = require('../../services/rentalService');
 const { isBotOwner } = require('../../services/roleService');
+const logger = require('../../config/logger');
+const { normalizeJid } = require('../../utils/jid');
 
 async function handle(ctx, parsed) {
-  if (!(await isBotOwner(ctx.sender))) {
-    await ctx.send('❌ Akses ditolak\nPerintah sewa hanya untuk Owner Bot, bukan admin grup.');
+  const senderJid = normalizeJid(ctx.sender);
+  const owner = await isBotOwner(senderJid);
+  logger.info({ command: parsed.command, senderDetected: ctx.sender, senderNormalized: senderJid, roleResolved: owner ? 'bot_owner' : 'user' }, 'rental command permission check');
+
+  if (!owner) {
+    await ctx.send('❌ Akses ditolak\nPerintah ini khusus untuk Owner Bot.');
     return;
   }
 

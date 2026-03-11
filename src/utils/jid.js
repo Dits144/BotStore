@@ -26,7 +26,15 @@ function getSenderJid(msg = {}) {
   const from = normalizeJid(key.remoteJid || '');
 
   if (from.endsWith('@g.us')) {
-    return normalizeJid(key.participant || '');
+    const participant =
+      key.participant ||
+      msg.message?.extendedTextMessage?.contextInfo?.participant ||
+      msg.message?.imageMessage?.contextInfo?.participant ||
+      msg.message?.videoMessage?.contextInfo?.participant ||
+      msg.message?.documentMessage?.contextInfo?.participant ||
+      '';
+
+    return normalizeJid(participant);
   }
 
   return from;

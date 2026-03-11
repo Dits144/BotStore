@@ -125,6 +125,10 @@ index.js
 - `ceksewa 1203630xxxx@g.us`
 - `cekrole` / `myrole`
 
+### Debug Role (Private / Grup)
+- `cekrole`
+- `myrole`
+
 ### Grup Aktif (semua user)
 - `infogrup`
 - `list`

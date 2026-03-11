@@ -13,12 +13,13 @@ async function routeMessage(sock, msg) {
   const body = extractMessageText(msg);
   if (!body) return;
 
+  const senderDetected = msg.key?.participant || msg.key?.remoteJid || '';
   const from = normalizeJid(msg.key?.remoteJid || '');
   const sender = getSenderJid(msg);
   const isGroup = from.endsWith('@g.us');
   const isOwner = await isBotOwner(sender);
 
-  logger.debug({ from, sender, isGroup }, 'incoming message context');
+  logger.debug({ from, senderDetected, senderNormalized: sender, isGroup }, 'incoming message context');
 
   const context = {
     sock,

@@ -38,7 +38,16 @@ async function claimOwner(ctx) {
 }
 
 async function handle(ctx, parsed) {
-  if (!(await isBotOwner(ctx.sender))) {
+  if (parsed.command === 'cekrole' || parsed.command === 'myrole') {
+    await showRole(ctx);
+    return;
+  }
+
+  const senderJid = normalizeJid(ctx.sender);
+  const owner = await isBotOwner(senderJid);
+  logger.info({ command: parsed.command, senderDetected: ctx.sender, senderNormalized: senderJid, roleResolved: owner ? 'bot_owner' : 'user' }, 'owner command permission check');
+
+  if (!owner) {
     await ctx.send('❌ Akses ditolak\nPerintah ini khusus untuk Owner Bot.');
     return;
   }
@@ -89,9 +98,6 @@ async function handle(ctx, parsed) {
     return;
   }
 
-  if (parsed.command === 'cekrole' || parsed.command === 'myrole') {
-    await showRole(ctx);
-  }
 }
 
 async function showRole(ctx) {
@@ -106,19 +112,18 @@ async function showRole(ctx) {
   if (role === 'bot_owner') roleLabel = 'Owner Bot';
   if (role === 'group_admin') roleLabel = 'Admin Grup';
 
-  let extra = '';
-  if (ctx.isGroup) {
-    const admin = await isGroupAdmin(ctx.sock, ctx.from, ctx.sender);
-    const rentalActive = await isGroupRentalActive(ctx.from);
-    extra = `\n👥 Admin Grup : ${admin ? 'Ya' : 'Tidak'}\n🏷️ Grup Aktif : ${rentalActive ? 'Ya' : 'Tidak'}`;
-  }
+  const admin = ctx.isGroup ? await isGroupAdmin(ctx.sock, ctx.from, ctx.sender) : false;
+  const rentalActive = ctx.isGroup ? await isGroupRentalActive(ctx.from) : false;
 
   await ctx.send(
     `┏━━〔 👤 ROLE SAYA 〕━━┓\n` +
     `┗━━━━━━━━━━━━━━━━━━┛\n` +
     `📱 Nomor : ${toPhoneNumber(ctx.sender)}\n` +
     `🆔 JID : ${normalizeJid(ctx.sender)}\n` +
-    `🛡️ Role : ${roleLabel}${extra}`
+    `🛡️ Role : ${roleLabel}\n` +
+    `💬 Chat : ${ctx.isGroup ? 'Group' : 'Private'}\n` +
+    `👥 Admin Grup : ${admin ? 'Ya' : 'Tidak'}\n` +
+    `🏷️ Grup Aktif : ${rentalActive ? 'Ya' : 'Tidak'}`
   );
 }
 
