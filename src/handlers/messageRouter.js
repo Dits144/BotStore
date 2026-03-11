@@ -2,7 +2,7 @@ const logger = require('../config/logger');
 const { parseCommand, normalizeText } = require('../utils/parser');
 const { canRunGroupCommand } = require('../middlewares/rentalGuard');
 const { isBotOwner } = require('../services/roleService');
-const { getSenderJid, normalizeJid } = require('../utils/jid');
+const { getSenderJid } = require('../utils/jid');
 const ownerCommands = require('../commands/owner');
 const rentalCommands = require('../commands/rental');
 const groupCommands = require('../commands/group');
@@ -13,23 +13,23 @@ async function routeMessage(sock, msg) {
   const body = extractMessageText(msg);
   if (!body) return;
 
-  const senderDetected = msg.key?.participant || msg.key?.remoteJid || '';
-  const from = normalizeJid(msg.key?.remoteJid || '');
+  const remoteJid = String(msg.key?.remoteJid || '').trim();
+  const participant = String(msg.key?.participant || '').trim();
   const sender = getSenderJid(msg);
-  const isGroup = from.endsWith('@g.us');
+  const isGroup = remoteJid.endsWith('@g.us');
   const isOwner = await isBotOwner(sender);
 
-  logger.debug({ from, senderDetected, senderNormalized: sender, isGroup }, 'incoming message context');
+  logger.debug({ remoteJid, participant, senderNormalized: sender, isGroup }, 'incoming message context');
 
   const context = {
     sock,
     msg,
     body,
-    from,
+    from: remoteJid,
     sender,
     isGroup,
     isOwner,
-    send: async (text, options = {}) => sock.sendMessage(from, { text, ...options }, { quoted: msg })
+    send: async (text, options = {}) => sock.sendMessage(remoteJid, { text, ...options }, { quoted: msg })
   };
 
   const isClaimOwnerText = normalizeText(body) === normalizeText(config.ownerClaimCode);
@@ -56,13 +56,13 @@ async function routeMessage(sock, msg) {
     return;
   }
 
-  if (isGroup && !(await canRunGroupCommand({ isGroup, isOwner, groupId: from }))) {
-    logger.debug({ command: parsed.command, groupId: from, sender }, 'command ditolak karena sewa grup tidak aktif');
+  if (['info', 'infogrup'].includes(parsed.command)) {
+    await groupCommands.info(context);
     return;
   }
 
-  if (parsed.command === 'infogrup') {
-    await groupCommands.infoGroup(context);
+  if (isGroup && !(await canRunGroupCommand({ isGroup, isOwner, groupId: remoteJid }))) {
+    logger.debug({ command: parsed.command, groupId: remoteJid, sender }, 'command ditolak karena sewa grup tidak aktif');
     return;
   }
 

@@ -9,9 +9,17 @@ const { normalizeJid } = require('../../utils/jid');
 async function handle(ctx, parsed) {
   const senderJid = normalizeJid(ctx.sender);
   const owner = await isBotOwner(senderJid);
-  logger.info({ command: parsed.command, senderDetected: ctx.sender, senderNormalized: senderJid, roleResolved: owner ? 'bot_owner' : 'user' }, 'rental command permission check');
+  logger.info({
+    command: parsed.command,
+    remoteJid: ctx.msg?.key?.remoteJid || '',
+    participant: ctx.msg?.key?.participant || '',
+    senderDetected: ctx.sender,
+    senderNormalized: senderJid,
+    roleResolved: owner ? 'bot_owner' : 'user'
+  }, 'rental command permission check');
 
   if (!owner) {
+    logger.warn({ command: parsed.command, senderJid, reason: 'not_owner' }, 'rental command denied');
     await ctx.send('❌ Akses ditolak\nPerintah ini khusus untuk Owner Bot.');
     return;
   }

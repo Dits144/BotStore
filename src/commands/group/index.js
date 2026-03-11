@@ -1,8 +1,13 @@
 const { formatDateTime } = require('../../utils/time');
 
-async function infoGroup(ctx) {
+async function info(ctx) {
   if (!ctx.isGroup) {
-    await ctx.send('⚠️ Command infogrup hanya bisa dipakai di grup.');
+    await ctx.send(
+      `┏━━〔 ℹ️ INFO BOT 〕━━┓\n` +
+      `┗━━━━━━━━━━━━━━━━━━┛\n` +
+      `📌 Command info grup hanya tersedia saat dipakai di grup.\n` +
+      `💡 Gunakan command ini di grup untuk melihat detail metadata grup.`
+    );
     return;
   }
 
@@ -38,4 +43,4 @@ async function infoGroup(ctx) {
   }
 }
 
-module.exports = { infoGroup };
+module.exports = { info };

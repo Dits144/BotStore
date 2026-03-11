@@ -9,12 +9,12 @@ function normalizeJid(input = '') {
 
     const server = String(serverPart || '').trim();
     if (server === 'g.us') return `${user}@g.us`;
-    return `${user}@s.whatsapp.net`;
+    return `${user}@c.us`;
   }
 
   const digits = raw.replace(/[^0-9]/g, '');
   if (!digits) return '';
-  return `${digits}@s.whatsapp.net`;
+  return `${digits}@c.us`;
 }
 
 function toPhoneNumber(jid = '') {
@@ -23,9 +23,9 @@ function toPhoneNumber(jid = '') {
 
 function getSenderJid(msg = {}) {
   const key = msg.key || {};
-  const from = normalizeJid(key.remoteJid || '');
+  const remoteJid = String(key.remoteJid || '').trim();
 
-  if (from.endsWith('@g.us')) {
+  if (remoteJid.endsWith('@g.us')) {
     const participant =
       key.participant ||
       msg.message?.extendedTextMessage?.contextInfo?.participant ||
@@ -37,7 +37,7 @@ function getSenderJid(msg = {}) {
     return normalizeJid(participant);
   }
 
-  return from;
+  return normalizeJid(remoteJid);
 }
 
 module.exports = { normalizeJid, toPhoneNumber, getSenderJid };

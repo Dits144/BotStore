@@ -17,7 +17,7 @@ async function handle(ctx, parsed) {
 
   const canManage = await canManageCatalogue(ctx.sock, ctx.from, ctx.sender);
   if (!canManage) {
-    await ctx.send('❌ Kamu tidak punya izin untuk mengelola katalog.');
+    await ctx.send('❌ Akses ditolak\nPerintah ini khusus untuk Admin Grup atau Owner Bot.');
     return;
   }
 
