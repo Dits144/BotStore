@@ -7,6 +7,8 @@ const ownerCommands = require('../commands/owner');
 const rentalCommands = require('../commands/rental');
 const groupCommands = require('../commands/group');
 const catalogueCommands = require('../commands/catalogue');
+const adminCommands = require('../commands/admin');
+const menuCommands = require('../commands/menu');
 const config = require('../config/env');
 
 async function routeMessage(sock, msg) {
@@ -58,6 +60,16 @@ async function routeMessage(sock, msg) {
 
   if (['info', 'infogrup'].includes(parsed.command)) {
     await groupCommands.info(context);
+    return;
+  }
+
+  if (parsed.command === 'allmenu') {
+    await menuCommands.allmenu(context);
+    return;
+  }
+
+  if (['welcome', 'setwelcome', 'h', 'p', 'd', 'r', 'b'].includes(parsed.command)) {
+    await adminCommands.handle(context, parsed);
     return;
   }
 

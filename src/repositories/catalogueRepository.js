@@ -1,13 +1,13 @@
 const { connectDatabase } = require('../database/connection');
 
 module.exports = {
-  async addItem(groupId, itemName, description, createdBy) {
+  async addItem(groupId, itemName, description, createdBy, media = {}) {
     const db = await connectDatabase();
     const now = new Date().toISOString();
     return db.run(
-      `INSERT INTO catalogues (group_id, item_name, description, created_by, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [groupId, itemName, description, createdBy, now, now]
+      `INSERT INTO catalogues (group_id, item_name, description, created_by, created_at, updated_at, media_path, media_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [groupId, itemName, description, createdBy, now, now, media.path || '', media.type || '']
     );
   },
 

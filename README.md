@@ -199,3 +199,21 @@ pm2 restart botstore
 - Owner utama default: `6282120196167@c.us`
 - Owner utama tidak bisa dihapus
 - Claim owner via `botstoreditsanalah144` **hanya** di personal chat dan langsung aktif sebagai Owner Bot penuh
+
+## Update Fitur Baru (UX & Admin)
+- Auto hapus pesan command admin (jika bot admin grup): `addlist`, `updatelist`, `dellist`, `setwelcome`, `h`, dan status transaksi `p/d/r/b`.
+- `addlist` mendukung media gambar (contoh QRIS) via caption command pada foto.
+- Trigger nama produk akan kirim gambar + caption jika item punya media.
+- Typo suggestion untuk nama produk (fuzzy suggestion ringan).
+- Command transaksi reply: `p`, `d`, `r`, `b` (admin/owner saja).
+- Broadcast grup: `h <pesan>` + mention seluruh member.
+- Welcome anggota baru dengan foto profil (fallback text), dukung `welcome on/off` dan `setwelcome@...` per grup.
+- Command `allmenu` dinamis berdasarkan role.
+
+### Command Tambahan
+- `allmenu`
+- `welcome on`
+- `welcome off`
+- `setwelcome@Halo @user, selamat datang di {group}`
+- `h sudah buka gais silahkan order`
+- `p` / `d` / `r` / `b` (harus reply pesan customer)

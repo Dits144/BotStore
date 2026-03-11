@@ -3,6 +3,13 @@ const config = require('../config/env');
 const logger = require('../config/logger');
 const { normalizeJid } = require('../utils/jid');
 
+async function ensureColumn(db, table, column, ddl) {
+  const columns = await db.all(`PRAGMA table_info(${table})`);
+  if (!columns.some((c) => c.name === column)) {
+    await db.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
+  }
+}
+
 async function migrate() {
   const db = await connectDatabase();
 
@@ -42,7 +49,19 @@ async function migrate() {
       value TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS group_settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_id TEXT NOT NULL UNIQUE,
+      welcome_enabled INTEGER NOT NULL DEFAULT 0,
+      welcome_message TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
+
+  await ensureColumn(db, 'catalogues', 'media_path', 'media_path TEXT NOT NULL DEFAULT ""');
+  await ensureColumn(db, 'catalogues', 'media_type', 'media_type TEXT NOT NULL DEFAULT ""');
 
   const now = new Date().toISOString();
   await db.run('INSERT OR IGNORE INTO owners (jid, is_main, created_at) VALUES (?, 1, ?)', [normalizeJid(config.mainOwnerJid), now]);

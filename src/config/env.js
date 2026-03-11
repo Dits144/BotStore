@@ -11,6 +11,7 @@ const config = {
   commandPrefix: process.env.COMMAND_PREFIX || '',
   databasePath: process.env.DB_PATH || path.join('data', 'botstore.sqlite'),
   sessionsPath: process.env.SESSIONS_PATH || path.join('sessions'),
+  mediaPath: process.env.MEDIA_PATH || path.join('data', 'media'),
   ownerClaimCode: process.env.OWNER_CLAIM_CODE || 'botstoreditsanalah144',
   mainOwnerJid: process.env.MAIN_OWNER_JID || '6282120196167@c.us',
   rentalRefreshSeconds: Number(process.env.RENTAL_REFRESH_SECONDS || 60),

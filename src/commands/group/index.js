@@ -1,4 +1,6 @@
+const groupSettingsRepository = require('../../repositories/groupSettingsRepository');
 const { formatDateTime } = require('../../utils/time');
+const { normalizeJid } = require('../../utils/jid');
 
 async function info(ctx) {
   if (!ctx.isGroup) {
@@ -38,9 +40,36 @@ async function info(ctx) {
       `🛡️ Jumlah Admin : ${adminCount}\n\n` +
       `✅ Gunakan info ini dengan bijak.`
     );
-  } catch (error) {
+  } catch {
     await ctx.send('❌ Gagal mengambil info grup. Coba lagi beberapa saat.');
   }
 }
 
-module.exports = { info };
+async function welcomeNewMembers(sock, update) {
+  const { id, participants = [], action } = update;
+  if (action !== 'add' || !id.endsWith('@g.us')) return;
+
+  const setting = await groupSettingsRepository.get(id);
+  if (!setting || Number(setting.welcome_enabled) !== 1) return;
+
+  const meta = await sock.groupMetadata(id);
+  const groupName = meta.subject || 'Group';
+
+  for (const rawJid of participants) {
+    const userJid = normalizeJid(rawJid);
+    const textTemplate = setting.welcome_message ||
+      'Halo @user\nSelamat datang di grup *{group}* ✨\n\nSemoga betah di sini, jangan lupa baca deskripsi grup dan ikuti aturan yang berlaku yaa.';
+
+    const body = textTemplate.replaceAll('{group}', groupName).replaceAll('@user', '@user');
+    const caption = `┏━━〔 👋 SELAMAT DATANG 〕━━┓\n┗━━━━━━━━━━━━━━━━━━━━┛\n\n${body}`;
+
+    try {
+      const ppUrl = await sock.profilePictureUrl(userJid, 'image');
+      await sock.sendMessage(id, { image: { url: ppUrl }, caption, mentions: [userJid] });
+    } catch {
+      await sock.sendMessage(id, { text: caption, mentions: [userJid] });
+    }
+  }
+}
+
+module.exports = { info, welcomeNewMembers };
