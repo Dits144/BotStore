@@ -1,109 +1,184 @@
 const fs = require('fs');
+const readline = require('readline/promises');
+const { stdin, stdout } = require('process');
 const baileys = require('@whiskeysockets/baileys');
 const makeWASocket = baileys.default;
 const {
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
-  Browsers,
-  DisconnectReason
+  Browsers
 } = baileys;
 const qrcode = require('qrcode-terminal');
 const config = require('../config/env');
 const logger = require('../config/logger');
-const { bindConnectionEvents } = require('../events/connection');
 const { bindMessageEvents } = require('../events/message');
+const { logConnectionState, resolveDisconnect } = require('../events/connection');
 
-let reconnectTimer = null;
 let currentSock = null;
+let reconnectTimer = null;
 let reconnectAttempt = 0;
+let isStarting = false;
 
 async function startWhatsApp() {
-  logger.info('starting');
-
-  if (!fs.existsSync(config.sessionsPath)) {
-    fs.mkdirSync(config.sessionsPath, { recursive: true });
+  if (isStarting) {
+    logger.warn('startWhatsApp dipanggil saat proses start masih berjalan, diabaikan');
+    return;
   }
 
-  const { state, saveCreds } = await useMultiFileAuthState(config.sessionsPath);
-  const hasSession = Boolean(state?.creds?.registered);
+  isStarting = true;
 
-  if (hasSession) {
-    logger.info('session detected, mencoba reconnect tanpa QR');
-  } else {
-    logger.info('session belum ada, menunggu QR...');
-  }
+  try {
+    logger.info('starting bot');
 
-  const { version, isLatest } = await fetchLatestBaileysVersion();
-  logger.info({ version, isLatest }, 'baileys version sync');
-
-  const sock = makeWASocket({
-    auth: state,
-    version,
-    browser: Browsers.ubuntu('BotStore'),
-    markOnlineOnConnect: false,
-    syncFullHistory: false,
-    printQRInTerminal: false,
-    connectTimeoutMs: 60_000,
-    keepAliveIntervalMs: 20_000,
-    retryRequestDelayMs: 2_000,
-    logger
-  });
-
-  currentSock = sock;
-
-  let qrShown = false;
-  const qrTimeout = setTimeout(() => {
-    if (!hasSession && !qrShown) {
-      logger.warn('QR belum muncul. Cek jam server (NTP), koneksi internet VPS, dan pastikan tidak ada firewall memblokir websocket.');
-    }
-  }, 15_000);
-
-  sock.ev.on('creds.update', saveCreds);
-  sock.ev.on('connection.update', (update) => {
-    if (update.qr) {
-      qrShown = true;
-      logger.info('qr generated');
-      qrcode.generate(update.qr, { small: true });
+    if (!fs.existsSync(config.sessionsPath)) {
+      fs.mkdirSync(config.sessionsPath, { recursive: true });
     }
 
-    if (update.connection === 'open') {
-      reconnectAttempt = 0;
-      clearTimeout(qrTimeout);
+    const { state, saveCreds } = await useMultiFileAuthState(config.sessionsPath);
+    const hasSession = Boolean(state?.creds?.registered);
+
+    if (hasSession) {
+      logger.info('session ditemukan, mencoba login ulang');
+    } else {
+      logger.info({ authMode: config.authMode }, 'session belum ada, menunggu autentikasi');
     }
 
-    if (update.connection === 'close') {
-      clearTimeout(qrTimeout);
-    }
-  });
+    const { version, isLatest } = await fetchLatestBaileysVersion();
+    logger.info({ version, isLatest }, 'baileys version sync');
 
-  bindConnectionEvents(sock, ({ shouldReconnect, statusCode }) => {
-    if (!shouldReconnect) {
-      logger.error({ statusCode }, 'session logout / reconnect dihentikan');
-      return;
-    }
+    const sock = makeWASocket({
+      auth: state,
+      version,
+      browser: Browsers.ubuntu('BotStore'),
+      markOnlineOnConnect: false,
+      syncFullHistory: false,
+      printQRInTerminal: false,
+      connectTimeoutMs: 60_000,
+      keepAliveIntervalMs: 20_000,
+      retryRequestDelayMs: 2_000,
+      logger
+    });
 
-    if (reconnectTimer) return;
+    currentSock = sock;
 
-    reconnectAttempt += 1;
-    const delay = Math.min(30_000, 3_000 * reconnectAttempt);
-    logger.info({ reconnectAttempt, delayMs: delay }, 'reconnecting');
+    sock.ev.on('creds.update', async () => {
+      await saveCreds();
+      logger.info('session saved');
+    });
 
-    reconnectTimer = setTimeout(async () => {
-      reconnectTimer = null;
+    let qrShown = false;
+    let pairingIssued = false;
 
-      try {
-        if (currentSock) {
-          currentSock.end(new Error('restart socket'));
+    sock.ev.on('connection.update', async (update) => {
+      const { connection, qr, lastDisconnect } = update;
+
+      logConnectionState(connection);
+
+      if (qr && config.authMode === 'qr') {
+        if (!qrShown) {
+          logger.info('QR code generated, silakan scan');
         }
-      } catch (error) {
-        logger.warn({ err: error }, 'gagal menutup socket lama');
+        qrShown = true;
+        qrcode.generate(qr, { small: false });
       }
 
-      await startWhatsApp();
-    }, delay);
-  });
+      if (connection === 'open') {
+        reconnectAttempt = 0;
+        clearReconnectTimer();
+        logger.info('berhasil terhubung');
+      }
 
-  bindMessageEvents(sock);
+      if (connection === 'close') {
+        const decision = resolveDisconnect(lastDisconnect);
+        logger.warn({ reason: decision.reason, statusCode: decision.statusCode }, 'disconnected');
+
+        if (decision.isLoggedOut) {
+          logger.error('status loggedOut terdeteksi. Hapus folder sessions jika ingin login ulang.');
+          return;
+        }
+
+        scheduleReconnect();
+      }
+
+      if (!hasSession && config.authMode === 'pairing' && !pairingIssued) {
+        pairingIssued = true;
+        try {
+          const phoneNumber = await resolvePairingNumber();
+          const code = await sock.requestPairingCode(phoneNumber);
+          logger.info({ phoneNumber }, 'pairing mode aktif');
+          logger.info(`pairing code: ${code}`);
+        } catch (error) {
+          logger.error({ err: error }, 'gagal membuat pairing code');
+          scheduleReconnect();
+        }
+      }
+    });
+
+    bindMessageEvents(sock);
+
+    if (!hasSession && config.authMode === 'qr') {
+      setTimeout(() => {
+        if (!qrShown) {
+          logger.warn('QR belum muncul. Cek internet VPS, sinkronisasi waktu, dan firewall/security group.');
+        }
+      }, 15000);
+    }
+  } finally {
+    isStarting = false;
+  }
+}
+
+function scheduleReconnect() {
+  if (reconnectTimer) return;
+
+  reconnectAttempt += 1;
+  const delay = Math.min(
+    config.reconnectMaxDelayMs,
+    Math.max(config.reconnectBaseDelayMs, config.reconnectBaseDelayMs * reconnectAttempt)
+  );
+
+  logger.info({ delayMs: delay, reconnectAttempt }, `reconnecting in ${Math.round(delay / 1000)} seconds`);
+
+  reconnectTimer = setTimeout(async () => {
+    clearReconnectTimer();
+
+    try {
+      if (currentSock) {
+        currentSock.end(new Error('restart socket'));
+      }
+    } catch (error) {
+      logger.warn({ err: error }, 'gagal menutup socket lama sebelum reconnect');
+    }
+
+    await startWhatsApp();
+  }, delay);
+}
+
+function clearReconnectTimer() {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+}
+
+async function resolvePairingNumber() {
+  if (config.pairingPhoneNumber) {
+    return sanitizePhoneNumber(config.pairingPhoneNumber);
+  }
+
+  const rl = readline.createInterface({ input: stdin, output: stdout });
+  const answer = await rl.question('Masukkan nomor WhatsApp untuk pairing (contoh 62812xxxx): ');
+  rl.close();
+
+  return sanitizePhoneNumber(answer);
+}
+
+function sanitizePhoneNumber(value) {
+  const cleaned = String(value || '').replace(/[^0-9]/g, '');
+  if (!cleaned) {
+    throw new Error('Nomor WhatsApp tidak valid untuk pairing code');
+  }
+  return cleaned;
 }
 
 function validateRuntime() {
@@ -116,4 +191,4 @@ function validateRuntime() {
   }
 }
 
-module.exports = { startWhatsApp, validateRuntime, DisconnectReason };
+module.exports = { startWhatsApp, validateRuntime };

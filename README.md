@@ -72,12 +72,27 @@ index.js
    npm start
    ```
 
-## Cara Scan QR
-- Saat start pertama, bot akan log `qr generated` lalu QR tampil di terminal
-- Scan dari WhatsApp > Linked devices > Link a device
-- Session akan tersimpan di folder `sessions/`
-- Jika session masih valid, bot akan reconnect otomatis dan QR memang tidak ditampilkan lagi
+## Login QR (default)
+1. Pastikan `.env` berisi `AUTH_MODE=qr`.
+2. Jalankan bot:
+   ```bash
+   npm start
+   ```
+3. Saat log `QR code generated, silakan scan`, QR akan tampil besar di terminal.
+4. Scan dari WhatsApp > Linked devices > Link a device.
+5. Setelah sukses akan muncul log `login success`, `berhasil terhubung`, dan `session saved`.
 
+## Login Pairing Code (fallback)
+1. Set `.env` ke `AUTH_MODE=pairing`.
+2. Isi `PAIRING_PHONE_NUMBER=628xxxx` (atau kosongkan agar diminta via terminal).
+3. Jalankan bot, lalu pairing code akan tampil di terminal.
+4. Masukkan pairing code di WhatsApp saat diminta.
+
+## Arti Log Reconnect
+- `connecting to WhatsApp` -> socket sedang handshake.
+- `disconnected` -> koneksi putus, cek `reason` & `statusCode` pada log JSON.
+- `reconnecting in X seconds` -> bot melakukan retry dengan backoff (tidak spam).
+- Jika `status loggedOut` -> session invalid, reset session agar bisa login ulang.
 
 ## Jika QR belum muncul (atau koneksi gagal terus)
 1. Pastikan pakai Node 20 LTS:
@@ -90,12 +105,12 @@ index.js
    sudo timedatectl set-ntp true
    ```
 3. Cek koneksi outbound HTTPS/WebSocket dari VPS (port 443 tidak diblokir firewall/security group).
-4. Hapus session lama jika korup lalu start ulang:
+4. Reset session lalu start ulang:
    ```bash
    rm -rf sessions
    npm start
    ```
-5. Jika log berulang `Connection Failure`, biasanya akar masalah ada di jaringan VPS / waktu server, bukan di command bot.
+5. Jika masih `Connection Failure`, umumnya masalah ada di jaringan VPS/provider, bukan command bot.
 
 ## Daftar Command
 

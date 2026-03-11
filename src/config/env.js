@@ -13,7 +13,11 @@ const config = {
   sessionsPath: process.env.SESSIONS_PATH || path.join('sessions'),
   ownerClaimCode: process.env.OWNER_CLAIM_CODE || 'Ditsanalah144',
   mainOwnerJid: process.env.MAIN_OWNER_JID || '6282120196167@s.whatsapp.net',
-  rentalRefreshSeconds: Number(process.env.RENTAL_REFRESH_SECONDS || 60)
+  rentalRefreshSeconds: Number(process.env.RENTAL_REFRESH_SECONDS || 60),
+  authMode: (process.env.AUTH_MODE || 'qr').toLowerCase(),
+  pairingPhoneNumber: process.env.PAIRING_PHONE_NUMBER || '',
+  reconnectBaseDelayMs: Number(process.env.RECONNECT_BASE_DELAY_MS || 5000),
+  reconnectMaxDelayMs: Number(process.env.RECONNECT_MAX_DELAY_MS || 60000)
 };
 
 module.exports = config;

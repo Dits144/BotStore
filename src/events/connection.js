@@ -1,25 +1,27 @@
 const { DisconnectReason } = require('@whiskeysockets/baileys');
 const logger = require('../config/logger');
 
-function bindConnectionEvents(sock, onReconnectDecision) {
-  sock.ev.on('connection.update', (update) => {
-    const { connection, lastDisconnect, qr } = update;
+function logConnectionState(connection) {
+  if (connection === 'connecting') {
+    logger.info('connecting to WhatsApp');
+  }
 
-    logger.debug({ connection, hasQR: Boolean(qr) }, 'connection update');
-
-    if (connection === 'open') {
-      logger.info('connected');
-    }
-
-    if (connection === 'close') {
-      const statusCode = lastDisconnect?.error?.output?.statusCode;
-      const reason = lastDisconnect?.error?.message || 'unknown';
-      const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-
-      logger.warn({ statusCode, reason }, 'disconnected');
-      onReconnectDecision({ shouldReconnect, statusCode });
-    }
-  });
+  if (connection === 'open') {
+    logger.info('login success');
+  }
 }
 
-module.exports = { bindConnectionEvents };
+function resolveDisconnect(lastDisconnect) {
+  const statusCode = lastDisconnect?.error?.output?.statusCode;
+  const reason = lastDisconnect?.error?.message || 'unknown';
+  const isLoggedOut = statusCode === DisconnectReason.loggedOut;
+
+  return {
+    statusCode,
+    reason,
+    shouldReconnect: !isLoggedOut,
+    isLoggedOut
+  };
+}
+
+module.exports = { logConnectionState, resolveDisconnect };
