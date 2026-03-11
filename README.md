@@ -3,7 +3,7 @@
 Project ini adalah bot WhatsApp Store berbasis **Node.js (JavaScript murni)** dengan login QR, session persisten, sistem owner, sistem sewa per grup, dan katalog produk per grup.
 
 ## Stack
-- Node.js LTS **20.x** (direkomendasikan)
+- Node.js LTS **20.x** (sangat direkomendasikan untuk Baileys)
 - `@whiskeysockets/baileys`
 - `sqlite3` + `sqlite` (wrapper Promise)
 - `dotenv`
@@ -77,6 +77,25 @@ index.js
 - Scan dari WhatsApp > Linked devices > Link a device
 - Session akan tersimpan di folder `sessions/`
 - Jika session masih valid, bot akan reconnect otomatis dan QR memang tidak ditampilkan lagi
+
+
+## Jika QR belum muncul (atau koneksi gagal terus)
+1. Pastikan pakai Node 20 LTS:
+   ```bash
+   node -v
+   ```
+2. Sinkronkan waktu server (WA sangat sensitif terhadap waktu):
+   ```bash
+   timedatectl status
+   sudo timedatectl set-ntp true
+   ```
+3. Cek koneksi outbound HTTPS/WebSocket dari VPS (port 443 tidak diblokir firewall/security group).
+4. Hapus session lama jika korup lalu start ulang:
+   ```bash
+   rm -rf sessions
+   npm start
+   ```
+5. Jika log berulang `Connection Failure`, biasanya akar masalah ada di jaringan VPS / waktu server, bukan di command bot.
 
 ## Daftar Command
 

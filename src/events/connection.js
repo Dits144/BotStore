@@ -1,24 +1,23 @@
 const { DisconnectReason } = require('@whiskeysockets/baileys');
 const logger = require('../config/logger');
 
-function bindConnectionEvents(sock, reconnectFn) {
+function bindConnectionEvents(sock, onReconnectDecision) {
   sock.ev.on('connection.update', (update) => {
     const { connection, lastDisconnect, qr } = update;
 
-    if (qr) logger.info('qr generated');
-    if (connection === 'open') logger.info('connected');
+    logger.debug({ connection, hasQR: Boolean(qr) }, 'connection update');
+
+    if (connection === 'open') {
+      logger.info('connected');
+    }
 
     if (connection === 'close') {
-      logger.warn('disconnected');
-      const code = lastDisconnect?.error?.output?.statusCode;
-      const shouldReconnect = code !== DisconnectReason.loggedOut;
+      const statusCode = lastDisconnect?.error?.output?.statusCode;
+      const reason = lastDisconnect?.error?.message || 'unknown';
+      const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
-      if (shouldReconnect) {
-        logger.info('reconnecting');
-        reconnectFn();
-      } else {
-        logger.error('session logout, silakan scan QR ulang.');
-      }
+      logger.warn({ statusCode, reason }, 'disconnected');
+      onReconnectDecision({ shouldReconnect, statusCode });
     }
   });
 }
