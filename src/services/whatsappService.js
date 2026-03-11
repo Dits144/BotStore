@@ -18,6 +18,7 @@ let currentSock = null;
 let reconnectTimer = null;
 let reconnectAttempt = 0;
 let isStarting = false;
+let hasLoggedQrHint = false;
 
 async function startWhatsApp() {
   if (isStarting) {
@@ -75,16 +76,14 @@ async function startWhatsApp() {
       logConnectionState(connection);
 
       if (qr && config.authMode === 'qr') {
-        if (!qrShown) {
-          logger.info('QR code generated, silakan scan');
-        }
+        renderQrToTerminal(qr, qrShown);
         qrShown = true;
-        qrcode.generate(qr, { small: false });
       }
 
       if (connection === 'open') {
         reconnectAttempt = 0;
         clearReconnectTimer();
+        hasLoggedQrHint = false;
         logger.info('berhasil terhubung');
       }
 
@@ -100,7 +99,7 @@ async function startWhatsApp() {
         scheduleReconnect();
       }
 
-      if (!hasSession && config.authMode === 'pairing' && !pairingIssued) {
+      if (!hasSession && config.authMode === 'pairing' && !pairingIssued && connection === 'connecting') {
         pairingIssued = true;
         try {
           const phoneNumber = await resolvePairingNumber();
@@ -119,7 +118,10 @@ async function startWhatsApp() {
     if (!hasSession && config.authMode === 'qr') {
       setTimeout(() => {
         if (!qrShown) {
-          logger.warn('QR belum muncul. Cek internet VPS, sinkronisasi waktu, dan firewall/security group.');
+          if (!hasLoggedQrHint) {
+            logger.warn('QR belum muncul. Cek internet VPS, sinkronisasi waktu, dan firewall/security group.');
+            hasLoggedQrHint = true;
+          }
         }
       }, 15000);
     }
@@ -179,6 +181,16 @@ function sanitizePhoneNumber(value) {
     throw new Error('Nomor WhatsApp tidak valid untuk pairing code');
   }
   return cleaned;
+}
+
+function renderQrToTerminal(qr, alreadyShown) {
+  if (alreadyShown) {
+    return;
+  }
+
+  process.stdout.write('\nSilakan scan QR berikut dari WhatsApp > Perangkat Tertaut\n\n');
+  qrcode.generate(qr, { small: true });
+  process.stdout.write('\n');
 }
 
 function validateRuntime() {
