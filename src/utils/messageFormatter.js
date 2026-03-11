@@ -4,9 +4,21 @@ function formatWrongExample(example) {
   return `❌ Format salah\nContoh:\n${example}`;
 }
 
-function mentionTag(jid = '') {
+function mentionTag(jid = '', fallback = 'user') {
   const normalized = normalizeJid(jid);
-  return `@${normalized.split('@')[0]}`;
+  const user = normalized.split('@')[0];
+  return user ? `@${fallback}` : `@${fallback}`;
 }
 
-module.exports = { formatWrongExample, mentionTag };
+function renderMentionText(textTemplate = '', targetJid = '', targetName = 'user') {
+  const normalized = normalizeJid(targetJid);
+  const safeName = String(targetName || 'user').trim().replace(/[^a-zA-Z0-9_]/g, '').slice(0, 15) || 'user';
+  const renderedText = String(textTemplate || '').replaceAll('@user', `@${safeName}`);
+
+  return {
+    text: renderedText,
+    mentions: normalized ? [normalized] : []
+  };
+}
+
+module.exports = { formatWrongExample, mentionTag, renderMentionText };

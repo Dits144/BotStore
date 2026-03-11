@@ -13,11 +13,16 @@ async function isBotGroupAdmin(sock, groupId) {
   }
 }
 
-async function deleteCommandMessage(sock, msg) {
+async function deleteMessageForEveryone(sock, msg) {
   try {
     const groupId = String(msg?.key?.remoteJid || '');
     if (!groupId.endsWith('@g.us')) return false;
-    if (!(await isBotGroupAdmin(sock, groupId))) return false;
+
+    const isAdmin = await isBotGroupAdmin(sock, groupId);
+    if (!isAdmin) {
+      logger.warn({ groupId }, 'bot bukan admin grup, skip hapus command');
+      return false;
+    }
 
     await sock.sendMessage(groupId, { delete: msg.key });
     return true;
@@ -27,4 +32,4 @@ async function deleteCommandMessage(sock, msg) {
   }
 }
 
-module.exports = { isBotGroupAdmin, deleteCommandMessage };
+module.exports = { isBotGroupAdmin, deleteMessageForEveryone, deleteCommandMessage: deleteMessageForEveryone };

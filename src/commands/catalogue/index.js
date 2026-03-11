@@ -1,11 +1,12 @@
 const fs = require('fs');
 const path = require('path');
+const baileys = require('@whiskeysockets/baileys');
 const catalogueRepository = require('../../repositories/catalogueRepository');
 const { canManageCatalogue } = require('../../middlewares/roleGuard');
 const { formatWrongExample } = require('../../utils/messageFormatter');
 const { normalizeText } = require('../../utils/parser');
 const { nowJakarta, formatDate, formatTime } = require('../../utils/time');
-const { deleteCommandMessage } = require('../../utils/admin');
+const { deleteMessageForEveryone } = require('../../utils/admin');
 const { suggestClosest } = require('../../utils/typo');
 const config = require('../../config/env');
 
@@ -73,23 +74,29 @@ async function addList(ctx, parsed) {
 
   const name = normalizeText(nameRaw);
   const description = descRaw.trim();
+  const hasImage = Boolean(ctx.msg?.message?.imageMessage);
+  if (hasImage) await react(ctx, '⏳');
+
   const media = await maybeSaveMedia(ctx, name);
 
   if (media?.error) {
+    if (hasImage) await react(ctx, '❌');
     await ctx.send('❌ Gagal menyimpan media payment. Coba kirim ulang gambarnya.');
     return;
   }
 
   try {
     await catalogueRepository.addItem(ctx.from, name, description, ctx.sender, media || {});
-    await deleteCommandMessage(ctx.sock, ctx.msg);
+    await deleteMessageForEveryone(ctx.sock, ctx.msg);
+    if (hasImage) await react(ctx, '✅');
     await ctx.send(
       `✅ List berhasil ditambahkan\n` +
       `📦 Nama : ${name}\n` +
       `📝 Deskripsi : ${description}` +
       `${media?.path ? '\n🖼️ Media : tersimpan' : ''}`
     );
-  } catch (error) {
+  } catch {
+    if (hasImage) await react(ctx, '❌');
     await ctx.send('❌ Gagal menambahkan list. Pastikan nama item unik per grup.');
   }
 }
@@ -109,7 +116,7 @@ async function delList(ctx, parsed) {
   }
 
   if (item?.media_path && fs.existsSync(item.media_path)) fs.unlinkSync(item.media_path);
-  await deleteCommandMessage(ctx.sock, ctx.msg);
+  await deleteMessageForEveryone(ctx.sock, ctx.msg);
   await ctx.send(`🗑️ List berhasil dihapus\n📦 Nama : ${name}`);
 }
 
@@ -131,7 +138,7 @@ async function updateList(ctx, parsed) {
     return;
   }
 
-  await deleteCommandMessage(ctx.sock, ctx.msg);
+  await deleteMessageForEveryone(ctx.sock, ctx.msg);
   await ctx.send(`♻️ List berhasil diperbarui\n📦 Nama : ${name}\n📝 Deskripsi Baru : ${description}`);
 }
 
@@ -181,12 +188,36 @@ async function maybeSaveMedia(ctx, name) {
 
   try {
     if (!fs.existsSync(config.mediaPath)) fs.mkdirSync(config.mediaPath, { recursive: true });
-    const buffer = await ctx.sock.downloadMediaMessage(ctx.msg, 'buffer', {}, {});
+
+    let buffer = null;
+    if (typeof ctx.sock.downloadMediaMessage === 'function') {
+      buffer = await ctx.sock.downloadMediaMessage(ctx.msg, 'buffer', {}, {});
+    }
+
+    if (!buffer) {
+      buffer = await baileys.downloadMediaMessage(
+        ctx.msg,
+        'buffer',
+        {},
+        { logger: undefined, reuploadRequest: ctx.sock.updateMediaMessage }
+      );
+    }
+
+    if (!buffer || !buffer.length) return { error: true };
+
     const filePath = path.join(config.mediaPath, `${Date.now()}-${name}.jpg`);
     fs.writeFileSync(filePath, buffer);
     return { path: filePath, type: 'image' };
   } catch {
     return { error: true };
+  }
+}
+
+async function react(ctx, emoji) {
+  try {
+    await ctx.sock.sendMessage(ctx.from, { react: { text: emoji, key: ctx.msg.key } });
+  } catch {
+    // noop
   }
 }
 

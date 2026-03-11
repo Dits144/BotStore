@@ -1,10 +1,10 @@
 const crypto = require('crypto');
 const { canManageCatalogue } = require('../../middlewares/roleGuard');
-const { deleteCommandMessage } = require('../../utils/admin');
-const { formatWrongExample } = require('../../utils/messageFormatter');
+const { deleteMessageForEveryone } = require('../../utils/admin');
+const { formatWrongExample, renderMentionText } = require('../../utils/messageFormatter');
 const groupSettingsRepository = require('../../repositories/groupSettingsRepository');
 const { nowJakarta, formatDate, formatTime } = require('../../utils/time');
-const { getSenderJid, normalizeJid } = require('../../utils/jid');
+const { normalizeJid } = require('../../utils/jid');
 
 async function handle(ctx, parsed) {
   if (!ctx.isGroup) {
@@ -32,7 +32,7 @@ async function setWelcomeStatus(ctx, parsed) {
   }
 
   await groupSettingsRepository.setWelcomeEnabled(ctx.from, action === 'on');
-  await deleteCommandMessage(ctx.sock, ctx.msg);
+  await deleteMessageForEveryone(ctx.sock, ctx.msg);
   await ctx.send(action === 'on' ? '✅ Welcome berhasil diaktifkan' : '✅ Welcome berhasil dinonaktifkan');
 }
 
@@ -46,7 +46,7 @@ async function setWelcomeTemplate(ctx, parsed) {
   }
 
   await groupSettingsRepository.setWelcomeMessage(ctx.from, templateRaw.trim());
-  await deleteCommandMessage(ctx.sock, ctx.msg);
+  await deleteMessageForEveryone(ctx.sock, ctx.msg);
   await ctx.send('✅ Welcome message berhasil diperbarui');
 }
 
@@ -60,14 +60,8 @@ async function broadcast(ctx, parsed) {
   const meta = await ctx.sock.groupMetadata(ctx.from);
   const mentions = (meta.participants || []).map((p) => normalizeJid(p.id)).filter(Boolean);
 
-  await deleteCommandMessage(ctx.sock, ctx.msg);
-  await ctx.send(
-    `┏━━〔 📢 PENGUMUMAN 〕━━┓\n` +
-    `┗━━━━━━━━━━━━━━━━━━┛\n\n` +
-    `${text}\n\n` +
-    `${mentions.map(() => '@user').join(' ')}`,
-    { mentions }
-  );
+  await deleteMessageForEveryone(ctx.sock, ctx.msg);
+  await ctx.send(text, { mentions });
 }
 
 async function transactionNote(ctx, statusCode) {
@@ -86,7 +80,8 @@ async function transactionNote(ctx, statusCode) {
   const trxId = `TRX-${now.format('YYYYMMDD')}-${crypto.randomInt(1000, 9999)}`;
   const userJid = normalizeJid(participant);
 
-  await deleteCommandMessage(ctx.sock, ctx.msg);
+  await deleteMessageForEveryone(ctx.sock, ctx.msg);
+  const mention = renderMentionText('@user Terima kasih sudah order!', userJid, 'user');
   await ctx.send(
     `「 TRANSAKSI ${status.toUpperCase()} 」\n\n` +
     `🆔 ID : ${trxId}\n` +
@@ -94,8 +89,8 @@ async function transactionNote(ctx, statusCode) {
     `⌚ JAM : ${formatTime(now)} WIB\n` +
     `✨ STATUS : ${status}\n\n` +
     `📝 Catatan : ${note}\n\n` +
-    `@user Terima kasih sudah order!`,
-    { mentions: [userJid] }
+    `${mention.text}`,
+    { mentions: mention.mentions }
   );
 }
 

@@ -1,6 +1,7 @@
 const groupSettingsRepository = require('../../repositories/groupSettingsRepository');
 const { formatDateTime } = require('../../utils/time');
 const { normalizeJid } = require('../../utils/jid');
+const { renderMentionText } = require('../../utils/messageFormatter');
 
 async function info(ctx) {
   if (!ctx.isGroup) {
@@ -60,14 +61,15 @@ async function welcomeNewMembers(sock, update) {
     const textTemplate = setting.welcome_message ||
       'Halo @user\nSelamat datang di grup *{group}* ✨\n\nSemoga betah di sini, jangan lupa baca deskripsi grup dan ikuti aturan yang berlaku yaa.';
 
-    const body = textTemplate.replaceAll('{group}', groupName).replaceAll('@user', '@user');
-    const caption = `┏━━〔 👋 SELAMAT DATANG 〕━━┓\n┗━━━━━━━━━━━━━━━━━━━━┛\n\n${body}`;
+    const bodyRaw = textTemplate.replaceAll('{group}', groupName);
+    const mention = renderMentionText(bodyRaw, userJid, 'user');
+    const caption = `┏━━〔 👋 SELAMAT DATANG 〕━━┓\n┗━━━━━━━━━━━━━━━━━━━━┛\n\n${mention.text}`;
 
     try {
       const ppUrl = await sock.profilePictureUrl(userJid, 'image');
-      await sock.sendMessage(id, { image: { url: ppUrl }, caption, mentions: [userJid] });
+      await sock.sendMessage(id, { image: { url: ppUrl }, caption, mentions: mention.mentions });
     } catch {
-      await sock.sendMessage(id, { text: caption, mentions: [userJid] });
+      await sock.sendMessage(id, { text: caption, mentions: mention.mentions });
     }
   }
 }
