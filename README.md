@@ -73,10 +73,10 @@ index.js
    ```
 
 ## Cara Scan QR
-- Saat start pertama, bot akan log `qr generated`
-- QR tampil di terminal
+- Saat start pertama, bot akan log `qr generated` lalu QR tampil di terminal
 - Scan dari WhatsApp > Linked devices > Link a device
 - Session akan tersimpan di folder `sessions/`
+- Jika session masih valid, bot akan reconnect otomatis dan QR memang tidak ditampilkan lagi
 
 ## Daftar Command
 

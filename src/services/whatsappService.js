@@ -17,19 +17,39 @@ async function startWhatsApp() {
   }
 
   const { state, saveCreds } = await useMultiFileAuthState(config.sessionsPath);
+  const hasSession = Boolean(state?.creds?.registered);
+
+  if (hasSession) {
+    logger.info('session detected, mencoba reconnect tanpa QR');
+  } else {
+    logger.info('session belum ada, menunggu QR...');
+  }
 
   const sock = makeWASocket({
     auth: state,
     markOnlineOnConnect: false,
     syncFullHistory: false,
-    printQRInTerminal: false,
+    printQRInTerminal: true,
     logger
   });
+
+  let qrShown = false;
+  const qrTimeout = setTimeout(() => {
+    if (!hasSession && !qrShown) {
+      logger.warn('QR belum muncul. Pastikan waktu server sinkron dan koneksi internet VPS stabil.');
+    }
+  }, 15000);
 
   sock.ev.on('creds.update', saveCreds);
   sock.ev.on('connection.update', (update) => {
     if (update.qr) {
+      qrShown = true;
+      logger.info('qr generated');
       qrcode.generate(update.qr, { small: true });
+    }
+
+    if (update.connection === 'open') {
+      clearTimeout(qrTimeout);
     }
   });
 
