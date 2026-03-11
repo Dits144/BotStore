@@ -3,13 +3,19 @@
 Project ini adalah bot WhatsApp Store berbasis **Node.js (JavaScript murni)** dengan login QR, session persisten, sistem owner, sistem sewa per grup, dan katalog produk per grup.
 
 ## Stack
-- Node.js LTS (disarankan Node 20)
+- Node.js LTS **20.x** (direkomendasikan)
 - `@whiskeysockets/baileys`
-- `better-sqlite3`
+- `sqlite3` + `sqlite` (wrapper Promise)
 - `dotenv`
 - `pino`
 - `dayjs`
 - `qrcode-terminal`
+
+## Kenapa tidak pakai better-sqlite3?
+`better-sqlite3` adalah native module. Pada beberapa environment (terutama Node sangat baru seperti v24.x), binary binding bisa tidak cocok / belum tersedia, sehingga muncul error:
+`Could not locate the bindings file for better-sqlite3`.
+
+Project ini sudah dimigrasikan ke `sqlite3` + `sqlite` agar lebih stabil di VPS Ubuntu dan flow async lebih aman.
 
 ## Struktur Folder
 
@@ -45,9 +51,14 @@ index.js
 - Middleware validasi sewa untuk command grup
 - `infogrup` dengan fallback field metadata aman
 - Katalog produk per grup (`list`, `addlist`, `dellist`, `updatelist`, trigger nama produk)
+- Auto init DB + auto create folder/file tabel jika belum ada
+- Log DB: `database connected`, `database initialized`, `failed to connect database`
 
 ## Instalasi Local
-1. Install Node.js LTS
+1. Install Node.js LTS 20:
+   ```bash
+   node -v
+   ```
 2. Install dependency:
    ```bash
    npm install
@@ -101,29 +112,10 @@ index.js
 - Scheduler update status sewa berkala sesuai `RENTAL_REFRESH_SECONDS`
 - Semua waktu timezone `Asia/Jakarta`
 
-## Contoh Output
-### Error format
-```text
-❌ Format salah
-Contoh:
-addsewa 1203630xxxx@g.us 90
-```
-
-### Detail produk
-```text
-┏━━〔 📦 DETAIL PRODUK 〕━━┓
-┗━━━━━━━━━━━━━━━━━━━━┛
-
-💎 Nama : capcut
-📝 Deskripsi : 1 bulan harga 50.000
-
-📌 Hubungi admin untuk order.
-```
-
 ## Deploy VPS Ubuntu
 ```bash
 sudo apt update
-sudo apt install -y git build-essential python3
+sudo apt install -y git curl
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 
@@ -134,7 +126,21 @@ cp .env.example .env
 npm start
 ```
 
-## Jalankan dengan PM2 (24 jam)
+## Jika Native Dependency Gagal Build
+Walau sudah pindah ke `sqlite3`, di beberapa VPS minimal tetap bisa butuh toolchain:
+
+```bash
+sudo apt install -y build-essential python3 make g++
+```
+
+Lalu reset dependency:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
+
+## PM2 (24 jam)
 ```bash
 npm install -g pm2
 pm2 start index.js --name botstore
@@ -142,8 +148,14 @@ pm2 save
 pm2 startup
 ```
 
+## Restart Service
+```bash
+pm2 restart botstore
+```
+
 ## Catatan Penting
+- Node direkomendasikan: **20.x LTS**
+- Hindari menjalankan di Node experimental/terlalu baru (mis. 24.x) untuk stabilitas dependency
 - Owner utama default: `6282120196167@s.whatsapp.net`
 - Owner utama tidak bisa dihapus
 - Claim owner via `Ditsanalah144` **hanya** di personal chat
-- Tidak menggunakan TypeScript

@@ -14,7 +14,7 @@ async function routeMessage(sock, msg) {
   const from = msg.key.remoteJid;
   const sender = msg.key.participant || msg.key.remoteJid;
   const isGroup = from.endsWith('@g.us');
-  const isOwner = isBotOwner(sender);
+  const isOwner = await isBotOwner(sender);
 
   const context = {
     sock,
@@ -45,7 +45,7 @@ async function routeMessage(sock, msg) {
     return;
   }
 
-  if (isGroup && !canRunGroupCommand({ isGroup, isOwner, groupId: from })) {
+  if (isGroup && !(await canRunGroupCommand({ isGroup, isOwner, groupId: from }))) {
     return;
   }
 

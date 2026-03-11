@@ -5,7 +5,7 @@ const { startRentalScheduler } = require('./src/services/schedulerService');
 
 async function bootstrap() {
   try {
-    migrate();
+    await migrate();
     startRentalScheduler();
     await startWhatsApp();
   } catch (error) {

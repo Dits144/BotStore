@@ -3,10 +3,13 @@ const { refreshRentalStatus } = require('./rentalService');
 const logger = require('../config/logger');
 
 function startRentalScheduler() {
-  refreshRentalStatus();
-  setInterval(() => {
+  refreshRentalStatus().catch((error) => {
+    logger.error({ err: error }, 'gagal refresh status sewa awal');
+  });
+
+  setInterval(async () => {
     try {
-      refreshRentalStatus();
+      await refreshRentalStatus();
     } catch (error) {
       logger.error({ err: error }, 'gagal refresh status sewa');
     }

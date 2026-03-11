@@ -9,7 +9,7 @@ async function handle(ctx, parsed) {
     return;
   }
 
-  refreshRentalStatus();
+  await refreshRentalStatus();
 
   if (parsed.command === 'addsewa') return addSewa(ctx, parsed.args);
   if (parsed.command === 'renewsewa') return renewSewa(ctx, parsed.args);
@@ -29,7 +29,7 @@ async function addSewa(ctx, args) {
   const groupName = await resolveGroupName(ctx.sock, groupId);
   const expiredAt = nowJakarta().add(duration, 'day').toISOString();
 
-  rentalRepository.upsertRental({
+  await rentalRepository.upsertRental({
     group_id: groupId,
     group_name: groupName,
     duration_days: duration,
@@ -55,11 +55,11 @@ async function renewSewa(ctx, args) {
 
   const groupId = args[0];
   const duration = Number(args[1]);
-  const existing = rentalRepository.getRental(groupId);
+  const existing = await rentalRepository.getRental(groupId);
   const expiredAt = computeRenewalExpiry(existing, duration);
   const groupName = await resolveGroupName(ctx.sock, groupId);
 
-  rentalRepository.upsertRental({
+  await rentalRepository.upsertRental({
     group_id: groupId,
     group_name: groupName,
     duration_days: duration,
@@ -84,8 +84,8 @@ async function delSewa(ctx, args) {
   }
 
   const groupId = args[0];
-  const existing = rentalRepository.getRental(groupId);
-  rentalRepository.deleteRental(groupId);
+  const existing = await rentalRepository.getRental(groupId);
+  await rentalRepository.deleteRental(groupId);
 
   await ctx.send(
     `🗑️ Grup berhasil dihapus dari daftar sewa\n` +
@@ -95,7 +95,7 @@ async function delSewa(ctx, args) {
 }
 
 async function listSewa(ctx) {
-  const rows = rentalRepository.listRentals();
+  const rows = await rentalRepository.listRentals();
   if (!rows.length) {
     await ctx.send('📭 Belum ada grup yang terdaftar sewa.');
     return;
@@ -115,7 +115,7 @@ async function cekSewa(ctx, args) {
     return;
   }
 
-  const row = rentalRepository.getRental(args[0]);
+  const row = await rentalRepository.getRental(args[0]);
   if (!row) {
     await ctx.send('❌ Data sewa grup tidak ditemukan.');
     return;

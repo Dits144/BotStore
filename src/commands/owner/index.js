@@ -5,12 +5,12 @@ const { formatWrongExample } = require('../../utils/messageFormatter');
 async function claimOwner(ctx) {
   if (ctx.isGroup) return;
 
-  if (ownerRepository.isOwner(ctx.sender)) {
+  if (await ownerRepository.isOwner(ctx.sender)) {
     await ctx.send('✅ Kamu sudah terdaftar sebagai owner bot.');
     return;
   }
 
-  ownerRepository.addOwner(ctx.sender, 0);
+  await ownerRepository.addOwner(ctx.sender, 0);
   await ctx.send('🎉 Claim owner berhasil!\nSekarang kamu terdaftar sebagai owner tambahan bot.');
 }
 
@@ -26,7 +26,7 @@ async function handle(ctx, parsed) {
       return;
     }
     const jid = parsed.args[0].toLowerCase();
-    ownerRepository.addOwner(jid, 0);
+    await ownerRepository.addOwner(jid, 0);
     await ctx.send(`✅ Owner berhasil ditambahkan\n👤 ${jid}`);
     return;
   }
@@ -43,13 +43,13 @@ async function handle(ctx, parsed) {
       return;
     }
 
-    ownerRepository.removeOwner(jid);
+    await ownerRepository.removeOwner(jid);
     await ctx.send(`🗑️ Owner tambahan berhasil dihapus\n👤 ${jid}`);
     return;
   }
 
   if (parsed.command === 'listowner') {
-    const rows = ownerRepository.listOwners();
+    const rows = await ownerRepository.listOwners();
     const lines = rows.map((row, i) => `${i + 1}. ${row.jid} (${Number(row.is_main) ? 'Owner Utama' : 'Owner Tambahan'})`);
     await ctx.send(`┏━━〔 👑 LIST OWNER BOT 〕━━┓\n${lines.join('\n')}\n┗━━━━━━━━━━━━━━━━━━━━┛`);
   }

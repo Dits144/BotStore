@@ -1,8 +1,11 @@
-const db = require('./connection');
+const { connectDatabase } = require('./connection');
 const config = require('../config/env');
+const logger = require('../config/logger');
 
-function migrate() {
-  db.exec(`
+async function migrate() {
+  const db = await connectDatabase();
+
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS owners (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       jid TEXT NOT NULL UNIQUE,
@@ -41,8 +44,8 @@ function migrate() {
   `);
 
   const now = new Date().toISOString();
-  db.prepare('INSERT OR IGNORE INTO owners (jid, is_main, created_at) VALUES (?, 1, ?)')
-    .run(config.mainOwnerJid, now);
+  await db.run('INSERT OR IGNORE INTO owners (jid, is_main, created_at) VALUES (?, 1, ?)', [config.mainOwnerJid, now]);
+  logger.info('database initialized');
 }
 
 module.exports = migrate;

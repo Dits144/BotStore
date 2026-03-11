@@ -1,13 +1,13 @@
 const rentalRepository = require('../repositories/rentalRepository');
 const { dayjs, nowJakarta } = require('../utils/time');
 
-function refreshRentalStatus() {
-  rentalRepository.refreshStatus(nowJakarta().toISOString());
+async function refreshRentalStatus() {
+  await rentalRepository.refreshStatus(nowJakarta().toISOString());
 }
 
-function isGroupRentalActive(groupId) {
-  refreshRentalStatus();
-  const row = rentalRepository.getRental(groupId);
+async function isGroupRentalActive(groupId) {
+  await refreshRentalStatus();
+  const row = await rentalRepository.getRental(groupId);
   if (!row) return false;
   return Number(row.is_active) === 1 && dayjs(row.expired_at).isAfter(nowJakarta());
 }

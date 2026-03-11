@@ -1,6 +1,6 @@
 const { isGroupRentalActive } = require('../services/rentalService');
 
-function canRunGroupCommand({ isGroup, isOwner, groupId }) {
+async function canRunGroupCommand({ isGroup, isOwner, groupId }) {
   if (!isGroup) return true;
   if (isOwner) return true;
   return isGroupRentalActive(groupId);

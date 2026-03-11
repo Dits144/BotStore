@@ -27,7 +27,7 @@ async function handle(ctx, parsed) {
 }
 
 async function listCatalogue(ctx) {
-  const rows = catalogueRepository.listByGroup(ctx.from);
+  const rows = await catalogueRepository.listByGroup(ctx.from);
   if (!rows.length) {
     await ctx.send('🛒 Toko kosong, admin belum menambahkan katalog.');
     return;
@@ -71,7 +71,7 @@ async function addList(ctx, parsed) {
   const description = descRaw.trim();
 
   try {
-    catalogueRepository.addItem(ctx.from, name, description, ctx.sender);
+    await catalogueRepository.addItem(ctx.from, name, description, ctx.sender);
     await ctx.send(`✅ List berhasil ditambahkan\n📦 Nama : ${name}\n📝 Deskripsi : ${description}`);
   } catch (error) {
     await ctx.send('❌ Gagal menambahkan list. Pastikan nama item unik per grup.');
@@ -85,7 +85,7 @@ async function delList(ctx, parsed) {
   }
 
   const name = normalizeText(parsed.args.join(' '));
-  const result = catalogueRepository.deleteItem(ctx.from, name);
+  const result = await catalogueRepository.deleteItem(ctx.from, name);
   if (!result.changes) {
     await ctx.send('❌ Item tidak ditemukan di katalog grup ini.');
     return;
@@ -105,7 +105,7 @@ async function updateList(ctx, parsed) {
 
   const name = normalizeText(nameRaw);
   const description = descRaw.trim();
-  const result = catalogueRepository.updateItem(ctx.from, name, description);
+  const result = await catalogueRepository.updateItem(ctx.from, name, description);
 
   if (!result.changes) {
     await ctx.send('❌ Item tidak ditemukan, gagal memperbarui katalog.');
@@ -119,7 +119,7 @@ async function productTrigger(ctx, rawText) {
   const name = normalizeText(rawText);
   if (!name || name.includes(' ')) return;
 
-  const item = catalogueRepository.getItem(ctx.from, name);
+  const item = await catalogueRepository.getItem(ctx.from, name);
   if (!item) return;
 
   await ctx.send(

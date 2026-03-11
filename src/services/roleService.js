@@ -1,6 +1,6 @@
 const ownerRepository = require('../repositories/ownerRepository');
 
-function isBotOwner(jid) {
+async function isBotOwner(jid) {
   return ownerRepository.isOwner(jid);
 }
 
