@@ -1,8 +1,7 @@
-const { isBotOwner, isGroupAdmin } = require('../services/roleService');
+const { isAllowedCatalogueManager } = require('../services/roleService');
 
 async function canManageCatalogue(sock, groupId, senderJid) {
-  if (await isBotOwner(senderJid)) return true;
-  return isGroupAdmin(sock, groupId, senderJid);
+  return isAllowedCatalogueManager(sock, groupId, senderJid);
 }
 
 module.exports = { canManageCatalogue };

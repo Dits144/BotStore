@@ -1,6 +1,7 @@
 const { connectDatabase } = require('./connection');
 const config = require('../config/env');
 const logger = require('../config/logger');
+const { normalizeJid } = require('../utils/jid');
 
 async function migrate() {
   const db = await connectDatabase();
@@ -44,7 +45,7 @@ async function migrate() {
   `);
 
   const now = new Date().toISOString();
-  await db.run('INSERT OR IGNORE INTO owners (jid, is_main, created_at) VALUES (?, 1, ?)', [config.mainOwnerJid, now]);
+  await db.run('INSERT OR IGNORE INTO owners (jid, is_main, created_at) VALUES (?, 1, ?)', [normalizeJid(config.mainOwnerJid), now]);
   logger.info('database initialized');
 }
 

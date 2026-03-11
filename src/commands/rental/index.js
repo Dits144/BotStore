@@ -2,10 +2,11 @@ const rentalRepository = require('../../repositories/rentalRepository');
 const { formatWrongExample } = require('../../utils/messageFormatter');
 const { dayjs, nowJakarta, formatDateTime } = require('../../utils/time');
 const { computeRenewalExpiry, refreshRentalStatus } = require('../../services/rentalService');
+const { isBotOwner } = require('../../services/roleService');
 
 async function handle(ctx, parsed) {
-  if (!ctx.isOwner) {
-    await ctx.send('❌ Command sewa hanya untuk owner bot.');
+  if (!(await isBotOwner(ctx.sender))) {
+    await ctx.send('❌ Akses ditolak\nPerintah sewa hanya untuk Owner Bot, bukan admin grup.');
     return;
   }
 

@@ -1,6 +1,8 @@
+const logger = require('../config/logger');
 const { parseCommand, normalizeText } = require('../utils/parser');
 const { canRunGroupCommand } = require('../middlewares/rentalGuard');
 const { isBotOwner } = require('../services/roleService');
+const { getSenderJid, normalizeJid } = require('../utils/jid');
 const ownerCommands = require('../commands/owner');
 const rentalCommands = require('../commands/rental');
 const groupCommands = require('../commands/group');
@@ -11,10 +13,12 @@ async function routeMessage(sock, msg) {
   const body = extractMessageText(msg);
   if (!body) return;
 
-  const from = msg.key.remoteJid;
-  const sender = msg.key.participant || msg.key.remoteJid;
+  const from = normalizeJid(msg.key?.remoteJid || '');
+  const sender = getSenderJid(msg);
   const isGroup = from.endsWith('@g.us');
   const isOwner = await isBotOwner(sender);
+
+  logger.debug({ from, sender, isGroup }, 'incoming message context');
 
   const context = {
     sock,
@@ -35,7 +39,7 @@ async function routeMessage(sock, msg) {
   const parsed = parseCommand(body);
   if (!parsed.command) return;
 
-  if (['owner', 'delowner', 'listowner'].includes(parsed.command)) {
+  if (['owner', 'delowner', 'listowner', 'cekrole', 'myrole'].includes(parsed.command)) {
     await ownerCommands.handle(context, parsed);
     return;
   }
@@ -46,6 +50,7 @@ async function routeMessage(sock, msg) {
   }
 
   if (isGroup && !(await canRunGroupCommand({ isGroup, isOwner, groupId: from }))) {
+    logger.debug({ command: parsed.command, groupId: from, sender }, 'command ditolak karena sewa grup tidak aktif');
     return;
   }
 
