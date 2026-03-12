@@ -3,7 +3,7 @@ const { canManageCatalogue } = require('../../middlewares/roleGuard');
 const { formatWrongExample, renderMentionText } = require('../../utils/messageFormatter');
 const groupSettingsRepository = require('../../repositories/groupSettingsRepository');
 const { nowJakarta, formatDate, formatTime } = require('../../utils/time');
-const { normalizeJid } = require('../../utils/jid');
+const { normalizeJid, toMentionJid } = require('../../utils/jid');
 const logger = require('../../config/logger');
 const {
   reactLoading,
@@ -80,7 +80,7 @@ async function broadcast(ctx, parsed, withMentionAll) {
   }
 
   const meta = await ctx.sock.groupMetadata(ctx.from);
-  const mentions = (meta.participants || []).map((p) => normalizeJid(p.id)).filter(Boolean).slice(0, 250);
+  const mentions = (meta.participants || []).map((p) => toMentionJid(p.id)).filter(Boolean).slice(0, 250);
   logger.info({ command: parsed.command, mentionsCount: mentions.length, groupId: ctx.from }, 'broadcast mentions prepared');
   await ctx.sock.sendMessage(ctx.from, { text, mentions });
   await reactSuccess(ctx.sock, ctx.msg);
@@ -100,7 +100,7 @@ async function transactionNote(ctx, statusCode) {
   const note = extractQuotedText(quoted) || '-';
   const now = nowJakarta();
   const trxId = `TRX-${now.format('YYYYMMDD')}-${crypto.randomInt(1000, 9999)}`;
-  const userJid = normalizeJid(participant);
+  const userJid = toMentionJid(participant);
 
   await reactLoading(ctx.sock, ctx.msg);
   await deleteMessageForEveryone(ctx.sock, ctx.msg);

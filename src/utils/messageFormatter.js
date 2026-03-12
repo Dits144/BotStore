@@ -1,4 +1,4 @@
-const { normalizeJid } = require('./jid');
+const { normalizeJid, toMentionJid } = require('./jid');
 
 function formatWrongExample(example) {
   return `❌ Format salah\nContoh:\n${example}`;
@@ -12,7 +12,7 @@ function mentionTag(jid = '', fallback = 'user') {
 
 function buildMentionText(textTemplate = '', targets = []) {
   const safeTargets = (Array.isArray(targets) ? targets : [targets])
-    .map((t) => normalizeJid(typeof t === 'string' ? t : t?.jid || ''))
+    .map((t) => toMentionJid(typeof t === 'string' ? t : t?.jid || ''))
     .filter(Boolean);
 
   let renderedText = String(textTemplate || '');
@@ -24,7 +24,7 @@ function buildMentionText(textTemplate = '', targets = []) {
 }
 
 function renderMentionText(textTemplate = '', targetJid = '', targetName = 'user') {
-  const normalized = normalizeJid(targetJid);
+  const normalized = toMentionJid(targetJid);
   const safeName = String(targetName || 'user').trim().replace(/[^a-zA-Z0-9_]/g, '').slice(0, 15) || 'user';
   const renderedText = String(textTemplate || '').replaceAll('@user', `@${safeName}`);
 

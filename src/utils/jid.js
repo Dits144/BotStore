@@ -17,6 +17,12 @@ function normalizeJid(input = '') {
   return `${digits}@c.us`;
 }
 
+function toMentionJid(input = '') {
+  const normalized = normalizeJid(input);
+  if (!normalized || normalized.endsWith('@g.us')) return normalized;
+  return `${normalized.split('@')[0]}@s.whatsapp.net`;
+}
+
 function toPhoneNumber(jid = '') {
   return normalizeJid(jid).split('@')[0] || '-';
 }
@@ -40,4 +46,4 @@ function getSenderJid(msg = {}) {
   return normalizeJid(remoteJid);
 }
 
-module.exports = { normalizeJid, toPhoneNumber, getSenderJid };
+module.exports = { normalizeJid, toMentionJid, toPhoneNumber, getSenderJid };

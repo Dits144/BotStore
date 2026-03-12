@@ -1,6 +1,6 @@
 const groupSettingsRepository = require('../../repositories/groupSettingsRepository');
 const { formatDateTime } = require('../../utils/time');
-const { normalizeJid } = require('../../utils/jid');
+const { normalizeJid, toMentionJid } = require('../../utils/jid');
 const { renderMentionText } = require('../../utils/messageFormatter');
 
 async function info(ctx) {
@@ -57,7 +57,7 @@ async function welcomeNewMembers(sock, update) {
   const groupName = meta.subject || 'Group';
 
   for (const rawJid of participants) {
-    const userJid = normalizeJid(rawJid);
+    const userJid = toMentionJid(rawJid);
     const textTemplate = setting.welcome_message ||
       'Halo @user\nSelamat datang di grup *{group}* ✨\n\nSemoga betah di sini, jangan lupa baca deskripsi grup dan ikuti aturan yang berlaku yaa.';
 
