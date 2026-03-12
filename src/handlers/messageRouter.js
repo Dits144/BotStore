@@ -31,7 +31,8 @@ async function routeMessage(sock, msg) {
     sender,
     isGroup,
     isOwner,
-    send: async (text, options = {}) => sock.sendMessage(remoteJid, { text, ...options }, { quoted: msg })
+    send: async (text, options = {}, sendOptions = {}) => sock.sendMessage(remoteJid, { text, ...options }, sendOptions),
+    reply: async (text, options = {}) => sock.sendMessage(remoteJid, { text, ...options }, { quoted: msg })
   };
 
   const isClaimOwnerText = normalizeText(body) === normalizeText(config.ownerClaimCode);

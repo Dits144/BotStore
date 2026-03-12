@@ -13,7 +13,7 @@ const config = {
   sessionsPath: process.env.SESSIONS_PATH || path.join('sessions'),
   mediaPath: process.env.MEDIA_PATH || path.join('data', 'media'),
   ownerClaimCode: process.env.OWNER_CLAIM_CODE || 'botditstore144',
-  mainOwnerJid: process.env.MAIN_OWNER_JID || '6282120196167@c.us',
+  mainOwnerJid: process.env.MAIN_OWNER_JID || '6282120196167@s.whatsapp.net',
   rentalRefreshSeconds: Number(process.env.RENTAL_REFRESH_SECONDS || 60),
   authMode: (process.env.AUTH_MODE || 'qr').toLowerCase(),
   pairingPhoneNumber: process.env.PAIRING_PHONE_NUMBER || '',

@@ -143,7 +143,7 @@ index.js
 - **Owner bot**: semua command, termasuk command sewa + owner + manajemen katalog
 - **Admin grup**: hanya `addlist` / `dellist` / `updatelist` + command user biasa
 - **User biasa**: `list` + lihat detail produk
-- **Owner utama (`6282120196167@c.us`) selalu valid sebagai owner bot**, meskipun data owner tambahan di database kosong.
+- **Owner utama (`6282120196167@s.whatsapp.net`) selalu valid sebagai owner bot**, meskipun data owner tambahan di database kosong.
 
 ## Sistem Sewa Grup
 - Command umum hanya jalan di grup dengan sewa aktif
@@ -196,7 +196,7 @@ pm2 restart botstore
 ## Catatan Penting
 - Node direkomendasikan: **20.x LTS**
 - Hindari menjalankan di Node experimental/terlalu baru (mis. 24.x) untuk stabilitas dependency
-- Owner utama default: `6282120196167@c.us`
+- Owner utama default: `6282120196167@s.whatsapp.net`
 - Owner utama tidak bisa dihapus
 - Claim owner via `botditstore144` **hanya** di personal chat dan langsung aktif sebagai Owner Bot penuh
 

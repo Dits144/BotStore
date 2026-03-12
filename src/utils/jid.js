@@ -2,25 +2,24 @@ function normalizeJid(input = '') {
   const raw = String(input || '').trim().toLowerCase();
   if (!raw) return '';
 
-  if (raw.includes('@')) {
-    const [userPart, serverPart] = raw.split('@');
-    const user = userPart.split(':')[0].replace(/[^0-9]/g, '');
-    if (!user) return '';
-
-    const server = String(serverPart || '').trim();
-    if (server === 'g.us') return `${user}@g.us`;
-    return `${user}@c.us`;
+  if (raw.endsWith('@g.us')) {
+    const user = raw.split('@')[0].replace(/[^0-9]/g, '');
+    return user ? `${user}@g.us` : '';
   }
 
-  const digits = raw.replace(/[^0-9]/g, '');
-  if (!digits) return '';
-  return `${digits}@c.us`;
+  let user = raw;
+  if (raw.includes('@')) {
+    user = raw.split('@')[0];
+  }
+
+  user = user.split(':')[0].replace(/[^0-9]/g, '');
+  if (!user) return '';
+
+  return `${user}@s.whatsapp.net`;
 }
 
 function toMentionJid(input = '') {
-  const normalized = normalizeJid(input);
-  if (!normalized || normalized.endsWith('@g.us')) return normalized;
-  return `${normalized.split('@')[0]}@s.whatsapp.net`;
+  return normalizeJid(input);
 }
 
 function toPhoneNumber(jid = '') {
