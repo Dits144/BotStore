@@ -24,10 +24,12 @@ async function deleteMessageForEveryone(sock, msg) {
       return false;
     }
 
-    await sock.sendMessage(groupId, { delete: msg.key });
+    const key = { ...msg.key };
+    await sock.sendMessage(groupId, { delete: key });
+    logger.info({ groupId, messageId: key.id, participant: key.participant || '' }, 'delete as admin success');
     return true;
   } catch (error) {
-    logger.warn({ err: error }, 'gagal menghapus pesan command');
+    logger.warn({ err: error, groupId: String(msg?.key?.remoteJid || ''), messageId: msg?.key?.id || '' }, 'delete as admin failed');
     return false;
   }
 }

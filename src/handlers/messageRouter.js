@@ -21,7 +21,7 @@ async function routeMessage(sock, msg) {
   const isGroup = remoteJid.endsWith('@g.us');
   const isOwner = await isBotOwner(sender);
 
-  logger.debug({ remoteJid, participant, senderNormalized: sender, isGroup }, 'incoming message context');
+  logger.debug({ remoteJid, participant, senderDetected: participant || remoteJid, senderNormalized: sender, roleResolved: isOwner ? 'bot_owner' : 'user', isGroup }, 'incoming message context');
 
   const context = {
     sock,

@@ -4,6 +4,7 @@ const { formatWrongExample, renderMentionText } = require('../../utils/messageFo
 const groupSettingsRepository = require('../../repositories/groupSettingsRepository');
 const { nowJakarta, formatDate, formatTime } = require('../../utils/time');
 const { normalizeJid } = require('../../utils/jid');
+const logger = require('../../config/logger');
 const {
   reactLoading,
   reactSuccess,
@@ -80,6 +81,7 @@ async function broadcast(ctx, parsed, withMentionAll) {
 
   const meta = await ctx.sock.groupMetadata(ctx.from);
   const mentions = (meta.participants || []).map((p) => normalizeJid(p.id)).filter(Boolean).slice(0, 250);
+  logger.info({ command: parsed.command, mentionsCount: mentions.length, groupId: ctx.from }, 'broadcast mentions prepared');
   await ctx.sock.sendMessage(ctx.from, { text, mentions });
   await reactSuccess(ctx.sock, ctx.msg);
 }
@@ -103,6 +105,7 @@ async function transactionNote(ctx, statusCode) {
   await reactLoading(ctx.sock, ctx.msg);
   await deleteMessageForEveryone(ctx.sock, ctx.msg);
   const mention = renderMentionText('@user Terima kasih sudah order!', userJid, 'user');
+  logger.info({ command: statusCode, targetMentionJid: userJid }, 'transaction mention target');
   await ctx.sock.sendMessage(ctx.from, {
     text:
       `「 TRANSAKSI ${status.toUpperCase()} 」\n\n` +

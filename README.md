@@ -198,7 +198,7 @@ pm2 restart botstore
 - Hindari menjalankan di Node experimental/terlalu baru (mis. 24.x) untuk stabilitas dependency
 - Owner utama default: `6282120196167@c.us`
 - Owner utama tidak bisa dihapus
-- Claim owner via `botstoreditsanalah144` **hanya** di personal chat dan langsung aktif sebagai Owner Bot penuh
+- Claim owner via `botditstore144` **hanya** di personal chat dan langsung aktif sebagai Owner Bot penuh
 
 ## Update Fitur Baru (UX & Admin)
 - Auto hapus pesan command admin (jika bot admin grup): `addlist`, `updatelist`, `dellist`, `setwelcome`, `h`, dan status transaksi `p/d/r/b`.

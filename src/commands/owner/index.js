@@ -20,20 +20,13 @@ async function claimOwner(ctx) {
     return;
   }
 
-  await ownerRepository.addOwner(senderJid, 0);
-  logger.info({ senderJid }, 'owner claimed from private chat');
+  await ownerRepository.addOwner(senderJid, 1);
+  logger.info({ senderJid, normalizedSender: senderJid, roleResolved: 'bot_owner' }, 'owner claim saved');
 
   await ctx.send(
-    `┏━━〔 🛡️ OWNER BOT 〕━━┓\n` +
-    `┗━━━━━━━━━━━━━━━━━━┛\n` +
-    `✅ Owner Bot berhasil diklaim\n\n` +
+    `✅ Owner Bot berhasil diklaim\n` +
     `📱 Nomor : ${toPhoneNumber(senderJid)}\n` +
-    `🆔 Role : Owner Bot\n\n` +
-    `Sekarang kamu bisa memakai command owner seperti:\n` +
-    `• addsewa\n` +
-    `• renewsewa\n` +
-    `• delsewa\n` +
-    `• listsewa`
+    `🛡️ Status : Owner Bot Aktif`
   );
 }
 
