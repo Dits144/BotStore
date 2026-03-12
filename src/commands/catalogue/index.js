@@ -3,7 +3,7 @@ const path = require('path');
 const baileys = require('@whiskeysockets/baileys');
 const catalogueRepository = require('../../repositories/catalogueRepository');
 const { canManageCatalogue } = require('../../middlewares/roleGuard');
-const { formatWrongExample } = require('../../utils/messageFormatter');
+const { formatWrongExample, renderMentionText } = require('../../utils/messageFormatter');
 const { normalizeText } = require('../../utils/parser');
 const { nowJakarta, formatDate, formatTime } = require('../../utils/time');
 const { deleteMessageForEveryone } = require('../../utils/admin');
@@ -44,12 +44,13 @@ async function listCatalogue(ctx) {
   const listBody = rows.map((r) => `┃ 💎 ${r.item_name}`).join('\n');
   const now = nowJakarta();
 
+  const mention = renderMentionText('@user', ctx.sender, 'user');
   await ctx.send(
     `┏━━〔 ⚙ ${groupName} 〕━━┓\n` +
     `┃ ◆ ◆ ◆ ◆ ◆ ◆\n` +
     `┗━━━━━━━━━━━━━┛\n` +
     `       ⋮\n` +
-    `     @user\n\n` +
+    `     ${mention.text}\n\n` +
     `⚡ Available Services\n\n` +
     `⏱ time : ${formatTime(now)}\n` +
     `📅 date : ${formatDate(now)}\n\n` +
@@ -60,7 +61,7 @@ async function listCatalogue(ctx) {
     `• ketik nama produk untuk melihat detail\n` +
     `• atau gunakan menu bot yang tersedia\n` +
     `• transaksi hanya melalui admin`,
-    { mentions: [ctx.sender] }
+    { mentions: mention.mentions }
   );
 }
 
@@ -151,22 +152,12 @@ async function productTrigger(ctx, rawText) {
     if (item.media_path && fs.existsSync(item.media_path)) {
       await ctx.sock.sendMessage(ctx.from, {
         image: fs.readFileSync(item.media_path),
-        caption:
-          `┏━━〔 💳 ${item.item_name.toUpperCase()} 〕━━┓\n` +
-          `┗━━━━━━━━━━━━━━━━━━┛\n` +
-          `📝 Deskripsi : ${item.description}\n\n` +
-          `📌 Silakan lakukan pembayaran ke metode di atas.`
+        caption: item.description
       }, { quoted: ctx.msg });
       return;
     }
 
-    await ctx.send(
-      `┏━━〔 📦 DETAIL PRODUK 〕━━┓\n` +
-      `┗━━━━━━━━━━━━━━━━━━━━┛\n\n` +
-      `💎 Nama : ${item.item_name}\n` +
-      `📝 Deskripsi : ${item.description}\n\n` +
-      `📌 Hubungi admin untuk order.`
-    );
+    await ctx.send(item.description);
     return;
   }
 
