@@ -1,29 +1,10 @@
 const logger = require('../config/logger');
-const { deleteMessageForEveryone } = require('./admin');
-
-async function reactLoading(sock, msg) {
-  return react(sock, msg, '⏳');
-}
-
-async function reactSuccess(sock, msg) {
-  return react(sock, msg, '✅');
-}
-
-async function reactError(sock, msg) {
-  return react(sock, msg, '❌');
-}
-
-async function react(sock, msg, emoji) {
-  try {
-    const jid = String(msg?.key?.remoteJid || '');
-    if (!jid) return false;
-    await sock.sendMessage(jid, { react: { text: emoji, key: msg.key } });
-    return true;
-  } catch (error) {
-    logger.debug({ err: error }, 'gagal kirim reaction');
-    return false;
-  }
-}
+const {
+  reactLoading,
+  reactSuccess,
+  reactError,
+  deleteForEveryone
+} = require('./messageActions');
 
 async function sendMinimalSuccess(sock, chatId, text = '✅ Berhasil.') {
   try {
@@ -45,7 +26,8 @@ module.exports = {
   reactLoading,
   reactSuccess,
   reactError,
-  deleteMessageForEveryone,
+  deleteMessageForEveryone: deleteForEveryone,
+  deleteForEveryone,
   sendMinimalSuccess,
   sendMinimalError
 };
