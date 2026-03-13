@@ -1,63 +1,52 @@
-# WhatsApp English Learning Bot (Baileys Mod)
+# WhatsApp English Learning Bot (Stage 2)
 
-Bot WhatsApp ringan untuk belajar bahasa Inggris harian: vocab, grammar, quiz, translate, dan chat practice.
+Bot WhatsApp belajar bahasa Inggris berbasis **Node.js + JavaScript + Baileys Mod**, modular dan ringan untuk VPS.
 
-## Fitur MVP
+## Fitur
 - `.menu`
 - `.daily`
 - `.quiz`
 - `.answer <jawaban>`
-- `.translate <kalimat>`
+- `.translate <kalimat>` / `.tr <kalimat>` (AI + fallback lokal)
+- `.fix <kalimat>` / `.correct <kalimat>` (AI grammar correction + fallback)
 - `.arti <kata/kalimat>`
 - `.grammar <topik>`
 - `.vocab`
-- `.chat on` / `.chat off`
+- `.pronounce <kata/kalimat>`
+- `.chat on` / `.chat off` (AI chat practice ringkas)
+- `.leaderboard` / `.top`
+- `.rank`
+- `.reminder on|off|status` (owner)
 - `.score`
 - `.streak`
 - `.resetprogress`
 
-## Batas Grup
+## Group Restriction
 Bot hanya aktif di grup:
 `120363406071615706@g.us`
 
-Jika command digunakan di luar grup itu, bot akan mengabaikan atau membalas singkat.
-
-## Struktur Project
-
+## Struktur
 ```txt
 project-root/
   src/
     commands/
-      menu.js
-      daily.js
-      quiz.js
-      answer.js
-      translate.js
-      arti.js
-      grammar.js
-      vocab.js
-      chat.js
-      score.js
-      streak.js
-      resetprogress.js
+      answer.js arti.js chat.js daily.js fix.js grammar.js leaderboard.js
+      menu.js pronounce.js quiz.js rank.js reminder.js resetprogress.js
+      score.js streak.js translate.js vocab.js
     handlers/
       messageHandler.js
     services/
-      userService.js
-      lessonService.js
-      quizService.js
-      correctionService.js
+      aiService.js chatPracticeService.js correctionService.js leaderboardService.js
+      lessonService.js pronunciationService.js quizService.js reminderService.js
+      speechService.js translateService.js userService.js
+    scheduler/
+      dailyReminder.js
     utils/
-      parser.js
-      formatter.js
-      constants.js
+      constants.js formatter.js parser.js
     database/
       db.js
   data/
-    vocab.json
-    grammar.json
-    quizzes.json
-    users.json
+    grammar.json quizzes.json users.json vocab.json
   session/
   index.js
   package.json
@@ -65,33 +54,40 @@ project-root/
   README.md
 ```
 
-## Install
-```bash
-npm install
-```
+## Setup
+1. Install dependency:
+   ```bash
+   npm install
+   ```
+2. Copy env:
+   ```bash
+   cp .env.example .env
+   ```
+3. Isi `.env`:
+   - `AI_API_KEY`
+   - `OWNER_NUMBER`
+   - `DAILY_REMINDER_TIME`
+   - `TZ`
+4. Jalankan bot:
+   ```bash
+   npm start
+   ```
 
-## Jalankan
-```bash
-npm start
-```
+## QR Login
+- Saat login awal, QR ditampilkan di terminal.
+- Scan via WhatsApp > Linked Devices.
+- Auth disimpan di folder `session/`, jadi tidak perlu scan ulang terus-menerus.
 
-## Scan QR
-1. Jalankan `npm start`.
-2. QR akan muncul di terminal pada login pertama.
-3. Scan QR lewat WhatsApp (Linked Devices).
-4. Session tersimpan di folder `session/`, jadi tidak perlu scan ulang selama auth valid.
+## Reminder Harian
+- Scheduler pakai `node-cron`.
+- Default waktu: `07:00` (`TZ=Asia/Jakarta`).
+- Owner bisa kontrol lewat `.reminder on|off|status`.
 
-## Cara Pakai Command
-Contoh:
-- `.menu`
-- `.daily`
-- `.quiz`
-- `.answer confident`
-- `.translate saya mau belajar bahasa inggris`
-- `.grammar present simple`
-- `.chat on`
+## Voice Note
+- MVP sudah mendeteksi voice note saat chat mode aktif.
+- Analisis pronunciation voice **belum aktif penuh** (fallback aman): bot akan mengarahkan user kirim teks dengan `.pronounce`.
 
-## Catatan
-- Bot memakai penyimpanan lokal JSON (`data/users.json`) untuk progress user.
-- Sudah ada reconnect logic saat koneksi putus.
-- Arsitektur dipisah per command, service, handler agar mudah dikembangkan.
+## Catatan Stabilitas
+- Semua command dibatasi di allowed group.
+- AI error tidak bikin bot crash (fallback lokal disiapkan).
+- JSON storage pakai write aman (tmp file + rename).

@@ -1,18 +1,25 @@
-const { translateText } = require('../services/lessonService');
+const { translateSmart } = require('../services/translateService');
 
 module.exports = {
   name: 'translate',
-  description: 'Translate sederhana ID/EN',
+  aliases: ['tr'],
+  description: 'Translate AI ID/EN',
   async execute({ sock, jid, args }) {
     const input = args.join(' ').trim();
     if (!input) {
-      await sock.sendMessage(jid, { text: 'Format: *.translate <kalimat>*' });
+      await sock.sendMessage(jid, { text: 'Format: *.translate <kalimat>* atau *.tr <kalimat>*' });
       return;
     }
 
-    const translated = translateText(input);
-    await sock.sendMessage(jid, {
-      text: `🌐 *Translate*\nInput: ${input}\nOutput: ${translated}`
-    });
+    const result = await translateSmart(input);
+    const text = [
+      '🌐 *Translate*',
+      `Original: ${result.original}`,
+      `Translation: ${result.translation}`,
+      result.natural ? `Natural: ${result.natural}` : null,
+      result.fallback ? '_AI fallback ke lokal_' : null
+    ].filter(Boolean).join('\n');
+
+    await sock.sendMessage(jid, { text });
   }
 };

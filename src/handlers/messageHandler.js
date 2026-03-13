@@ -2,24 +2,27 @@ const fs = require('fs');
 const path = require('path');
 const { parseCommand } = require('../utils/parser');
 const { ALLOWED_GROUP_ID } = require('../utils/constants');
-const { getUser } = require('../services/userService');
-const { correctSentence } = require('../services/correctionService');
+const { getUser, incrementPracticeCount } = require('../services/userService');
+const { getPracticeReply } = require('../services/chatPracticeService');
+const { analyzeVoiceNote } = require('../services/speechService');
 
 const commands = {};
+const aliases = {};
 const commandFiles = fs.readdirSync(path.join(__dirname, '..', 'commands')).filter((file) => file.endsWith('.js'));
 for (const file of commandFiles) {
   const cmd = require(path.join(__dirname, '..', 'commands', file));
   commands[cmd.name] = cmd;
+  (cmd.aliases || []).forEach((alias) => {
+    aliases[alias] = cmd.name;
+  });
 }
 
 function getTextFromMessage(message) {
-  return (
-    message?.conversation ||
-    message?.extendedTextMessage?.text ||
-    message?.imageMessage?.caption ||
-    message?.videoMessage?.caption ||
-    ''
-  );
+  return message?.conversation || message?.extendedTextMessage?.text || message?.imageMessage?.caption || message?.videoMessage?.caption || '';
+}
+
+function isVoiceNote(message) {
+  return Boolean(message?.audioMessage?.ptt || message?.audioMessage);
 }
 
 async function handleMessage(sock, msg) {
@@ -29,51 +32,52 @@ async function handleMessage(sock, msg) {
 
     const jid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
-    const fromMe = msg.key.fromMe;
-    if (fromMe) return;
+    if (msg.key.fromMe) return;
+
+    const text = getTextFromMessage(message).trim();
+    const parsed = parseCommand(text);
 
     if (jid !== ALLOWED_GROUP_ID) {
-      const text = getTextFromMessage(message);
-      const parsed = parseCommand(text);
-      if (parsed.isCommand) {
-        await sock.sendMessage(jid, { text: 'Bot hanya aktif di grup belajar yang ditentukan.' });
+      if (parsed.isCommand) await sock.sendMessage(jid, { text: 'Bot hanya aktif di grup belajar yang ditentukan.' });
+      return;
+    }
+
+    const user = getUser(sender);
+
+    if (isVoiceNote(message)) {
+      if (user.chatMode) {
+        const voice = await analyzeVoiceNote();
+        await sock.sendMessage(jid, { text: `🎙️ ${voice.message}` });
       }
       return;
     }
 
-    const text = getTextFromMessage(message).trim();
     if (!text) return;
 
-    const { isCommand, command, args } = parseCommand(text);
-
-    const user = getUser(sender);
-
-    if (!isCommand && user.chatMode) {
-      const correction = correctSentence(text);
-      const response = [
-        '💬 *Chat Practice*',
-        `Correct: ${correction.corrected}${correction.alternative ? ` / ${correction.alternative}` : ''}`,
-        `Meaning: ${correction.meaning}`,
-        `Note: ${correction.note}`
-      ].join('\n');
-      await sock.sendMessage(jid, { text: response });
+    if (!parsed.isCommand && user.chatMode) {
+      const now = Date.now();
+      if (now - (user.lastPracticeResponseAt || 0) < 7000) return;
+      const r = await getPracticeReply(text);
+      incrementPracticeCount(sender);
+      await sock.sendMessage(jid, {
+        text: ['💬 *Chat Practice*', `Correct: ${r.correct}`, `Natural: ${r.natural}`, `Meaning: ${r.meaning}`, `Note: ${r.note}`].join('\n')
+      });
       return;
     }
 
-    if (!isCommand) return;
+    if (!parsed.isCommand) return;
 
-    const cmd = commands[command];
+    const commandName = aliases[parsed.command] || parsed.command;
+    const cmd = commands[commandName];
     if (!cmd) {
       await sock.sendMessage(jid, { text: 'Command tidak dikenali. Gunakan *.menu*' });
       return;
     }
 
-    await cmd.execute({ sock, msg, jid, sender, args, text });
+    await cmd.execute({ sock, msg, jid, sender, args: parsed.args, text });
   } catch (error) {
     console.error('messageHandler error:', error);
   }
 }
 
-module.exports = {
-  handleMessage
-};
+module.exports = { handleMessage };
