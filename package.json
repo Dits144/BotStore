@@ -1,0 +1,25 @@
+{
+  "name": "whatsapp-english-learning-bot",
+  "version": "1.0.0",
+  "description": "Bot WhatsApp belajar bahasa Inggris berbasis Node.js dan Baileys Mod",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "lint": "node -e \"console.log('No linter configured')\""
+  },
+  "keywords": [
+    "whatsapp",
+    "baileys",
+    "english-learning-bot",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "pino": "^9.3.2",
+    "baileys": "^6.7.18"
+  }
+}

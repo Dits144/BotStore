@@ -1,0 +1,26 @@
+[
+  {
+    "id": "q1",
+    "question": "Apa bahasa Inggris dari 'percaya diri'?",
+    "answer": "confident",
+    "options": ["schedule", "confident", "habit", "mistake"]
+  },
+  {
+    "id": "q2",
+    "question": "Choose the correct sentence:",
+    "answer": "she is studying now",
+    "options": ["she studying now", "she is studying now", "she study now", "she are studying now"]
+  },
+  {
+    "id": "q3",
+    "question": "Apa arti kata 'improve'?",
+    "answer": "meningkatkan",
+    "options": ["mengulang", "meningkatkan", "menghafal", "mengirim"]
+  },
+  {
+    "id": "q4",
+    "question": "Kalimat simple future yang benar adalah...",
+    "answer": "i will learn tonight",
+    "options": ["i will learn tonight", "i am learn tonight", "i learned tonight", "i learning tonight"]
+  }
+]

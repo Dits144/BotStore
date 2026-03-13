@@ -1,0 +1,53 @@
+require('dotenv').config();
+
+const pino = require('pino');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('baileys');
+const { ensureDataFile } = require('./src/database/db');
+const { handleMessage } = require('./src/handlers/messageHandler');
+const { SESSION_DIR } = require('./src/utils/constants');
+
+async function startBot() {
+  ensureDataFile();
+
+  const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
+  const { version } = await fetchLatestBaileysVersion();
+
+  const sock = makeWASocket({
+    version,
+    auth: state,
+    printQRInTerminal: true,
+    logger: pino({ level: 'silent' }),
+    browser: ['EnglishBot', 'Chrome', '1.0.0']
+  });
+
+  sock.ev.on('creds.update', saveCreds);
+
+  sock.ev.on('connection.update', (update) => {
+    const { connection, lastDisconnect } = update;
+
+    if (connection === 'close') {
+      const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+      console.log('Connection closed. Reconnect:', shouldReconnect);
+      if (shouldReconnect) {
+        startBot();
+      }
+    }
+
+    if (connection === 'open') {
+      console.log('Bot connected ✅');
+    }
+  });
+
+  sock.ev.on('messages.upsert', async ({ messages, type }) => {
+    if (type !== 'notify') return;
+    const msg = messages[0];
+    if (!msg || msg.key?.remoteJid === 'status@broadcast') return;
+
+    await handleMessage(sock, msg);
+  });
+}
+
+startBot().catch((error) => {
+  console.error('Fatal error:', error);
+  process.exit(1);
+});

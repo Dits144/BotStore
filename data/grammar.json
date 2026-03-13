@@ -1,0 +1,46 @@
+{
+  "present simple": {
+    "title": "Present Simple",
+    "formula": "S + V1(s/es) + O",
+    "usage": "Untuk kebiasaan, fakta umum, dan rutinitas.",
+    "example": "She studies English every night.",
+    "exercises": [
+      "Ubah: He (play) football every Sunday.",
+      "Buat kalimat tentang rutinitas pagimu.",
+      "Isi: They ___ (not like) spicy food."
+    ]
+  },
+  "present continuous": {
+    "title": "Present Continuous",
+    "formula": "S + am/is/are + V-ing + O",
+    "usage": "Untuk aktivitas yang sedang berlangsung saat ini.",
+    "example": "I am reading an English article now.",
+    "exercises": [
+      "Ubah: She (cook) now.",
+      "Buat kalimat tentang apa yang sedang kamu lakukan.",
+      "Isi: We ___ (study) for the test right now."
+    ]
+  },
+  "simple past": {
+    "title": "Simple Past",
+    "formula": "S + V2 + O",
+    "usage": "Untuk kejadian yang sudah selesai di masa lalu.",
+    "example": "I visited my friend yesterday.",
+    "exercises": [
+      "Ubah: They (go) to Bali last month.",
+      "Buat kalimat tentang kegiatanmu kemarin.",
+      "Isi: He ___ (not watch) TV last night."
+    ]
+  },
+  "simple future": {
+    "title": "Simple Future",
+    "formula": "S + will + V1 + O",
+    "usage": "Untuk rencana, prediksi, atau keputusan spontan di masa depan.",
+    "example": "I will practice speaking tonight.",
+    "exercises": [
+      "Ubah: She (join) the class tomorrow.",
+      "Buat kalimat rencana belajarmu besok.",
+      "Isi: We ___ (travel) next week."
+    ]
+  }
+}
