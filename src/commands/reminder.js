@@ -13,7 +13,7 @@ function isOwner(sender) {
 module.exports = {
   name: 'reminder',
   description: 'Admin control reminder harian',
-  async execute({ sock, jid, sender, args }) {
+  async execute({ sock, jid, sender, args, runtime }) {
     if (!isOwner(sender)) {
       await sock.sendMessage(jid, { text: 'Khusus owner.' });
       return;
@@ -31,7 +31,7 @@ module.exports = {
     const meta = getReminderMeta();
     const enabled = getReminderStatus();
     await sock.sendMessage(jid, {
-      text: `⏰ Reminder: *${enabled ? 'ON' : 'OFF'}*\nLast sent: ${meta.lastReminderSentAt || '-'}\nTime: ${process.env.DAILY_REMINDER_TIME || '07:00'} (${process.env.TZ || 'Asia/Jakarta'})`
+      text: `⏰ Reminder: *${enabled ? 'ON' : 'OFF'}*\nLast sent: ${meta.lastReminderSentAt || '-'}\nTime: ${process.env.DAILY_REMINDER_TIME || '07:00'} (${process.env.TZ || 'Asia/Jakarta'})\nScheduler started: ${runtime?.schedulerStarted ? 'yes' : 'no'}`
     });
   }
 };

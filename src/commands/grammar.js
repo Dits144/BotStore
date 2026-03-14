@@ -5,9 +5,11 @@ module.exports = {
   description: 'Materi grammar berdasarkan topik',
   async execute({ sock, jid, args }) {
     const topic = args.join(' ').trim().toLowerCase();
+    const topics = getAllGrammarTopics();
+
     if (!topic) {
       await sock.sendMessage(jid, {
-        text: `Format: *.grammar <topik>*\nTopik tersedia: ${getAllGrammarTopics().join(', ')}`
+        text: `Format: *.grammar <topik>*\nTopik tersedia: ${topics.join(', ')}`
       });
       return;
     }
@@ -15,17 +17,17 @@ module.exports = {
     const data = getGrammarTopic(topic);
     if (!data) {
       await sock.sendMessage(jid, {
-        text: `Topik tidak ditemukan. Topik tersedia: ${getAllGrammarTopics().join(', ')}`
+        text: `Topik tidak ditemukan. Topik tersedia: ${topics.join(', ')}`
       });
       return;
     }
 
-    const exercises = data.exercises.map((x, i) => `${i + 1}. ${x}`).join('\n');
+    const exercises = (data.exercises || []).map((x, i) => `${i + 1}. ${x}`).join('\n') || '-';
     const text = [
-      `📚 *Grammar: ${data.title}*`,
-      `Rumus: ${data.formula}`,
-      `Dipakai saat: ${data.usage}`,
-      `Contoh: ${data.example}`,
+      `📚 *Grammar: ${data.title || topic}*`,
+      `Rumus: ${data.formula || '-'}`,
+      `Dipakai saat: ${data.usage || '-'}`,
+      `Contoh: ${data.example || '-'}`,
       '',
       'Latihan singkat:',
       exercises

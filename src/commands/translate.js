@@ -17,7 +17,8 @@ module.exports = {
       `Original: ${result.original}`,
       `Translation: ${result.translation}`,
       result.natural ? `Natural: ${result.natural}` : null,
-      result.fallback ? '_AI fallback ke lokal_' : null
+      result.fallback ? `_AI fallback ke lokal_` : null,
+      result.note ? `Note: ${result.note}` : null
     ].filter(Boolean).join('\n');
 
     await sock.sendMessage(jid, { text });

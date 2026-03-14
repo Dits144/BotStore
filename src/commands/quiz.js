@@ -6,6 +6,11 @@ module.exports = {
   description: 'Quiz random',
   async execute({ sock, jid, sender }) {
     const quiz = generateQuiz(sender);
+    if (!quiz) {
+      await sock.sendMessage(jid, { text: 'Data quiz belum tersedia. Cek data/quizzes.json.' });
+      return;
+    }
+
     updateStreak(sender);
 
     const options = quiz.options?.length
@@ -13,7 +18,7 @@ module.exports = {
       : '';
 
     await sock.sendMessage(jid, {
-      text: `❓ *Quiz Aktif*\n${quiz.question}${options}\n\nJawab dengan: *.answer <jawaban>*`
+      text: `❓ *Quiz Aktif*\n${quiz.question}${options}\n\nJawab dengan: *.answer <jawaban>*\n(Bisa juga pakai huruf opsi: A/B/C/D)`
     });
   }
 };

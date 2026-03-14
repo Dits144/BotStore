@@ -4,14 +4,30 @@ const pino = require('pino');
 const qrcode = require('qrcode-terminal');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('baileys');
 const { ensureDataFile } = require('./src/database/db');
-const { handleMessage } = require('./src/handlers/messageHandler');
-const { SESSION_DIR } = require('./src/utils/constants');
-const { startDailyReminder } = require('./src/scheduler/dailyReminder');
+const { handleMessage, getCommandRegistryInfo } = require('./src/handlers/messageHandler');
+const { SESSION_DIR, ALLOWED_GROUP_ID } = require('./src/utils/constants');
+const { startDailyReminder, getReminderScheduleInfo } = require('./src/scheduler/dailyReminder');
+const { isAIEnabled } = require('./src/services/aiService');
 
 let reminderJob;
 
+function printStartupSanity() {
+  const cmdInfo = getCommandRegistryInfo();
+  const reminderInfo = getReminderScheduleInfo();
+
+  console.log('=== Bot Startup Sanity Check ===');
+  console.log('Allowed Group ID:', ALLOWED_GROUP_ID);
+  console.log('Owner Number Loaded:', process.env.OWNER_NUMBER ? 'yes' : 'no');
+  console.log('AI Enabled:', isAIEnabled() ? 'yes' : 'no');
+  console.log('Total Commands Loaded:', cmdInfo.totalCommands);
+  console.log('Reminder Schedule:', `${reminderInfo.time} (${reminderInfo.timezone}) -> ${reminderInfo.cronExp}`);
+  console.log('Session Path:', SESSION_DIR);
+  console.log('===============================');
+}
+
 async function startBot() {
   ensureDataFile();
+  printStartupSanity();
 
   const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
   const { version } = await fetchLatestBaileysVersion();
@@ -20,7 +36,7 @@ async function startBot() {
     version,
     auth: state,
     logger: pino({ level: process.env.LOG_LEVEL || 'silent' }),
-    browser: ['EnglishBot', 'Chrome', '2.0.0']
+    browser: ['EnglishBot', 'Chrome', '2.1.0']
   });
 
   sock.ev.on('creds.update', saveCreds);
@@ -34,28 +50,30 @@ async function startBot() {
     }
 
     if (connection === 'close') {
-      const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-      console.log('Connection closed. Reconnect:', shouldReconnect);
+      const statusCode = lastDisconnect?.error?.output?.statusCode;
+      const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+      console.log('Connection closed. code=', statusCode, 'reconnect=', shouldReconnect);
       if (shouldReconnect) startBot();
     }
 
     if (connection === 'open') {
       console.log('Bot connected ✅');
-      if (!reminderJob) reminderJob = startDailyReminder(sock);
+      if (!reminderJob) {
+        reminderJob = startDailyReminder(sock);
+        console.log('Daily reminder scheduler started ✅');
+      }
     }
   });
 
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return;
-    const msg = messages[0];
-    if (!msg || msg.key?.remoteJid === 'status@broadcast') return;
-    if (msg.key?.participant && msg.key.participant.endsWith('status')) return;
-
-    await handleMessage(sock, msg);
+    const msg = messages?.[0];
+    if (!msg || msg?.key?.remoteJid === 'status@broadcast') return;
+    await handleMessage(sock, msg, { schedulerStarted: Boolean(reminderJob) });
   });
 }
 
 startBot().catch((error) => {
-  console.error('Fatal error:', error);
+  console.error('Fatal error:', error.message);
   process.exit(1);
 });

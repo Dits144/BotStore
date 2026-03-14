@@ -1,4 +1,4 @@
-const { chatCompletion } = require('./aiService');
+const { chatCompletion, isAIEnabled } = require('./aiService');
 const { detectLanguage } = require('./translateService');
 
 function capitalize(text) {
@@ -7,7 +7,7 @@ function capitalize(text) {
 }
 
 function fallbackCorrection(text) {
-  const lower = text.toLowerCase().trim();
+  const lower = String(text || '').toLowerCase().trim();
   if (/^i am go to (.+)$/.test(lower)) {
     const place = lower.replace(/^i am go to /, '');
     return {
@@ -56,9 +56,15 @@ async function correctSentence(input) {
     };
   }
 
+  if (!isAIEnabled()) {
+    const fallback = fallbackCorrection(input);
+    return { ...fallback, note: `${fallback.note} (AI nonaktif: AI_API_KEY belum di-set)` };
+  }
+
   try {
     return await correctWithAI(input);
-  } catch (_) {
+  } catch (error) {
+    console.error('correctSentence error:', error.message);
     return fallbackCorrection(input);
   }
 }

@@ -1,48 +1,62 @@
-# WhatsApp English Learning Bot (Stage 2)
+# WhatsApp English Learning Bot (Stabilization Pass)
 
-Bot WhatsApp belajar bahasa Inggris berbasis **Node.js + JavaScript + Baileys Mod**, modular dan ringan untuk VPS.
+Bot WhatsApp belajar bahasa Inggris berbasis **Node.js + JavaScript + Baileys Mod**, fokus stabil untuk VPS.
 
-## Fitur
+## Fokus Stabilitas
+Project ini difokuskan ke **bugfix + audit alur end-to-end**, bukan menambah fitur berlebihan.
+
+## Command yang Didukung
 - `.menu`
 - `.daily`
 - `.quiz`
 - `.answer <jawaban>`
-- `.translate <kalimat>` / `.tr <kalimat>` (AI + fallback lokal)
-- `.fix <kalimat>` / `.correct <kalimat>` (AI grammar correction + fallback)
+- `.translate <kalimat>` / `.tr <kalimat>`
 - `.arti <kata/kalimat>`
 - `.grammar <topik>`
 - `.vocab`
-- `.pronounce <kata/kalimat>`
-- `.chat on` / `.chat off` (AI chat practice ringkas)
-- `.leaderboard` / `.top`
-- `.rank`
-- `.reminder on|off|status` (owner)
+- `.chat on` / `.chat off`
 - `.score`
 - `.streak`
 - `.resetprogress`
+- `.fix <kalimat>` / `.correct <kalimat>`
+- `.pronounce <kata/kalimat>`
+- `.leaderboard` / `.top`
+- `.rank`
+- `.reminder on|off|status` (owner)
+- `.health` (owner)
+- `.debugcmd` (owner)
 
-## Group Restriction
-Bot hanya aktif di grup:
+## Group Guard
+Bot hanya aktif untuk group:
 `120363406071615706@g.us`
 
-## Struktur
+## AI vs Lokal (Jujur)
+- **Butuh AI_API_KEY**: `.translate/.tr`, `.fix/.correct`, chat practice AI.
+- Jika `AI_API_KEY` tidak ada/AI error: bot **tidak crash** dan fallback ke local helper.
+- `AI_API_KEY` adalah key dari provider model AI (misalnya OpenRouter), **bukan dari Baileys/WhatsApp**.
+
+## Voice Note
+- Voice note sudah dideteksi.
+- Analisis pronunciation voice belum aktif penuh; bot memberi fallback aman untuk pakai `.pronounce <teks>`.
+
+## Struktur Project
 ```txt
 project-root/
   src/
     commands/
-      answer.js arti.js chat.js daily.js fix.js grammar.js leaderboard.js
-      menu.js pronounce.js quiz.js rank.js reminder.js resetprogress.js
-      score.js streak.js translate.js vocab.js
+      answer.js arti.js chat.js daily.js debugcmd.js fix.js grammar.js
+      health.js leaderboard.js menu.js pronounce.js quiz.js rank.js
+      reminder.js resetprogress.js score.js streak.js translate.js vocab.js
     handlers/
       messageHandler.js
     services/
-      aiService.js chatPracticeService.js correctionService.js leaderboardService.js
-      lessonService.js pronunciationService.js quizService.js reminderService.js
-      speechService.js translateService.js userService.js
+      aiService.js chatPracticeService.js commandService.js correctionService.js
+      leaderboardService.js lessonService.js pronunciationService.js quizService.js
+      reminderService.js speechService.js translateService.js userService.js
     scheduler/
       dailyReminder.js
     utils/
-      constants.js formatter.js parser.js
+      constants.js formatter.js message.js parser.js
     database/
       db.js
   data/
@@ -55,7 +69,7 @@ project-root/
 ```
 
 ## Setup
-1. Install dependency:
+1. Install:
    ```bash
    npm install
    ```
@@ -64,30 +78,52 @@ project-root/
    cp .env.example .env
    ```
 3. Isi `.env`:
-   - `AI_API_KEY`
-   - `OWNER_NUMBER`
-   - `DAILY_REMINDER_TIME`
-   - `TZ`
-4. Jalankan bot:
+   ```env
+   ALLOWED_GROUP_ID=120363406071615706@g.us
+   OWNER_NUMBER=6282120196167
+
+   AI_PROVIDER=openrouter
+   AI_API_KEY=your_ai_provider_key
+   AI_MODEL=openai/gpt-4o-mini
+
+   DAILY_REMINDER_TIME=12:00
+   TZ=Asia/Jakarta
+   ```
+4. Jalankan:
    ```bash
    npm start
    ```
 
-## QR Login
-- Saat login awal, QR ditampilkan di terminal.
-- Scan via WhatsApp > Linked Devices.
-- Auth disimpan di folder `session/`, jadi tidak perlu scan ulang terus-menerus.
+## Startup Sanity Logs
+Saat bot start, akan print:
+- allowed group id
+- owner number loaded yes/no
+- ai enabled yes/no
+- total command loaded
+- reminder schedule
+- session path
 
-## Reminder Harian
-- Scheduler pakai `node-cron`.
-- Default waktu: `07:00` (`TZ=Asia/Jakarta`).
-- Owner bisa kontrol lewat `.reminder on|off|status`.
+## Checklist Uji Manual End-to-End
+1. Login QR muncul di terminal.
+2. Bot connect.
+3. Kirim di group allowed:
+   - `.menu`
+   - `.daily`
+   - `.quiz`
+   - `.answer A` (atau jawaban teks)
+   - `.grammar present simple`
+   - `.vocab`
+   - `.score`
+   - `.tr halo apa kabar`
+   - `.fix I am go to school`
+   - `.chat on`, lalu kirim pesan biasa
+   - `.leaderboard`
+   - `.rank`
+   - `.reminder status` (owner)
+   - `.health` (owner)
+   - `.debugcmd` (owner)
 
-## Voice Note
-- MVP sudah mendeteksi voice note saat chat mode aktif.
-- Analisis pronunciation voice **belum aktif penuh** (fallback aman): bot akan mengarahkan user kirim teks dengan `.pronounce`.
-
-## Catatan Stabilitas
-- Semua command dibatasi di allowed group.
-- AI error tidak bikin bot crash (fallback lokal disiapkan).
-- JSON storage pakai write aman (tmp file + rename).
+## Catatan Teknis
+- Storage JSON aman: read default, recover file corrupt, write atomic (tmp + rename).
+- Scheduler reminder start sekali saat koneksi open.
+- Reconnect aman saat koneksi putus (kecuali logged out).

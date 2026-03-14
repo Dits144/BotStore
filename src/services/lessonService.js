@@ -4,16 +4,26 @@ const path = require('path');
 const vocabPath = path.join(process.cwd(), 'data', 'vocab.json');
 const grammarPath = path.join(process.cwd(), 'data', 'grammar.json');
 
-function readJson(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+function safeReadJson(filePath, fallback) {
+  try {
+    if (!fs.existsSync(filePath)) return fallback;
+    const raw = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(raw);
+  } catch (error) {
+    console.error('safeReadJson error:', filePath, error.message);
+    return fallback;
+  }
 }
 
 function randomItem(arr) {
+  if (!Array.isArray(arr) || !arr.length) return null;
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function getRandomVocab(count = 1) {
-  const vocab = readJson(vocabPath);
+  const vocab = safeReadJson(vocabPath, []);
+  if (!Array.isArray(vocab) || !vocab.length) return [];
+
   const clone = [...vocab];
   const picked = [];
   while (picked.length < Math.min(count, clone.length)) {
@@ -24,8 +34,23 @@ function getRandomVocab(count = 1) {
 }
 
 function getDailyLesson() {
-  const words = getRandomVocab(5);
-  const target = randomItem(words);
+  const vocab = safeReadJson(vocabPath, []);
+  if (!vocab.length) {
+    return {
+      words: [],
+      quiz: 'Data vocabulary belum tersedia.',
+      quizAnswer: '-',
+      challenge: 'Tambahkan data vocabulary ke data/vocab.json'
+    };
+  }
+
+  const daySeed = Number(new Date().toISOString().slice(0, 10).replace(/-/g, ''));
+  const words = [];
+  for (let i = 0; i < Math.min(5, vocab.length); i += 1) {
+    words.push(vocab[(daySeed + i) % vocab.length]);
+  }
+
+  const target = words[0] || randomItem(vocab);
   return {
     words,
     quiz: `Apa arti kata "${target.word}"?`,
@@ -34,20 +59,30 @@ function getDailyLesson() {
   };
 }
 
+function normalizeTopic(topic = '') {
+  return topic.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
 function getGrammarTopic(topic) {
-  const grammar = readJson(grammarPath);
-  return grammar[topic.toLowerCase()] || null;
+  const grammar = safeReadJson(grammarPath, {});
+  const normalized = normalizeTopic(topic);
+  if (grammar[normalized]) return grammar[normalized];
+
+  const keys = Object.keys(grammar);
+  const looseMatch = keys.find((key) => key.includes(normalized) || normalized.includes(key));
+  return looseMatch ? grammar[looseMatch] : null;
 }
 
 function getAllGrammarTopics() {
-  const grammar = readJson(grammarPath);
+  const grammar = safeReadJson(grammarPath, {});
   return Object.keys(grammar);
 }
 
 function translateText(text) {
-  const lower = text.toLowerCase();
+  const lower = String(text || '').toLowerCase().trim();
   const dict = {
     'apa kabar': 'how are you',
+    'halo apa kabar': 'hello, how are you',
     'saya mau belajar bahasa inggris': 'i want to learn english',
     'selamat pagi': 'good morning',
     'i am happy': 'saya senang',
@@ -55,22 +90,15 @@ function translateText(text) {
     'thank you': 'terima kasih'
   };
 
-  if (dict[lower]) {
-    return dict[lower];
-  }
-
-  return `Terjemahan sederhana belum ditemukan untuk: "${text}"`;
+  if (dict[lower]) return dict[lower];
+  return `Terjemahan lokal belum ditemukan untuk: "${text}"`;
 }
 
 function explainMeaning(text) {
   const translation = translateText(text);
-  const words = text.split(/\s+/).filter(Boolean);
+  const words = String(text || '').split(/\s+/).filter(Boolean);
   const breakdown = words.map((word, index) => `${index + 1}. ${word}`).join('\n');
-
-  return {
-    translation,
-    breakdown: breakdown || '-'
-  };
+  return { translation, breakdown: breakdown || '-' };
 }
 
 module.exports = {
@@ -79,5 +107,6 @@ module.exports = {
   getGrammarTopic,
   getAllGrammarTopics,
   translateText,
-  explainMeaning
+  explainMeaning,
+  safeReadJson
 };

@@ -1,52 +1,37 @@
-const fs = require('fs');
-const path = require('path');
 const { parseCommand } = require('../utils/parser');
 const { ALLOWED_GROUP_ID } = require('../utils/constants');
 const { getUser, incrementPracticeCount } = require('../services/userService');
 const { getPracticeReply } = require('../services/chatPracticeService');
 const { analyzeVoiceNote } = require('../services/speechService');
+const { loadCommands } = require('../services/commandService');
+const { getMessageText, isVoiceNote } = require('../utils/message');
 
-const commands = {};
-const aliases = {};
-const commandFiles = fs.readdirSync(path.join(__dirname, '..', 'commands')).filter((file) => file.endsWith('.js'));
-for (const file of commandFiles) {
-  const cmd = require(path.join(__dirname, '..', 'commands', file));
-  commands[cmd.name] = cmd;
-  (cmd.aliases || []).forEach((alias) => {
-    aliases[alias] = cmd.name;
-  });
-}
+const registry = loadCommands();
 
-function getTextFromMessage(message) {
-  return message?.conversation || message?.extendedTextMessage?.text || message?.imageMessage?.caption || message?.videoMessage?.caption || '';
-}
-
-function isVoiceNote(message) {
-  return Boolean(message?.audioMessage?.ptt || message?.audioMessage);
-}
-
-async function handleMessage(sock, msg) {
+async function handleMessage(sock, msg, runtime = {}) {
   try {
-    const message = msg.message;
+    const message = msg?.message;
     if (!message) return;
 
-    const jid = msg.key.remoteJid;
-    const sender = msg.key.participant || msg.key.remoteJid;
-    if (msg.key.fromMe) return;
+    const jid = msg?.key?.remoteJid;
+    const sender = msg?.key?.participant || msg?.key?.remoteJid;
+    if (!jid || !sender || msg?.key?.fromMe) return;
 
-    const text = getTextFromMessage(message).trim();
+    const text = getMessageText(message);
     const parsed = parseCommand(text);
 
     if (jid !== ALLOWED_GROUP_ID) {
-      if (parsed.isCommand) await sock.sendMessage(jid, { text: 'Bot hanya aktif di grup belajar yang ditentukan.' });
+      if (parsed.isCommand) {
+        await sock.sendMessage(jid, { text: 'Bot hanya aktif di grup belajar yang ditentukan.' });
+      }
       return;
     }
 
     const user = getUser(sender);
 
     if (isVoiceNote(message)) {
-      if (user.chatMode) {
-        const voice = await analyzeVoiceNote();
+      if (user.chatMode || parsed.command === 'pronounce') {
+        const voice = await analyzeVoiceNote(message);
         await sock.sendMessage(jid, { text: `🎙️ ${voice.message}` });
       }
       return;
@@ -57,27 +42,48 @@ async function handleMessage(sock, msg) {
     if (!parsed.isCommand && user.chatMode) {
       const now = Date.now();
       if (now - (user.lastPracticeResponseAt || 0) < 7000) return;
-      const r = await getPracticeReply(text);
+      const response = await getPracticeReply(text);
       incrementPracticeCount(sender);
       await sock.sendMessage(jid, {
-        text: ['💬 *Chat Practice*', `Correct: ${r.correct}`, `Natural: ${r.natural}`, `Meaning: ${r.meaning}`, `Note: ${r.note}`].join('\n')
+        text: [
+          '💬 *Chat Practice*',
+          `Correct: ${response.correct}`,
+          `Natural: ${response.natural}`,
+          `Meaning: ${response.meaning}`,
+          `Note: ${response.note}`
+        ].join('\n')
       });
       return;
     }
 
     if (!parsed.isCommand) return;
 
-    const commandName = aliases[parsed.command] || parsed.command;
-    const cmd = commands[commandName];
+    const commandName = registry.aliases[parsed.command] || parsed.command;
+    const cmd = registry.commands[commandName];
     if (!cmd) {
       await sock.sendMessage(jid, { text: 'Command tidak dikenali. Gunakan *.menu*' });
       return;
     }
 
-    await cmd.execute({ sock, msg, jid, sender, args: parsed.args, text });
+    await cmd.execute({
+      sock,
+      msg,
+      jid,
+      sender,
+      args: parsed.args,
+      text,
+      runtime: { ...runtime, totalCommands: registry.totalCommands, commands: Object.keys(registry.commands).sort() }
+    });
   } catch (error) {
-    console.error('messageHandler error:', error);
+    console.error('messageHandler error:', error.message);
   }
 }
 
-module.exports = { handleMessage };
+function getCommandRegistryInfo() {
+  return {
+    totalCommands: registry.totalCommands,
+    commands: Object.keys(registry.commands).sort()
+  };
+}
+
+module.exports = { handleMessage, getCommandRegistryInfo };

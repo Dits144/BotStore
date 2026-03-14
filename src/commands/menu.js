@@ -19,6 +19,8 @@ module.exports = {
       commandItem('leaderboard/.top', 'Top 10 learner'),
       commandItem('rank', 'Peringkat kamu'),
       commandItem('reminder on|off|status', 'Kontrol reminder (owner)'),
+      commandItem('health', 'Health check (owner)'),
+      commandItem('debugcmd', 'Debug command registry (owner)'),
       commandItem('score', 'Lihat score, xp, level'),
       commandItem('streak', 'Lihat streak belajar'),
       commandItem('resetprogress', 'Reset progress akunmu')
