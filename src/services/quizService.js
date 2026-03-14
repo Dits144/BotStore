@@ -20,6 +20,10 @@ function loadQuizzes() {
 
 function generateQuiz(userId) {
   const quizzes = loadQuizzes();
+  if (!quizzes.length) {
+    throw new Error('Quiz data kosong setelah loading');
+  }
+
   const quiz = quizzes[Math.floor(Math.random() * quizzes.length)];
 
   updateUser(userId, (user) => ({

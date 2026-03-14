@@ -46,7 +46,7 @@ async function handleMessage(sock, msg, runtime = {}) {
       incrementPracticeCount(sender);
       await sock.sendMessage(jid, {
         text: [
-          '💬 *Chat Practice*',
+          '💬 *ENGLISH PRACTICE* 💬',
           `Correct: ${response.correct}`,
           `Natural: ${response.natural}`,
           `Meaning: ${response.meaning}`,
@@ -72,7 +72,7 @@ async function handleMessage(sock, msg, runtime = {}) {
       sender,
       args: parsed.args,
       text,
-      runtime: { ...runtime, rawCommand: parsed.command, totalCommands: registry.totalCommands, commands: Object.keys(registry.commands).sort() }
+      runtime: { ...runtime, rawText: text, parsedCommand: parsed.command, parsedArgs: parsed.args, isAllowedGroup: jid === ALLOWED_GROUP_ID, rawCommand: parsed.command, totalCommands: registry.totalCommands, commands: Object.keys(registry.commands).sort() }
     });
   } catch (error) {
     console.error('messageHandler error:', error.message);

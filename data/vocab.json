@@ -1,22 +1,152 @@
 [
-  {"word":"confident","meaning":"percaya diri","example":"I feel confident when I practice speaking."},
-  {"word":"improve","meaning":"meningkatkan","example":"I want to improve my English daily."},
-  {"word":"habit","meaning":"kebiasaan","example":"Reading every day is a good habit."},
-  {"word":"schedule","meaning":"jadwal","example":"I made a study schedule for this week."},
-  {"word":"mistake","meaning":"kesalahan","example":"Do not be afraid of making mistakes."},
-  {"word":"practice","meaning":"latihan","example":"Practice helps me speak more clearly."},
-  {"word":"challenge","meaning":"tantangan","example":"This quiz is a fun challenge."},
-  {"word":"focus","meaning":"fokus","example":"I need to focus during grammar class."},
-  {"word":"effort","meaning":"usaha","example":"Your effort will bring great progress."},
-  {"word":"progress","meaning":"kemajuan","example":"I can see progress in my vocabulary."},
-  {"word":"fluent","meaning":"lancar","example":"She speaks English fluently now."},
-  {"word":"review","meaning":"mengulas","example":"I review old words every night."},
-  {"word":"remember","meaning":"mengingat","example":"I remember new words with flashcards."},
-  {"word":"polite","meaning":"sopan","example":"Please use polite words in conversation."},
-  {"word":"response","meaning":"respon","example":"Thank you for your quick response."},
-  {"word":"grammar","meaning":"tata bahasa","example":"Grammar takes time to master."},
-  {"word":"sentence","meaning":"kalimat","example":"Write one sentence for each word."},
-  {"word":"translate","meaning":"menerjemahkan","example":"Can you translate this sentence?"},
-  {"word":"meaning","meaning":"arti","example":"What is the meaning of this word?"},
-  {"word":"pronounce","meaning":"mengucapkan","example":"Please pronounce this word clearly."}
+  {
+    "word": "confident",
+    "meaning": "percaya diri",
+    "example": "I feel confident when I speak in class."
+  },
+  {
+    "word": "improve",
+    "meaning": "meningkatkan",
+    "example": "I improve my English every day."
+  },
+  {
+    "word": "habit",
+    "meaning": "kebiasaan",
+    "example": "Reading daily is a good habit."
+  },
+  {
+    "word": "schedule",
+    "meaning": "jadwal",
+    "example": "I made a study schedule for this week."
+  },
+  {
+    "word": "mistake",
+    "meaning": "kesalahan",
+    "example": "Do not fear making mistakes."
+  },
+  {
+    "word": "practice",
+    "meaning": "latihan",
+    "example": "Practice helps you speak fluently."
+  },
+  {
+    "word": "challenge",
+    "meaning": "tantangan",
+    "example": "This quiz is a fun challenge."
+  },
+  {
+    "word": "focus",
+    "meaning": "fokus",
+    "example": "Please focus on your pronunciation."
+  },
+  {
+    "word": "effort",
+    "meaning": "usaha",
+    "example": "Your effort brings great results."
+  },
+  {
+    "word": "progress",
+    "meaning": "kemajuan",
+    "example": "I can see your progress this month."
+  },
+  {
+    "word": "fluent",
+    "meaning": "lancar",
+    "example": "She speaks English fluently."
+  },
+  {
+    "word": "review",
+    "meaning": "mengulas",
+    "example": "I review old words every night."
+  },
+  {
+    "word": "remember",
+    "meaning": "mengingat",
+    "example": "I remember new words better now."
+  },
+  {
+    "word": "polite",
+    "meaning": "sopan",
+    "example": "Use polite words in formal chat."
+  },
+  {
+    "word": "response",
+    "meaning": "respon",
+    "example": "Thanks for your quick response."
+  },
+  {
+    "word": "grammar",
+    "meaning": "tata bahasa",
+    "example": "Grammar takes time to master."
+  },
+  {
+    "word": "sentence",
+    "meaning": "kalimat",
+    "example": "Write one sentence for each word."
+  },
+  {
+    "word": "translate",
+    "meaning": "menerjemahkan",
+    "example": "Can you translate this phrase?"
+  },
+  {
+    "word": "meaning",
+    "meaning": "arti",
+    "example": "What is the meaning of this word?"
+  },
+  {
+    "word": "pronounce",
+    "meaning": "mengucapkan",
+    "example": "Please pronounce this word clearly."
+  },
+  {
+    "word": "listen",
+    "meaning": "mendengarkan",
+    "example": "Listen to English podcasts every day."
+  },
+  {
+    "word": "speak",
+    "meaning": "berbicara",
+    "example": "Try to speak English for five minutes."
+  },
+  {
+    "word": "write",
+    "meaning": "menulis",
+    "example": "Write a short paragraph today."
+  },
+  {
+    "word": "read",
+    "meaning": "membaca",
+    "example": "Read one English article daily."
+  },
+  {
+    "word": "understand",
+    "meaning": "memahami",
+    "example": "I understand this lesson now."
+  },
+  {
+    "word": "repeat",
+    "meaning": "mengulang",
+    "example": "Repeat the sentence three times."
+  },
+  {
+    "word": "vocabulary",
+    "meaning": "kosakata",
+    "example": "Build your vocabulary step by step."
+  },
+  {
+    "word": "goal",
+    "meaning": "tujuan",
+    "example": "Set a clear goal for your study."
+  },
+  {
+    "word": "consistent",
+    "meaning": "konsisten",
+    "example": "Be consistent with your learning routine."
+  },
+  {
+    "word": "brave",
+    "meaning": "berani",
+    "example": "Be brave to speak English in public."
+  }
 ]

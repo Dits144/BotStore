@@ -13,19 +13,20 @@ const FALLBACK_VOCAB = [
   { word: 'mistake', meaning: 'kesalahan', example: 'Making mistakes is part of learning.' }
 ];
 
-const LOCAL_DICT = {
-  'apa kabar': 'how are you',
-  'halo apa kabar': 'hello, how are you',
-  'saya mau belajar bahasa inggris': 'i want to learn english',
-  'selamat pagi': 'good morning',
-  'terima kasih': 'thank you',
-  'sampai jumpa': 'see you later',
-  'i am happy': 'saya senang',
-  'i am going to campus': 'saya sedang pergi ke kampus',
-  'thank you': 'terima kasih',
-  'how are you': 'apa kabar',
-  'good morning': 'selamat pagi'
-};
+const BASE_PAIRS = [
+  ['apa kabar', 'how are you'],
+  ['halo apa kabar', 'hello, how are you'],
+  ['saya mau belajar bahasa inggris', 'i want to learn english'],
+  ['selamat pagi', 'good morning'],
+  ['terima kasih', 'thank you'],
+  ['sampai jumpa', 'see you later'],
+  ['saya sedang pergi ke kampus', 'i am going to campus'],
+  ['saya senang', 'i am happy'],
+  ['aku lapar', 'i am hungry'],
+  ['saya setuju', 'i agree']
+];
+
+const LOCAL_DICT = Object.fromEntries(BASE_PAIRS.flatMap(([id, en]) => [[id, en], [en, id]]));
 
 function safeReadJson(filePath, fallback) {
   try {
@@ -41,9 +42,16 @@ function safeReadJson(filePath, fallback) {
 
 function loadArray(filePath, { validator, fallback }) {
   const parsed = safeReadJson(filePath, fallback);
-  if (!Array.isArray(parsed) || !parsed.length) return fallback;
+  if (!Array.isArray(parsed) || !parsed.length) {
+    console.error('[data-loader] invalid array or empty:', filePath);
+    return fallback;
+  }
   const filtered = parsed.filter(validator);
-  return filtered.length ? filtered : fallback;
+  if (!filtered.length) {
+    console.error('[data-loader] no valid items after validation:', filePath);
+    return fallback;
+  }
+  return filtered;
 }
 
 function randomItem(arr) {
@@ -74,6 +82,7 @@ function getDailyLesson() {
   const limit = Math.max(3, Math.min(5, vocab.length));
   const daySeed = Number(new Date().toISOString().slice(0, 10).replace(/-/g, ''));
   const words = [];
+
   for (let i = 0; i < limit; i += 1) {
     words.push(vocab[(daySeed + i) % vocab.length]);
   }
@@ -111,10 +120,6 @@ function getAllGrammarTopics() {
 function translateText(text) {
   const lower = String(text || '').toLowerCase().trim();
   if (LOCAL_DICT[lower]) return LOCAL_DICT[lower];
-
-  const reverse = Object.entries(LOCAL_DICT).find(([, value]) => value === lower);
-  if (reverse) return reverse[0];
-
   return `Terjemahan lokal belum ditemukan untuk: "${text}"`;
 }
 

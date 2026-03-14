@@ -1,62 +1,83 @@
-# WhatsApp English Learning Bot (Stabilized)
+# WhatsApp English Learning Bot (Production Stabilization)
 
-Bot WhatsApp belajar bahasa Inggris berbasis **Node.js + JavaScript + Baileys Mod**.
+Bot belajar bahasa Inggris berbasis **Node.js + JavaScript + Baileys Mod**.
 
-## Command Utama
+## Fitur Existing (Sudah Wired)
 - `.menu`
 - `.daily`
 - `.quiz`
 - `.answer <jawaban>`
-- `.translate <teks>` / `.tr <teks>` (auto-detect)
+- `.translate <teks>` / `.tr <teks>` (auto detect)
 - `.tren <teks>` (paksa ke English)
 - `.trid <teks>` (paksa ke Indonesia)
 - `.arti <teks>`
 - `.grammar <topik>`
 - `.vocab`
 - `.chat on` / `.chat off`
+- `.score` / `.streak` / `.resetprogress`
 - `.fix <kalimat>` / `.correct <kalimat>`
-- `.pronounce <kata/kalimat>`
-- `.leaderboard` / `.top`
-- `.rank`
-- `.score`
-- `.streak`
-- `.resetprogress`
+- `.pronounce <teks>`
+- `.leaderboard` / `.top` / `.rank`
 - `.claimowner <password>`
 - `.reminder on|off|status` *(owner)*
 - `.health` *(owner)*
 - `.debugcmd` *(owner)*
 
-## Group Guard
-Bot hanya aktif di group:
+## Group Restriction
+Bot hanya aktif di grup:
 `120363406071615706@g.us`
 
+## AI vs Lokal
+### Butuh AI API key
+- `.tr/.translate/.tren/.trid` (prioritas AI)
+- `.fix/.correct`
+- chat mode AI (`.chat on`)
+
+### Fallback lokal (jika AI gagal / AI_API_KEY tidak tersedia)
+- translate dua arah ID ↔ EN (dataset lokal terbatas)
+- koreksi grammar sederhana rule-based
+
+> `AI_API_KEY` adalah key dari provider model AI (contoh OpenRouter), **bukan key Baileys/WhatsApp**.
+
 ## Owner Claim
-Jika bot belum punya owner, jalankan:
+Jika belum ada owner:
 ```txt
 .claimowner botengress144
 ```
-Owner disimpan permanen di `data/users.json` (global.ownerNumber).
+Owner disimpan permanen di `data/users.json` -> `global.ownerNumber`.
 
-## AI Translation
-- `.tr` mendeteksi bahasa otomatis (ID ↔ EN).
-- Jika `AI_API_KEY` tersedia, bot mencoba AI untuk dua arah.
-- Jika AI error/tidak tersedia, fallback lokal tetap jalan (dua arah).
-
-## Format Data
+## Struktur Data
 ### `data/vocab.json`
-Array object dengan format:
+Array item:
 ```json
-{"word":"confident","meaning":"percaya diri","example":"I feel confident..."}
+{
+  "word": "confident",
+  "meaning": "percaya diri",
+  "example": "I feel confident when I speak in class."
+}
 ```
 
 ### `data/quizzes.json`
-Array object dengan format:
+Array item:
 ```json
-{"id":"q1","question":"...","answer":"...","options":["A","B","C","D"]}
+{
+  "id": "q1",
+  "question": "Apa arti kata 'confident'?",
+  "answer": "percaya diri",
+  "options": ["percaya diri", "jadwal", "tantangan", "latihan"]
+}
 ```
 
+### `data/grammar.json`
+Minimal field per topik:
+- `title`
+- `pattern`
+- `usage`
+- `examples`
+- `exercises`
+
 ## Setup
-1. Install dependency
+1. Install dependencies
 ```bash
 npm install
 ```
@@ -79,13 +100,43 @@ TZ=Asia/Jakarta
 npm start
 ```
 
-## Startup Logs (untuk debug VPS)
+## Startup Log Wajib
 Saat startup bot akan menampilkan:
-- allowed group id
-- owner loaded (yes/no)
-- AI enabled (yes/no)
-- vocab data loaded count
-- quiz data loaded count
-- total commands loaded
-- reminder schedule
 - session path
+- allowed group id
+- owner loaded yes/no
+- AI enabled yes/no
+- provider
+- model
+- vocab loaded count
+- quizzes loaded count
+- grammar topics count
+- total command loaded
+- reminder time
+- timezone
+
+## Checklist Uji End-to-End
+1. QR muncul di terminal lalu scan.
+2. Di grup allowed kirim:
+   - `.menu`
+   - `.daily`
+   - `.quiz`
+   - `.answer A`
+   - `.tr how are you`
+   - `.tren saya mau belajar bahasa inggris`
+   - `.trid i am happy`
+   - `.grammar present simple`
+   - `.vocab`
+   - `.chat on` lalu kirim pesan biasa
+   - `.fix I am go to school`
+   - `.score`
+   - `.leaderboard`
+   - `.rank`
+3. Owner flow:
+   - `.claimowner botengress144`
+   - `.health`
+   - `.debugcmd`
+   - `.reminder status`
+
+## Voice Note
+Voice note sudah terdeteksi. Jika STT belum aktif penuh, bot memakai fallback aman dan mengarahkan user pakai `.pronounce <teks>`.

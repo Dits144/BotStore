@@ -16,9 +16,9 @@ module.exports = {
     const result = await translateSmart(input, { forceTarget });
 
     const text = [
-      '🌍 *TRANSLATE* 🌍',
+      '🌍 *TRANSLATE RESULT* 🌍',
       `📝 Original: ${result.original}`,
-      `🔎 Translation: ${result.translation}`,
+      `✨ Translation: ${result.translation}`,
       result.natural ? `💬 Natural: ${result.natural}` : null,
       result.fallback ? '⚠️ Menggunakan fallback lokal.' : null,
       result.note ? `ℹ️ ${result.note}` : null

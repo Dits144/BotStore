@@ -1,8 +1,16 @@
 const DEFAULT_PROVIDER = process.env.AI_PROVIDER || 'openrouter';
 const DEFAULT_MODEL = process.env.AI_MODEL || 'openai/gpt-4o-mini';
 
+function getAIConfig() {
+  return {
+    provider: process.env.AI_PROVIDER || DEFAULT_PROVIDER,
+    model: process.env.AI_MODEL || DEFAULT_MODEL,
+    enabled: Boolean(process.env.AI_API_KEY)
+  };
+}
+
 function isAIEnabled() {
-  return Boolean(process.env.AI_API_KEY);
+  return getAIConfig().enabled;
 }
 
 function validateProvider(provider) {
@@ -10,17 +18,11 @@ function validateProvider(provider) {
 }
 
 async function chatCompletion({ system, user, temperature = 0.3 }) {
-  const provider = process.env.AI_PROVIDER || DEFAULT_PROVIDER;
-  const model = process.env.AI_MODEL || DEFAULT_MODEL;
+  const { provider, model } = getAIConfig();
   const apiKey = process.env.AI_API_KEY;
 
-  if (!apiKey) {
-    throw new Error('AI_API_KEY tidak tersedia');
-  }
-
-  if (!validateProvider(provider)) {
-    throw new Error(`AI provider tidak didukung: ${provider}`);
-  }
+  if (!apiKey) throw new Error('AI_API_KEY tidak tersedia');
+  if (!validateProvider(provider)) throw new Error(`AI provider tidak didukung: ${provider}`);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
@@ -58,5 +60,6 @@ async function chatCompletion({ system, user, temperature = 0.3 }) {
 module.exports = {
   chatCompletion,
   isAIEnabled,
-  validateProvider
+  validateProvider,
+  getAIConfig
 };

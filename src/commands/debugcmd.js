@@ -1,4 +1,5 @@
 const { isOwnerJid } = require('../services/ownerService');
+const { isAIEnabled } = require('../services/aiService');
 
 module.exports = {
   name: 'debugcmd',
@@ -11,9 +12,14 @@ module.exports = {
 
     const text = [
       '🛠️ *COMMAND DEBUG*',
-      `🔢 Total: ${runtime?.totalCommands || 0}`,
+      `📝 Raw text: ${runtime?.rawText || '-'}`,
+      `🔤 Parsed command: ${runtime?.parsedCommand || '-'}`,
+      `📦 Args: ${(runtime?.parsedArgs || []).join(' ') || '-'}`,
+      `📌 Allowed group: ${runtime?.isAllowedGroup ? 'yes' : 'no'}`,
+      `👑 Is owner: ${isOwnerJid(sender) ? 'yes' : 'no'}`,
+      `🤖 AI ready: ${isAIEnabled() ? 'yes' : 'no'}`,
       `⏱️ Scheduler started: ${runtime?.schedulerStarted ? 'yes' : 'no'}`,
-      `📋 List: ${(runtime?.commands || []).join(', ') || '-'}`
+      `🔢 Total command: ${runtime?.totalCommands || 0}`
     ].join('\n');
 
     await sock.sendMessage(jid, { text });
