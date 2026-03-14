@@ -3,6 +3,7 @@
   "global": {
     "allowedGroupId": "120363406071615706@g.us",
     "reminderEnabled": true,
-    "lastReminderSentAt": null
+    "lastReminderSentAt": null,
+    "ownerNumber": ""
   }
 }

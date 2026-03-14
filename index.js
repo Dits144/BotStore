@@ -8,6 +8,9 @@ const { handleMessage, getCommandRegistryInfo } = require('./src/handlers/messag
 const { SESSION_DIR, ALLOWED_GROUP_ID } = require('./src/utils/constants');
 const { startDailyReminder, getReminderScheduleInfo } = require('./src/scheduler/dailyReminder');
 const { isAIEnabled } = require('./src/services/aiService');
+const { getDataStats } = require('./src/services/lessonService');
+const { getQuizStats } = require('./src/services/quizService');
+const { getOwnerNumber } = require('./src/services/ownerService');
 
 let reminderJob;
 
@@ -17,8 +20,12 @@ function printStartupSanity() {
 
   console.log('=== Bot Startup Sanity Check ===');
   console.log('Allowed Group ID:', ALLOWED_GROUP_ID);
-  console.log('Owner Number Loaded:', process.env.OWNER_NUMBER ? 'yes' : 'no');
+  console.log('Owner Number Loaded:', getOwnerNumber() ? 'yes' : 'no');
+  const dataStats = getDataStats();
+  const quizStats = getQuizStats();
   console.log('AI Enabled:', isAIEnabled() ? 'yes' : 'no');
+  console.log('Vocab Data Loaded:', dataStats.vocabCount);
+  console.log('Quiz Data Loaded:', quizStats.quizCount);
   console.log('Total Commands Loaded:', cmdInfo.totalCommands);
   console.log('Reminder Schedule:', `${reminderInfo.time} (${reminderInfo.timezone}) -> ${reminderInfo.cronExp}`);
   console.log('Session Path:', SESSION_DIR);

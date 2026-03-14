@@ -1,37 +1,22 @@
 [
-  {
-    "word": "confident",
-    "meaning": "percaya diri",
-    "example": "I want to speak English more confidently."
-  },
-  {
-    "word": "improve",
-    "meaning": "meningkatkan",
-    "example": "I improve my English by practicing every day."
-  },
-  {
-    "word": "habit",
-    "meaning": "kebiasaan",
-    "example": "Reading is a good habit for language learners."
-  },
-  {
-    "word": "schedule",
-    "meaning": "jadwal",
-    "example": "I make a study schedule every week."
-  },
-  {
-    "word": "mistake",
-    "meaning": "kesalahan",
-    "example": "Making mistakes is part of learning."
-  },
-  {
-    "word": "practice",
-    "meaning": "latihan",
-    "example": "Practice makes your English better."
-  },
-  {
-    "word": "challenge",
-    "meaning": "tantangan",
-    "example": "Speaking daily is a fun challenge."
-  }
+  {"word":"confident","meaning":"percaya diri","example":"I feel confident when I practice speaking."},
+  {"word":"improve","meaning":"meningkatkan","example":"I want to improve my English daily."},
+  {"word":"habit","meaning":"kebiasaan","example":"Reading every day is a good habit."},
+  {"word":"schedule","meaning":"jadwal","example":"I made a study schedule for this week."},
+  {"word":"mistake","meaning":"kesalahan","example":"Do not be afraid of making mistakes."},
+  {"word":"practice","meaning":"latihan","example":"Practice helps me speak more clearly."},
+  {"word":"challenge","meaning":"tantangan","example":"This quiz is a fun challenge."},
+  {"word":"focus","meaning":"fokus","example":"I need to focus during grammar class."},
+  {"word":"effort","meaning":"usaha","example":"Your effort will bring great progress."},
+  {"word":"progress","meaning":"kemajuan","example":"I can see progress in my vocabulary."},
+  {"word":"fluent","meaning":"lancar","example":"She speaks English fluently now."},
+  {"word":"review","meaning":"mengulas","example":"I review old words every night."},
+  {"word":"remember","meaning":"mengingat","example":"I remember new words with flashcards."},
+  {"word":"polite","meaning":"sopan","example":"Please use polite words in conversation."},
+  {"word":"response","meaning":"respon","example":"Thank you for your quick response."},
+  {"word":"grammar","meaning":"tata bahasa","example":"Grammar takes time to master."},
+  {"word":"sentence","meaning":"kalimat","example":"Write one sentence for each word."},
+  {"word":"translate","meaning":"menerjemahkan","example":"Can you translate this sentence?"},
+  {"word":"meaning","meaning":"arti","example":"What is the meaning of this word?"},
+  {"word":"pronounce","meaning":"mengucapkan","example":"Please pronounce this word clearly."}
 ]

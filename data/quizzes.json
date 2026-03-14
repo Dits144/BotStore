@@ -1,26 +1,22 @@
 [
-  {
-    "id": "q1",
-    "question": "Apa bahasa Inggris dari 'percaya diri'?",
-    "answer": "confident",
-    "options": ["schedule", "confident", "habit", "mistake"]
-  },
-  {
-    "id": "q2",
-    "question": "Choose the correct sentence:",
-    "answer": "she is studying now",
-    "options": ["she studying now", "she is studying now", "she study now", "she are studying now"]
-  },
-  {
-    "id": "q3",
-    "question": "Apa arti kata 'improve'?",
-    "answer": "meningkatkan",
-    "options": ["mengulang", "meningkatkan", "menghafal", "mengirim"]
-  },
-  {
-    "id": "q4",
-    "question": "Kalimat simple future yang benar adalah...",
-    "answer": "i will learn tonight",
-    "options": ["i will learn tonight", "i am learn tonight", "i learned tonight", "i learning tonight"]
-  }
+  {"id":"q1","question":"Apa bahasa Inggris dari 'percaya diri'?","answer":"confident","options":["confident","schedule","review","mistake"]},
+  {"id":"q2","question":"Apa arti kata 'improve'?","answer":"meningkatkan","options":["meningkatkan","mengulang","menyerah","menunggu"]},
+  {"id":"q3","question":"Choose the correct sentence:","answer":"she is studying now","options":["she are studying now","she studying now","she is studying now","she study now"]},
+  {"id":"q4","question":"Apa arti kata 'habit'?","answer":"kebiasaan","options":["kebiasaan","hadiah","tantangan","respon"]},
+  {"id":"q5","question":"Kalimat simple future yang benar adalah...","answer":"i will practice tonight","options":["i practice tonight","i am practice tonight","i will practice tonight","i practiced tonight"]},
+  {"id":"q6","question":"Apa bahasa Inggris dari 'jadwal'?","answer":"schedule","options":["schedule","response","sentence","effort"]},
+  {"id":"q7","question":"Choose the right translation for 'thank you':","answer":"terima kasih","options":["selamat pagi","terima kasih","sampai jumpa","maaf"]},
+  {"id":"q8","question":"Apa arti kata 'challenge'?","answer":"tantangan","options":["kemajuan","tantangan","jawaban","kebiasaan"]},
+  {"id":"q9","question":"Choose the correct sentence:","answer":"i am going to school","options":["i am go to school","i going school","i am going to school","i goes school"]},
+  {"id":"q10","question":"Apa arti kata 'focus'?","answer":"fokus","options":["fokus","respon","latihan","lancar"]},
+  {"id":"q11","question":"Apa bahasa Inggris dari 'usaha'?","answer":"effort","options":["effort","mistake","review","meaning"]},
+  {"id":"q12","question":"Choose the best answer: He ___ English every day.","answer":"studies","options":["study","studies","studying","studied"]},
+  {"id":"q13","question":"Apa arti kata 'progress'?","answer":"kemajuan","options":["jadwal","kemajuan","arti","latihan"]},
+  {"id":"q14","question":"Apa bahasa Inggris dari 'mengulas'?","answer":"review","options":["remember","review","translate","pronounce"]},
+  {"id":"q15","question":"Choose the correct phrase:","answer":"good morning","options":["good morning","morning good","good in morning","nice morningly"]},
+  {"id":"q16","question":"Apa arti kata 'fluent'?","answer":"lancar","options":["lancar","fokus","tepat","sopan"]},
+  {"id":"q17","question":"Apa bahasa Inggris dari 'tata bahasa'?","answer":"grammar","options":["grammar","vocab","lesson","quiz"]},
+  {"id":"q18","question":"Choose the right sentence:","answer":"they were happy yesterday","options":["they was happy yesterday","they were happy yesterday","they are happy yesterday","they happy yesterday"]},
+  {"id":"q19","question":"Apa arti kata 'sentence'?","answer":"kalimat","options":["kalimat","tantangan","jadwal","respon"]},
+  {"id":"q20","question":"Apa bahasa Inggris dari 'menerjemahkan'?","answer":"translate","options":["translate","progress","practice","review"]}
 ]

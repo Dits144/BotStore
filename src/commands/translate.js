@@ -2,23 +2,26 @@ const { translateSmart } = require('../services/translateService');
 
 module.exports = {
   name: 'translate',
-  aliases: ['tr'],
-  description: 'Translate AI ID/EN',
-  async execute({ sock, jid, args }) {
+  aliases: ['tr', 'tren', 'trid'],
+  description: 'Translate otomatis atau paksa bahasa',
+  async execute({ sock, jid, args, runtime }) {
     const input = args.join(' ').trim();
     if (!input) {
-      await sock.sendMessage(jid, { text: 'Format: *.translate <kalimat>* atau *.tr <kalimat>*' });
+      await sock.sendMessage(jid, { text: '🌍 Format: *.tr <kalimat>* | *.tren <kalimat>* | *.trid <kalimat>*' });
       return;
     }
 
-    const result = await translateSmart(input);
+    const mode = runtime?.rawCommand;
+    const forceTarget = mode === 'tren' ? 'en' : mode === 'trid' ? 'id' : null;
+    const result = await translateSmart(input, { forceTarget });
+
     const text = [
-      '🌐 *Translate*',
-      `Original: ${result.original}`,
-      `Translation: ${result.translation}`,
-      result.natural ? `Natural: ${result.natural}` : null,
-      result.fallback ? `_AI fallback ke lokal_` : null,
-      result.note ? `Note: ${result.note}` : null
+      '🌍 *TRANSLATE* 🌍',
+      `📝 Original: ${result.original}`,
+      `🔎 Translation: ${result.translation}`,
+      result.natural ? `💬 Natural: ${result.natural}` : null,
+      result.fallback ? '⚠️ Menggunakan fallback lokal.' : null,
+      result.note ? `ℹ️ ${result.note}` : null
     ].filter(Boolean).join('\n');
 
     await sock.sendMessage(jid, { text });

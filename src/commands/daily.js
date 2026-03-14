@@ -5,28 +5,36 @@ module.exports = {
   name: 'daily',
   description: 'Materi English harian',
   async execute({ sock, jid, sender }) {
-    const lesson = getDailyLesson();
-    updateStreak(sender);
-    updateUser(sender, { lastStudyAt: new Date().toISOString() });
+    try {
+      const lesson = getDailyLesson();
+      updateStreak(sender);
+      updateUser(sender, { lastStudyAt: new Date().toISOString() });
 
-    if (!lesson.words.length) {
-      await sock.sendMessage(jid, { text: 'Data daily lesson belum tersedia. Cek data/vocab.json dulu.' });
-      return;
+      const wordsText = lesson.words
+        .slice(0, 5)
+        .map((item, i) => [
+          `📝 Word ${i + 1}: *${item.word}*`,
+          `🇮🇩 Arti: ${item.meaning}`,
+          `💬 Example: ${item.example || '-'}`
+        ].join('\n'))
+        .join('\n\n');
+
+      const text = [
+        '📚 *DAILY ENGLISH LESSON* 📚',
+        '',
+        wordsText,
+        '',
+        '❓ *Quiz:*',
+        lesson.quiz,
+        '',
+        '🎯 *Challenge:*',
+        lesson.challenge
+      ].join('\n');
+
+      await sock.sendMessage(jid, { text });
+    } catch (error) {
+      console.error('[daily] failed:', error.message);
+      await sock.sendMessage(jid, { text: '⚠️ Daily lesson sedang bermasalah. Coba lagi sebentar ya.' });
     }
-
-    const wordsText = lesson.words
-      .map((item, i) => `Word ${i + 1}: ${item.word} = ${item.meaning}\nExample: ${item.example || '-'}`)
-      .join('\n\n');
-
-    const text = [
-      '📅 *Daily English Lesson*',
-      '',
-      wordsText,
-      '',
-      `Quiz: ${lesson.quiz}`,
-      `Challenge: ${lesson.challenge}`
-    ].join('\n');
-
-    await sock.sendMessage(jid, { text });
   }
 };

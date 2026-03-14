@@ -1,32 +1,27 @@
-const { toTitle, bulletList, commandItem } = require('../utils/formatter');
+const { commandItem } = require('../utils/formatter');
 
 module.exports = {
   name: 'menu',
   description: 'Menampilkan semua command',
   async execute({ sock, jid }) {
-    const items = [
-      commandItem('menu', 'Lihat daftar command'),
-      commandItem('daily', 'Materi belajar harian'),
-      commandItem('quiz', 'Ambil quiz random'),
-      commandItem('answer <jawaban>', 'Jawab quiz aktif'),
-      commandItem('translate/.tr <kalimat>', 'Terjemahkan AI ID/EN'),
-      commandItem('fix/.correct <kalimat>', 'Koreksi grammar AI'),
-      commandItem('arti <kata/kalimat>', 'Jelaskan arti + breakdown sederhana'),
-      commandItem('grammar <topik>', 'Materi grammar'),
-      commandItem('vocab', 'Vocab random'),
-      commandItem('pronounce <teks>', 'Panduan pengucapan'),
-      commandItem('chat on|off', 'Aktif/nonaktif chat practice'),
-      commandItem('leaderboard/.top', 'Top 10 learner'),
-      commandItem('rank', 'Peringkat kamu'),
-      commandItem('reminder on|off|status', 'Kontrol reminder (owner)'),
-      commandItem('health', 'Health check (owner)'),
-      commandItem('debugcmd', 'Debug command registry (owner)'),
-      commandItem('score', 'Lihat score, xp, level'),
-      commandItem('streak', 'Lihat streak belajar'),
-      commandItem('resetprogress', 'Reset progress akunmu')
+    const lines = [
+      '╭───📚 *ENGLISH LEARNING BOT* 📚───',
+      '│',
+      `├ ${commandItem('daily', '📖 materi English harian')}`,
+      `├ ${commandItem('quiz', '🧠 quiz bahasa Inggris')}`,
+      `├ ${commandItem('answer <jawaban>', '✏️ jawab quiz')}`,
+      `├ ${commandItem('tr / tren / trid', '🌍 translate otomatis/manual')}`,
+      `├ ${commandItem('arti <teks>', '🔎 arti kata/kalimat')}`,
+      `├ ${commandItem('grammar <topik>', '📘 belajar grammar')}`,
+      `├ ${commandItem('chat on/off', '💬 latihan chat')}`,
+      `├ ${commandItem('leaderboard / top', '🏆 ranking grup')}`,
+      `├ ${commandItem('score', '🎯 skor belajar')}`,
+      `├ ${commandItem('streak', '🔥 streak belajar')}`,
+      `├ ${commandItem('claimowner <password>', '👑 klaim owner bot')}`,
+      '│',
+      '╰──────────────────'
     ];
 
-    const text = `${toTitle('English Learning Bot Menu')}\n\n${bulletList(items)}`;
-    await sock.sendMessage(jid, { text });
+    await sock.sendMessage(jid, { text: lines.join('\n') });
   }
 };

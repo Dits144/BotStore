@@ -7,13 +7,13 @@ module.exports = {
   async execute({ sock, jid, sender, args }) {
     const rawAnswer = args.join(' ').trim();
     if (!rawAnswer) {
-      await sock.sendMessage(jid, { text: 'Format: *.answer <jawaban>*' });
+      await sock.sendMessage(jid, { text: '✏️ Format: *.answer <jawaban>*' });
       return;
     }
 
     const activeQuiz = getActiveQuiz(sender);
     if (!activeQuiz) {
-      await sock.sendMessage(jid, { text: 'Belum ada quiz aktif. Gunakan *.quiz* dulu.' });
+      await sock.sendMessage(jid, { text: 'ℹ️ Belum ada quiz aktif. Pakai *.quiz* dulu ya.' });
       return;
     }
 
@@ -25,14 +25,14 @@ module.exports = {
       updateStreak(sender);
       clearActiveQuiz(sender, { question: activeQuiz.question, result: 'correct', answer: userAnswer, at: Date.now() });
       await sock.sendMessage(jid, {
-        text: `✅ Jawaban benar! +15 XP\nScore: ${user.score} | XP: ${user.xp} | Level: ${user.level}`
+        text: `✅ *Jawaban benar!*\n🏆 +15 XP\n🎯 Score: ${user.score} | XP: ${user.xp} | Level: ${user.level}`
       });
       return;
     }
 
     clearActiveQuiz(sender, { question: activeQuiz.question, result: 'wrong', answer: userAnswer, at: Date.now() });
     await sock.sendMessage(jid, {
-      text: `❌ Jawaban kurang tepat.\nJawaban benar: *${activeQuiz.answer}*`
+      text: `❌ Jawaban kurang tepat.\n✅ Jawaban benar: *${activeQuiz.answer}*`
     });
   }
 };

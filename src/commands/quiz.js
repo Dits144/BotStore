@@ -5,20 +5,20 @@ module.exports = {
   name: 'quiz',
   description: 'Quiz random',
   async execute({ sock, jid, sender }) {
-    const quiz = generateQuiz(sender);
-    if (!quiz) {
-      await sock.sendMessage(jid, { text: 'Data quiz belum tersedia. Cek data/quizzes.json.' });
-      return;
+    try {
+      const quiz = generateQuiz(sender);
+      updateStreak(sender);
+
+      const options = quiz.options?.length
+        ? `\n\n🧠 Pilihan:\n${quiz.options.map((opt, i) => `${String.fromCharCode(65 + i)}. ${opt}`).join('\n')}`
+        : '';
+
+      await sock.sendMessage(jid, {
+        text: `🧠 *QUIZ AKTIF*\n❓ ${quiz.question}${options}\n\n✏️ Jawab dengan: *.answer <jawaban>*`
+      });
+    } catch (error) {
+      console.error('[quiz] failed:', error.message);
+      await sock.sendMessage(jid, { text: '⚠️ Quiz belum bisa dimuat. Coba lagi sebentar.' });
     }
-
-    updateStreak(sender);
-
-    const options = quiz.options?.length
-      ? `\n\nPilihan:\n${quiz.options.map((opt, i) => `${String.fromCharCode(65 + i)}. ${opt}`).join('\n')}`
-      : '';
-
-    await sock.sendMessage(jid, {
-      text: `❓ *Quiz Aktif*\n${quiz.question}${options}\n\nJawab dengan: *.answer <jawaban>*\n(Bisa juga pakai huruf opsi: A/B/C/D)`
-    });
   }
 };

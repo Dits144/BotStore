@@ -72,7 +72,7 @@ async function handleMessage(sock, msg, runtime = {}) {
       sender,
       args: parsed.args,
       text,
-      runtime: { ...runtime, totalCommands: registry.totalCommands, commands: Object.keys(registry.commands).sort() }
+      runtime: { ...runtime, rawCommand: parsed.command, totalCommands: registry.totalCommands, commands: Object.keys(registry.commands).sort() }
     });
   } catch (error) {
     console.error('messageHandler error:', error.message);
