@@ -10,7 +10,7 @@ async function getPracticeReply(text) {
       correct: tr.translation,
       natural: tr.natural || tr.translation,
       meaning: text,
-      note: 'Input Indonesia diterjemahkan ke English.'
+      note: tr.fallback ? 'Fallback lokal aktif untuk chat mode.' : 'Input Indonesia diterjemahkan ke English.'
     };
   }
 

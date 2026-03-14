@@ -1,5 +1,5 @@
 const { isOwnerJid, getOwnerNumber } = require('../services/ownerService');
-const { getAIConfig } = require('../services/aiService');
+const { getAIReadiness } = require('../services/aiService');
 const { getReminderStatus } = require('../services/reminderService');
 const { getDataStats } = require('../services/lessonService');
 const { getQuizStats } = require('../services/quizService');
@@ -7,7 +7,7 @@ const { getQuizStats } = require('../services/quizService');
 function maskKey(key = '') {
   if (!key) return '-';
   if (key.length <= 8) return '****';
-  return `${key.slice(0, 6)}****${key.slice(-4)}`;
+  return `${key.slice(0, 10)}****${key.slice(-4)}`;
 }
 
 module.exports = {
@@ -19,7 +19,7 @@ module.exports = {
       return;
     }
 
-    const ai = getAIConfig();
+    const ai = getAIReadiness();
     const vocabStats = getDataStats();
     const quizStats = getQuizStats();
 
@@ -27,6 +27,9 @@ module.exports = {
       '🩺 *BOT HEALTH*',
       `🔌 Bot connected: ${runtime?.connected ? 'yes' : 'no'}`,
       `🤖 AI enabled: ${ai.enabled ? 'yes' : 'no'}`,
+      `✅ AI provider valid: ${ai.providerValid ? 'yes' : 'no'}`,
+      `🧩 AI model loaded: ${ai.modelLoaded ? 'yes' : 'no'}`,
+      `🚀 AI service ready: ${ai.ready ? 'yes' : 'no'}`,
       `🧠 Provider: ${ai.provider}`,
       `🧪 Model: ${ai.model}`,
       `🔐 API key: ${maskKey(process.env.AI_API_KEY || '')}`,

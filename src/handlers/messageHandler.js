@@ -37,11 +37,18 @@ async function handleMessage(sock, msg, runtime = {}) {
       return;
     }
 
-    if (!text) return;
+    if (!text) {
+      console.log('[CHAT_MODE] skipped: empty text');
+      return;
+    }
 
     if (!parsed.isCommand && user.chatMode) {
       const now = Date.now();
-      if (now - (user.lastPracticeResponseAt || 0) < 7000) return;
+      if (now - (user.lastPracticeResponseAt || 0) < 7000) {
+        console.log('[CHAT_MODE] skipped: cooldown active');
+        return;
+      }
+      console.log(`[CHAT_MODE] processing sender=${sender.split('@')[0]}`);
       const response = await getPracticeReply(text);
       incrementPracticeCount(sender);
       await sock.sendMessage(jid, {
@@ -56,7 +63,10 @@ async function handleMessage(sock, msg, runtime = {}) {
       return;
     }
 
-    if (!parsed.isCommand) return;
+    if (!parsed.isCommand) {
+      console.log('[CHAT_MODE] skipped: not enabled for sender');
+      return;
+    }
 
     const commandName = registry.aliases[parsed.command] || parsed.command;
     const cmd = registry.commands[commandName];

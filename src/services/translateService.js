@@ -1,4 +1,4 @@
-const { chatCompletion, isAIEnabled } = require('./aiService');
+const { chatCompletion, getAIReadiness } = require('./aiService');
 const { translateText } = require('./lessonService');
 
 function detectLanguage(text) {
@@ -18,7 +18,8 @@ async function translateWithAI(input, forceTarget = null) {
   const content = await chatCompletion({
     system: 'Kamu penerjemah ringkas. Balas JSON valid: {"translation":"...","natural":"..."}',
     user: `Terjemahkan ke ${targetLabel}: ${input}`,
-    temperature: 0.2
+    temperature: 0.2,
+    task: 'translate'
   });
 
   try {
@@ -36,8 +37,10 @@ async function translateWithAI(input, forceTarget = null) {
 
 async function translateSmart(input, options = {}) {
   const forceTarget = options.forceTarget || null;
+  const ai = getAIReadiness();
 
-  if (!isAIEnabled()) {
+  if (!ai.ready) {
+    console.warn('[AI] translate skipped: service not ready');
     return {
       original: input,
       targetLang: forceTarget || (detectLanguage(input) === 'id' ? 'en' : 'id'),
@@ -51,7 +54,7 @@ async function translateSmart(input, options = {}) {
   try {
     return await translateWithAI(input, forceTarget);
   } catch (error) {
-    console.error('[translate] AI gagal:', error.message);
+    console.error('[translate] AI gagal, fallback lokal:', error.message);
     return {
       original: input,
       targetLang: forceTarget || (detectLanguage(input) === 'id' ? 'en' : 'id'),

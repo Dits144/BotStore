@@ -9,7 +9,7 @@ const { ensureDataFile } = require('./src/database/db');
 const { handleMessage, getCommandRegistryInfo } = require('./src/handlers/messageHandler');
 const { SESSION_DIR, ALLOWED_GROUP_ID } = require('./src/utils/constants');
 const { startDailyReminder, getReminderScheduleInfo } = require('./src/scheduler/dailyReminder');
-const { getAIConfig } = require('./src/services/aiService');
+const { getAIReadiness } = require('./src/services/aiService');
 const { getDataStats } = require('./src/services/lessonService');
 const { getQuizStats } = require('./src/services/quizService');
 const { getOwnerNumber, normalizePhone } = require('./src/services/ownerService');
@@ -19,7 +19,8 @@ const botRuntime = { connected: false, schedulerStarted: false };
 
 function validateEnv(ai) {
   const envPath = path.resolve(process.cwd(), '.env');
-  if (!fs.existsSync(envPath)) {
+  const envDetected = fs.existsSync(envPath);
+  if (!envDetected) {
     console.warn('⚠️ .env runtime file tidak ditemukan. Bot akan pakai default/env sistem.');
   }
 
@@ -27,8 +28,12 @@ function validateEnv(ai) {
     console.warn('⚠️ ALLOWED_GROUP_ID kosong. Bot akan berisiko memproses pesan di grup lain.');
   }
 
-  if (process.env.AI_PROVIDER === 'openrouter' && !process.env.AI_API_KEY) {
-    console.warn('⚠️ AI_PROVIDER=openrouter tapi AI_API_KEY kosong. AI dinonaktifkan.');
+  if (!process.env.AI_API_KEY) {
+    console.warn('⚠️ AI_API_KEY kosong. AI dinonaktifkan.');
+  }
+
+  if (process.env.AI_PROVIDER && !ai.providerValid) {
+    console.warn(`⚠️ AI_PROVIDER tidak didukung: ${process.env.AI_PROVIDER}`);
   }
 
   if (!process.env.AI_MODEL) {
@@ -39,23 +44,29 @@ function validateEnv(ai) {
     console.warn('⚠️ OWNER_NUMBER tidak valid, owner env akan diabaikan.');
   }
 
-  return ai;
+  return { ...ai, envDetected };
 }
 
 function printStartupSanity() {
   const cmdInfo = getCommandRegistryInfo();
   const reminderInfo = getReminderScheduleInfo();
-  const ai = validateEnv(getAIConfig());
+  const ai = validateEnv(getAIReadiness());
   const dataStats = getDataStats();
   const quizStats = getQuizStats();
 
   console.log('=== Bot Startup Sanity Check ===');
+  console.log('Dotenv Loaded: yes');
+  console.log('Env File Detected:', ai.envDetected ? 'yes' : 'no');
   console.log('Session Path:', SESSION_DIR);
   console.log('Allowed Group ID:', ALLOWED_GROUP_ID || '-');
   console.log('Owner Number Loaded:', getOwnerNumber() ? 'yes' : 'no');
-  console.log('AI Enabled:', ai.enabled ? 'yes' : 'no');
+  console.log('AI Enabled:', ai.ready ? 'yes' : 'no');
   console.log('AI Provider:', ai.provider);
+  console.log('AI Provider Valid:', ai.providerValid ? 'yes' : 'no');
   console.log('AI Model:', ai.model);
+  console.log('AI Model Loaded:', ai.modelLoaded ? 'yes' : 'no');
+  console.log('AI Key Present:', ai.apiKeyPresent ? 'yes' : 'no');
+  console.log('AI Service Ready:', ai.ready ? 'yes' : 'no');
   console.log('Vocab Data Loaded:', dataStats.vocabCount);
   console.log('Quizzes Loaded:', quizStats.quizCount);
   console.log('Grammar Topics Loaded:', dataStats.grammarTopicCount);

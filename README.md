@@ -1,14 +1,18 @@
-# WhatsApp English Learning Bot (Production Stabilization)
+# WhatsApp English Learning Bot (Bugfix + Wiring Pass)
 
 Bot belajar bahasa Inggris berbasis **Node.js + JavaScript + Baileys Mod**.
 
 ## Runtime Config: `.env` vs `.env.example`
-- `.env` = file runtime yang benar-benar dibaca bot saat jalan.
+- `.env` = file runtime yang benar-benar dibaca bot.
 - `.env.example` = template aman tanpa API key asli.
 
-> Jangan pernah commit atau bagikan API key asli.
+> Jangan pernah commit/bagikan API key asli.
 
-## Env yang dipakai
+## Provider AI yang didukung
+- `openrouter`
+- `groq`
+
+## Env runtime
 ```env
 LOG_LEVEL=silent
 ALLOWED_GROUP_ID=120363406071615706@g.us
@@ -20,61 +24,45 @@ DAILY_REMINDER_TIME=07:00
 TZ=Asia/Jakarta
 ```
 
-## Fitur (wired)
-- `.menu`, `.daily`, `.quiz`, `.answer <jawaban>`
-- `.tr/.translate <teks>` (auto detect)
-- `.tren <teks>` (paksa ke English)
-- `.trid <teks>` (paksa ke Indonesia)
-- `.fix/.correct <kalimat>`
-- `.arti`, `.grammar`, `.vocab`
-- `.chat on/off`, `.score`, `.streak`, `.resetprogress`
-- `.leaderboard/.top`, `.rank`
-- `.claimowner <password>`
-- `.reminder on/off/status`, `.health`, `.debugcmd`
+## Catatan penting owner
+Jika `OWNER_NUMBER` terisi di `.env`, maka owner dianggap sudah ada dan `.claimowner` akan ditolak.
 
-## AI vs Fallback Lokal
-Jika `AI_API_KEY` tersedia:
-- `.tr/.tren/.trid`, `.fix/.correct`, chat mode akan prioritas pakai AI OpenRouter.
+Pesan ini normal:
+> Bot ini sudah memiliki owner dari konfigurasi.
 
-Jika AI gagal/tidak aktif:
-- bot fallback ke local translation/correction terbatas,
-- bot tetap tidak crash.
+Jika ingin pakai `.claimowner`, kosongkan `OWNER_NUMBER` di `.env` lalu restart bot.
 
-## Cara setup
-1. Install:
-```bash
-npm install
-```
-2. Copy template env:
-```bash
-cp .env.example .env
-```
-3. Isi `AI_API_KEY` di `.env`.
-4. Jalankan:
-```bash
-npm start
-```
+## Fitur yang difokuskan stabil
+- `.tr/.translate`, `.tren`, `.trid`
+- `.fix/.correct`
+- `.chat on/.chat off` + pesan biasa saat chat mode aktif
+- `.health`, `.debugcmd`
+- `.claimowner`
 
-## Sanity startup log
+## AI wiring behavior
+- Jika AI ready (`provider valid + model ada + key ada`), command AI pakai provider dulu.
+- Jika request AI gagal, bot fallback lokal dan log alasan error ke console.
+
+## Startup sanity log
 Saat startup bot menampilkan:
-- session path
-- allowed group id
-- owner loaded yes/no
-- AI enabled yes/no
-- provider
-- model
-- vocab count
-- quiz count
-- grammar topics count
+- dotenv env file detected
+- allowed group
+- owner loaded
+- AI enabled/provider/model
+- AI provider valid/model loaded/service ready
+- vocab/quiz/grammar count
 - total command loaded
-- reminder time + timezone
+- reminder time/timezone
+- session path
 
 ## Uji cepat
 - `.health`
+- `.debugcmd`
 - `.tr halo apa kabar`
 - `.trid I want to learn English`
 - `.tren saya ingin belajar`
 - `.fix I am go to school`
+- `.chat on` lalu kirim pesan biasa
 
-## Catatan voice note
-Voice note terdeteksi. Jika STT belum aktif penuh, bot memberi fallback aman dan arahkan ke `.pronounce <teks>`.
+## Voice note
+Voice note terdeteksi. Jika STT belum aktif penuh, bot fallback aman dan arahkan user pakai `.pronounce <teks>`.

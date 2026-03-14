@@ -1,4 +1,4 @@
-const { chatCompletion, isAIEnabled } = require('./aiService');
+const { chatCompletion, getAIReadiness } = require('./aiService');
 const { detectLanguage } = require('./translateService');
 
 function capitalize(text) {
@@ -32,7 +32,8 @@ async function correctWithAI(input) {
   const content = await chatCompletion({
     system: 'Kamu tutor English ringkas. Balas JSON valid saja dengan key: original, corrected, natural, meaning, note',
     user: `Koreksi kalimat ini: ${input}`,
-    temperature: 0.2
+    temperature: 0.2,
+    task: 'grammar-correction'
   });
 
   const parsed = JSON.parse(content);
@@ -56,15 +57,17 @@ async function correctSentence(input) {
     };
   }
 
-  if (!isAIEnabled()) {
+  const ai = getAIReadiness();
+  if (!ai.ready) {
+    console.warn('[AI] correction skipped: service not ready');
     const fallback = fallbackCorrection(input);
-    return { ...fallback, note: `${fallback.note} (AI nonaktif: AI_API_KEY belum di-set)` };
+    return { ...fallback, note: `${fallback.note} (AI nonaktif)` };
   }
 
   try {
     return await correctWithAI(input);
   } catch (error) {
-    console.error('correctSentence error:', error.message);
+    console.error('[correction] AI gagal, fallback:', error.message);
     return fallbackCorrection(input);
   }
 }

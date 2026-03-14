@@ -7,7 +7,9 @@ module.exports = {
   description: 'Klaim owner bot',
   async execute({ sock, jid, sender, args }) {
     if (hasOwner()) {
-      await sock.sendMessage(jid, { text: '⚠️ Bot ini sudah memiliki owner.' });
+      await sock.sendMessage(jid, {
+        text: '⚠️ Bot ini sudah memiliki owner dari konfigurasi.\nJika ingin memakai .claimowner, kosongkan OWNER_NUMBER di file .env lalu restart bot.'
+      });
       return;
     }
 
