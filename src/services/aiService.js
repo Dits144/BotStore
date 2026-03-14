@@ -1,18 +1,11 @@
-const DEFAULT_PROVIDER = process.env.AI_PROVIDER || 'openrouter';
-const DEFAULT_MODEL = process.env.AI_MODEL || 'openai/gpt-4o-mini';
-
-const PROVIDER_CONFIG = {
-  openrouter: {
-    url: 'https://openrouter.ai/api/v1/chat/completions'
-  },
-  groq: {
-    url: 'https://api.groq.com/openai/v1/chat/completions'
-  }
-};
+function resolveDefaultModel(provider) {
+  if (provider === 'groq') return 'llama3-8b-8192';
+  return 'openai/gpt-4o-mini';
+}
 
 function getAIConfig() {
-  const provider = (process.env.AI_PROVIDER || DEFAULT_PROVIDER).toLowerCase().trim();
-  const model = process.env.AI_MODEL || DEFAULT_MODEL;
+  const provider = (process.env.AI_PROVIDER || 'openrouter').toLowerCase().trim();
+  const model = process.env.AI_MODEL || resolveDefaultModel(provider);
   const apiKey = process.env.AI_API_KEY || '';
 
   return {
@@ -22,6 +15,15 @@ function getAIConfig() {
     enabled: Boolean(apiKey)
   };
 }
+
+const PROVIDER_CONFIG = {
+  openrouter: {
+    url: 'https://openrouter.ai/api/v1/chat/completions'
+  },
+  groq: {
+    url: 'https://api.groq.com/openai/v1/chat/completions'
+  }
+};
 
 function validateProvider(provider) {
   return Boolean(PROVIDER_CONFIG[provider]);
@@ -56,7 +58,7 @@ async function chatCompletion({ system, user, temperature = 0.3, task = 'generic
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
 
-  console.log(`[AI] provider=${readiness.provider} model=${readiness.model} task=${task}`);
+  console.log(`[AI] provider=${readiness.provider} model=${readiness.model}`);
   console.log(`[AI] ${task} request started`);
 
   try {
@@ -89,7 +91,7 @@ async function chatCompletion({ system, user, temperature = 0.3, task = 'generic
     console.log(`[AI] ${task} request success`);
     return content;
   } catch (error) {
-    console.error(`[AI] ${task} request failed:`, error.message);
+    console.error('[AI] request failed:', error.message);
     throw error;
   } finally {
     clearTimeout(timeout);
@@ -101,5 +103,6 @@ module.exports = {
   isAIEnabled,
   validateProvider,
   getAIConfig,
-  getAIReadiness
+  getAIReadiness,
+  resolveDefaultModel
 };

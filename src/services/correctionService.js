@@ -30,8 +30,8 @@ function fallbackCorrection(text) {
 
 async function correctWithAI(input) {
   const content = await chatCompletion({
-    system: 'Kamu tutor English ringkas. Balas JSON valid saja dengan key: original, corrected, natural, meaning, note',
-    user: `Koreksi kalimat ini: ${input}`,
+    system: 'You are an English tutor helping someone practice English.',
+    user: `Correct this sentence and return concise JSON: {"original":"...","corrected":"...","natural":"...","meaning":"...","note":"..."}\n\nSentence: ${input}`,
     temperature: 0.2,
     task: 'grammar-correction'
   });
@@ -52,8 +52,8 @@ async function correctSentence(input) {
       original: input,
       corrected: input,
       natural: input,
-      meaning: 'Input terdeteksi Bahasa Indonesia. Gunakan .translate untuk menerjemahkan dulu.',
-      note: 'Command .fix ideal untuk kalimat berbahasa Inggris.'
+      meaning: 'Input terdeteksi Bahasa Indonesia. Gunakan .tr untuk terjemah dulu.',
+      note: 'Command .fix lebih cocok untuk kalimat Bahasa Inggris.'
     };
   }
 
@@ -67,7 +67,7 @@ async function correctSentence(input) {
   try {
     return await correctWithAI(input);
   } catch (error) {
-    console.error('[correction] AI gagal, fallback:', error.message);
+    console.error('[AI] request failed:', error.message);
     return fallbackCorrection(input);
   }
 }

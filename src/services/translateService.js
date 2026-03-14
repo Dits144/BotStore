@@ -16,8 +16,8 @@ async function translateWithAI(input, forceTarget = null) {
   const targetLabel = targetLang === 'en' ? 'English' : 'Bahasa Indonesia';
 
   const content = await chatCompletion({
-    system: 'Kamu penerjemah ringkas. Balas JSON valid: {"translation":"...","natural":"..."}',
-    user: `Terjemahkan ke ${targetLabel}: ${input}`,
+    system: 'You are a translation assistant. Detect the language automatically and translate.',
+    user: `${input}\n\nTarget language: ${targetLabel}. Return concise JSON: {"translation":"...","natural":"..."}`,
     temperature: 0.2,
     task: 'translate'
   });
@@ -30,14 +30,21 @@ async function translateWithAI(input, forceTarget = null) {
       translation: parsed.translation || translateText(input),
       natural: parsed.natural || ''
     };
-  } catch (_) {
-    return { original: input, targetLang, translation: content || translateText(input), natural: '' };
+  } catch {
+    return {
+      original: input,
+      targetLang,
+      translation: content || translateText(input),
+      natural: ''
+    };
   }
 }
 
 async function translateSmart(input, options = {}) {
   const forceTarget = options.forceTarget || null;
   const ai = getAIReadiness();
+
+  console.log('[AI] translate invoked');
 
   if (!ai.ready) {
     console.warn('[AI] translate skipped: service not ready');
@@ -47,14 +54,14 @@ async function translateSmart(input, options = {}) {
       translation: translateText(input),
       natural: '',
       fallback: true,
-      note: 'AI nonaktif, menggunakan terjemahan lokal dua arah.'
+      note: 'AI nonaktif, menggunakan fallback lokal.'
     };
   }
 
   try {
     return await translateWithAI(input, forceTarget);
   } catch (error) {
-    console.error('[translate] AI gagal, fallback lokal:', error.message);
+    console.error('[AI] request failed:', error.message);
     return {
       original: input,
       targetLang: forceTarget || (detectLanguage(input) === 'id' ? 'en' : 'id'),

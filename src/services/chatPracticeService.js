@@ -2,6 +2,8 @@ const { detectLanguage, translateSmart } = require('./translateService');
 const { correctSentence } = require('./correctionService');
 
 async function getPracticeReply(text) {
+  console.log('[AI] chat tutor invoked');
+
   const lang = detectLanguage(` ${text} `);
   if (lang === 'id') {
     const tr = await translateSmart(text);
@@ -10,7 +12,7 @@ async function getPracticeReply(text) {
       correct: tr.translation,
       natural: tr.natural || tr.translation,
       meaning: text,
-      note: tr.fallback ? 'Fallback lokal aktif untuk chat mode.' : 'Input Indonesia diterjemahkan ke English.'
+      note: tr.fallback ? 'Fallback lokal aktif untuk chat mode.' : 'Terjemahan AI berhasil.'
     };
   }
 
