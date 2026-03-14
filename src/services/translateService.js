@@ -25,11 +25,12 @@ async function translateWithAI(input, forceTarget = null) {
     const parsed = JSON.parse(content);
     return {
       original: input,
+      targetLang,
       translation: parsed.translation || translateText(input),
       natural: parsed.natural || ''
     };
   } catch (_) {
-    return { original: input, translation: content || translateText(input), natural: '' };
+    return { original: input, targetLang, translation: content || translateText(input), natural: '' };
   }
 }
 
@@ -39,6 +40,7 @@ async function translateSmart(input, options = {}) {
   if (!isAIEnabled()) {
     return {
       original: input,
+      targetLang: forceTarget || (detectLanguage(input) === 'id' ? 'en' : 'id'),
       translation: translateText(input),
       natural: '',
       fallback: true,
@@ -52,6 +54,7 @@ async function translateSmart(input, options = {}) {
     console.error('[translate] AI gagal:', error.message);
     return {
       original: input,
+      targetLang: forceTarget || (detectLanguage(input) === 'id' ? 'en' : 'id'),
       translation: translateText(input),
       natural: '',
       fallback: true,

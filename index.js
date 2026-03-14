@@ -1,5 +1,7 @@
 require('dotenv').config();
 
+const fs = require('fs');
+const path = require('path');
 const pino = require('pino');
 const qrcode = require('qrcode-terminal');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('baileys');
@@ -10,21 +12,46 @@ const { startDailyReminder, getReminderScheduleInfo } = require('./src/scheduler
 const { getAIConfig } = require('./src/services/aiService');
 const { getDataStats } = require('./src/services/lessonService');
 const { getQuizStats } = require('./src/services/quizService');
-const { getOwnerNumber } = require('./src/services/ownerService');
+const { getOwnerNumber, normalizePhone } = require('./src/services/ownerService');
 
 let reminderJob;
 const botRuntime = { connected: false, schedulerStarted: false };
 
+function validateEnv(ai) {
+  const envPath = path.resolve(process.cwd(), '.env');
+  if (!fs.existsSync(envPath)) {
+    console.warn('⚠️ .env runtime file tidak ditemukan. Bot akan pakai default/env sistem.');
+  }
+
+  if (!ALLOWED_GROUP_ID) {
+    console.warn('⚠️ ALLOWED_GROUP_ID kosong. Bot akan berisiko memproses pesan di grup lain.');
+  }
+
+  if (process.env.AI_PROVIDER === 'openrouter' && !process.env.AI_API_KEY) {
+    console.warn('⚠️ AI_PROVIDER=openrouter tapi AI_API_KEY kosong. AI dinonaktifkan.');
+  }
+
+  if (!process.env.AI_MODEL) {
+    console.warn('⚠️ AI_MODEL kosong. Menggunakan default openai/gpt-4o-mini.');
+  }
+
+  if (process.env.OWNER_NUMBER && !normalizePhone(process.env.OWNER_NUMBER)) {
+    console.warn('⚠️ OWNER_NUMBER tidak valid, owner env akan diabaikan.');
+  }
+
+  return ai;
+}
+
 function printStartupSanity() {
   const cmdInfo = getCommandRegistryInfo();
   const reminderInfo = getReminderScheduleInfo();
-  const ai = getAIConfig();
+  const ai = validateEnv(getAIConfig());
   const dataStats = getDataStats();
   const quizStats = getQuizStats();
 
   console.log('=== Bot Startup Sanity Check ===');
   console.log('Session Path:', SESSION_DIR);
-  console.log('Allowed Group ID:', ALLOWED_GROUP_ID);
+  console.log('Allowed Group ID:', ALLOWED_GROUP_ID || '-');
   console.log('Owner Number Loaded:', getOwnerNumber() ? 'yes' : 'no');
   console.log('AI Enabled:', ai.enabled ? 'yes' : 'no');
   console.log('AI Provider:', ai.provider);
@@ -50,7 +77,7 @@ async function startBot() {
     version,
     auth: state,
     logger: pino({ level: process.env.LOG_LEVEL || 'silent' }),
-    browser: ['EnglishBot', 'Chrome', '2.2.0']
+    browser: ['EnglishBot', 'Chrome', '2.3.0']
   });
 
   sock.ev.on('creds.update', saveCreds);

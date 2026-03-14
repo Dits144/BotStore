@@ -7,19 +7,20 @@ module.exports = {
   async execute({ sock, jid, args, runtime }) {
     const input = args.join(' ').trim();
     if (!input) {
-      await sock.sendMessage(jid, { text: '🌍 Format: *.tr <kalimat>* | *.tren <kalimat>* | *.trid <kalimat>*' });
+      await sock.sendMessage(jid, { text: '🌍 Contoh: *.tr halo apa kabar* | *.tren saya ingin belajar* | *.trid I want to learn English*' });
       return;
     }
 
     const mode = runtime?.rawCommand;
     const forceTarget = mode === 'tren' ? 'en' : mode === 'trid' ? 'id' : null;
     const result = await translateSmart(input, { forceTarget });
+    const targetMark = (forceTarget || result.targetLang) === 'en' ? '🇬🇧' : '🇮🇩';
 
     const text = [
       '🌍 *TRANSLATE RESULT* 🌍',
       `📝 Original: ${result.original}`,
-      `✨ Translation: ${result.translation}`,
-      result.natural ? `💬 Natural: ${result.natural}` : null,
+      `${targetMark} Translation: ${result.translation}`,
+      result.natural ? `✨ Natural: ${result.natural}` : null,
       result.fallback ? '⚠️ Menggunakan fallback lokal.' : null,
       result.note ? `ℹ️ ${result.note}` : null
     ].filter(Boolean).join('\n');
