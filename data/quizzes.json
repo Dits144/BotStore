@@ -1,0 +1,332 @@
+[
+  {
+    "id": "q1",
+    "question": "Apa arti kata 'confident'?",
+    "answer": "percaya diri",
+    "options": [
+      "percaya diri",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q2",
+    "question": "Apa arti kata 'improve'?",
+    "answer": "meningkatkan",
+    "options": [
+      "meningkatkan",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q3",
+    "question": "Apa arti kata 'habit'?",
+    "answer": "kebiasaan",
+    "options": [
+      "kebiasaan",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q4",
+    "question": "Apa arti kata 'schedule'?",
+    "answer": "jadwal",
+    "options": [
+      "jadwal",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q5",
+    "question": "Apa arti kata 'mistake'?",
+    "answer": "kesalahan",
+    "options": [
+      "kesalahan",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q6",
+    "question": "Apa arti kata 'practice'?",
+    "answer": "latihan",
+    "options": [
+      "latihan",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q7",
+    "question": "Apa arti kata 'challenge'?",
+    "answer": "tantangan",
+    "options": [
+      "tantangan",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q8",
+    "question": "Apa arti kata 'focus'?",
+    "answer": "fokus",
+    "options": [
+      "fokus",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q9",
+    "question": "Apa arti kata 'effort'?",
+    "answer": "usaha",
+    "options": [
+      "usaha",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q10",
+    "question": "Apa arti kata 'progress'?",
+    "answer": "kemajuan",
+    "options": [
+      "kemajuan",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q11",
+    "question": "Apa arti kata 'fluent'?",
+    "answer": "lancar",
+    "options": [
+      "lancar",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q12",
+    "question": "Apa arti kata 'review'?",
+    "answer": "mengulas",
+    "options": [
+      "mengulas",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q13",
+    "question": "Apa arti kata 'remember'?",
+    "answer": "mengingat",
+    "options": [
+      "mengingat",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q14",
+    "question": "Apa arti kata 'polite'?",
+    "answer": "sopan",
+    "options": [
+      "sopan",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q15",
+    "question": "Apa arti kata 'response'?",
+    "answer": "respon",
+    "options": [
+      "respon",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q16",
+    "question": "Apa arti kata 'grammar'?",
+    "answer": "tata bahasa",
+    "options": [
+      "tata bahasa",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q17",
+    "question": "Apa arti kata 'sentence'?",
+    "answer": "kalimat",
+    "options": [
+      "kalimat",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q18",
+    "question": "Apa arti kata 'translate'?",
+    "answer": "menerjemahkan",
+    "options": [
+      "menerjemahkan",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q19",
+    "question": "Apa arti kata 'meaning'?",
+    "answer": "arti",
+    "options": [
+      "arti",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q20",
+    "question": "Apa arti kata 'pronounce'?",
+    "answer": "mengucapkan",
+    "options": [
+      "mengucapkan",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q21",
+    "question": "Apa arti kata 'listen'?",
+    "answer": "mendengarkan",
+    "options": [
+      "mendengarkan",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q22",
+    "question": "Apa arti kata 'speak'?",
+    "answer": "berbicara",
+    "options": [
+      "berbicara",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q23",
+    "question": "Apa arti kata 'write'?",
+    "answer": "menulis",
+    "options": [
+      "menulis",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q24",
+    "question": "Apa arti kata 'read'?",
+    "answer": "membaca",
+    "options": [
+      "membaca",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q25",
+    "question": "Apa arti kata 'understand'?",
+    "answer": "memahami",
+    "options": [
+      "memahami",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q26",
+    "question": "Apa arti kata 'repeat'?",
+    "answer": "mengulang",
+    "options": [
+      "mengulang",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q27",
+    "question": "Apa arti kata 'vocabulary'?",
+    "answer": "kosakata",
+    "options": [
+      "kosakata",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q28",
+    "question": "Apa arti kata 'goal'?",
+    "answer": "tujuan",
+    "options": [
+      "tujuan",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q29",
+    "question": "Apa arti kata 'consistent'?",
+    "answer": "konsisten",
+    "options": [
+      "konsisten",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  },
+  {
+    "id": "q30",
+    "question": "Apa arti kata 'brave'?",
+    "answer": "berani",
+    "options": [
+      "berani",
+      "jadwal",
+      "tantangan",
+      "latihan"
+    ]
+  }
+]

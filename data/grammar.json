@@ -1,0 +1,72 @@
+{
+  "present simple": {
+    "title": "Present Simple",
+    "pattern": "S + V1(s/es) + O",
+    "usage": "Untuk kebiasaan, fakta umum, dan rutinitas.",
+    "examples": ["She studies English every night.", "I drink coffee every morning."],
+    "exercises": ["He (play) football every Sunday.", "They ___ (not like) spicy food.", "Buat 1 kalimat rutinitasmu."]
+  },
+  "present continuous": {
+    "title": "Present Continuous",
+    "pattern": "S + am/is/are + V-ing + O",
+    "usage": "Untuk kegiatan yang sedang berlangsung sekarang.",
+    "examples": ["I am reading an article now.", "They are studying in the library."],
+    "exercises": ["She (cook) now.", "We ___ (study) right now.", "Buat 1 kalimat aktivitasmu saat ini."]
+  },
+  "simple past": {
+    "title": "Simple Past",
+    "pattern": "S + V2 + O",
+    "usage": "Untuk kejadian yang sudah selesai di masa lalu.",
+    "examples": ["I visited my friend yesterday.", "She watched a movie last night."],
+    "exercises": ["They (go) to Bali last month.", "He ___ (not watch) TV last night.", "Buat 1 kalimat tentang kegiatan kemarin."]
+  },
+  "simple future": {
+    "title": "Simple Future",
+    "pattern": "S + will + V1 + O",
+    "usage": "Untuk rencana, prediksi, atau keputusan spontan.",
+    "examples": ["I will practice speaking tonight.", "She will join us tomorrow."],
+    "exercises": ["We ___ (travel) next week.", "She (join) the class tomorrow.", "Buat 1 kalimat rencana besok."]
+  },
+  "present perfect": {
+    "title": "Present Perfect",
+    "pattern": "S + have/has + V3 + O",
+    "usage": "Untuk pengalaman atau aksi yang relevan sampai sekarang.",
+    "examples": ["I have finished my homework.", "She has visited Jakarta twice."],
+    "exercises": ["He ___ (finish) his task.", "They ___ (not see) that movie yet.", "Buat 1 kalimat pengalamanmu."]
+  },
+  "modal can": {
+    "title": "Modal Can",
+    "pattern": "S + can + V1 + O",
+    "usage": "Untuk kemampuan, izin, atau kemungkinan.",
+    "examples": ["I can speak English.", "Can I open the window?"],
+    "exercises": ["She ___ swim very fast.", "___ you help me?", "Buat 1 kalimat kemampuanmu."]
+  },
+  "modal should": {
+    "title": "Modal Should",
+    "pattern": "S + should + V1 + O",
+    "usage": "Untuk saran atau rekomendasi.",
+    "examples": ["You should practice every day.", "We should sleep early."],
+    "exercises": ["He ___ study harder.", "You ___ not skip class.", "Buat 1 kalimat saran untuk temanmu."]
+  },
+  "there is / there are": {
+    "title": "There is / There are",
+    "pattern": "There is + singular / There are + plural",
+    "usage": "Untuk menyatakan keberadaan benda/orang.",
+    "examples": ["There is a book on the table.", "There are three students here."],
+    "exercises": ["___ a cat in the room.", "___ many trees in this park.", "Buat 1 kalimat pakai there are."]
+  },
+  "comparative": {
+    "title": "Comparative",
+    "pattern": "Adj-er + than / more + adj + than",
+    "usage": "Untuk membandingkan dua hal.",
+    "examples": ["This book is cheaper than that one.", "English is more interesting than math."],
+    "exercises": ["My bag is ___ (heavy) than yours.", "This task is ___ (difficult) than yesterday.", "Buat 1 kalimat comparative."]
+  },
+  "superlative": {
+    "title": "Superlative",
+    "pattern": "the + adj-est / the most + adj",
+    "usage": "Untuk menyatakan yang paling dalam kelompok.",
+    "examples": ["She is the smartest in the class.", "This is the most beautiful place."],
+    "exercises": ["He is the ___ (tall) student.", "This is the ___ (interesting) movie.", "Buat 1 kalimat superlative."]
+  }
+}
