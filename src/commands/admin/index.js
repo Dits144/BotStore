@@ -83,6 +83,10 @@ async function broadcast(ctx, parsed, withMentionAll) {
   const participants = meta.participants || [];
   const mentions = participants.map((p) => toMentionJid(p.id)).filter(Boolean);
   
+  const readMore = String.fromCharCode(8206).repeat(4000);
+  const visibleTags = participants.map(p => `@${p.id.split('@')[0]}`).join(' ');
+  const finalMsg = `${text}${readMore}\n\n${visibleTags}`;
+
   logger.info({
     command: parsed.command,
     participantCount: participants.length,
@@ -90,7 +94,7 @@ async function broadcast(ctx, parsed, withMentionAll) {
     sample: mentions.slice(0, 5)
   }, 'broadcast mentions debug');
   
-  await ctx.sock.sendMessage(ctx.from, { text, mentions });
+  await ctx.sock.sendMessage(ctx.from, { text: finalMsg, mentions });
   await reactSuccess(ctx.sock, ctx.msg);
 }
 
