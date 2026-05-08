@@ -25,8 +25,10 @@ function buildMentionText(textTemplate = '', targets = []) {
 
 function renderMentionText(textTemplate = '', targetJid = '') {
   const normalized = toMentionJid(targetJid);
-  // Jangan ubah @user menjadi nomor jid agar tidak terlihat aneh (misal: @+242 xxx)
-  const renderedText = String(textTemplate || '');
+  const userNumber = normalized ? normalized.split('@')[0] : 'user';
+  
+  // Mengganti @user menjadi @nomor 
+  const renderedText = String(textTemplate || '').replaceAll('@user', `@${userNumber}`);
 
   return {
     text: renderedText,
