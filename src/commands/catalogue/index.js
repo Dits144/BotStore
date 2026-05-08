@@ -165,12 +165,20 @@ async function productTrigger(ctx, rawText) {
   const suggestions = suggestClosest(name, rows.map((r) => r.item_name));
   if (!suggestions.length) return;
 
-  if (suggestions.length === 1) {
-    await ctx.send(`❓ Apakah yang kamu maksud: ${suggestions[0]} ?`);
-    return;
+  const bestMatchName = suggestions[0];
+  const bestMatchItem = rows.find(r => r.item_name === bestMatchName);
+  
+  if (bestMatchItem) {
+    const captionText = `❓ Maksud Anda ${bestMatchName}?\n\n${bestMatchItem.description}`;
+    if (bestMatchItem.media_path && fs.existsSync(bestMatchItem.media_path)) {
+      await ctx.sock.sendMessage(ctx.from, {
+        image: fs.readFileSync(bestMatchItem.media_path),
+        caption: captionText
+      }, { quoted: ctx.msg });
+      return;
+    }
+    await ctx.send(captionText);
   }
-
-  await ctx.send(`❓ Mungkin yang kamu maksud:\n${suggestions.map((s) => `• ${s}`).join('\n')}`);
 }
 
 async function maybeSaveMedia(ctx, name) {

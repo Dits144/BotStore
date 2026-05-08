@@ -23,10 +23,10 @@ function buildMentionText(textTemplate = '', targets = []) {
   return { text: renderedText, mentions: [...new Set(safeTargets)] };
 }
 
-function renderMentionText(textTemplate = '', targetJid = '', targetName = 'user') {
+function renderMentionText(textTemplate = '', targetJid = '') {
   const normalized = toMentionJid(targetJid);
-  const safeName = String(targetName || 'user').trim().replace(/[^a-zA-Z0-9_]/g, '').slice(0, 15) || 'user';
-  const renderedText = String(textTemplate || '').replaceAll('@user', `@${safeName}`);
+  const userNumber = normalized ? normalized.split('@')[0] : 'user';
+  const renderedText = String(textTemplate || '').replaceAll('@user', `@${userNumber}`);
 
   return {
     text: renderedText,

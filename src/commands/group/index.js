@@ -62,7 +62,7 @@ async function welcomeNewMembers(sock, update) {
       'Halo @user\nSelamat datang di grup *{group}* ✨\n\nSemoga betah di sini, jangan lupa baca deskripsi grup dan ikuti aturan yang berlaku yaa.';
 
     const bodyRaw = textTemplate.replaceAll('{group}', groupName);
-    const mention = renderMentionText(bodyRaw, userJid, 'user');
+    const mention = renderMentionText(bodyRaw, userJid);
     const caption = `┏━━〔 👋 SELAMAT DATANG 〕━━┓\n┗━━━━━━━━━━━━━━━━━━━━┛\n\n${mention.text}`;
 
     try {

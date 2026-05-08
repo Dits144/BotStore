@@ -66,7 +66,7 @@ async function setWelcomeTemplate(ctx, parsed) {
 async function broadcast(ctx, parsed, withMentionAll) {
   const text = parsed.raw.slice(parsed.command.length).trim();
   if (!text) {
-    await sendMinimalError(ctx.sock, ctx.from, formatWrongExample(`${parsed.command} halo semua nya`));
+    await sendMinimalError(ctx.sock, ctx.from, formatWrongExample(`${parsed.command} Haiii`));
     return;
   }
 
@@ -80,8 +80,16 @@ async function broadcast(ctx, parsed, withMentionAll) {
   }
 
   const meta = await ctx.sock.groupMetadata(ctx.from);
-  const mentions = (meta.participants || []).map((p) => toMentionJid(p.id)).filter(Boolean).slice(0, 250);
-  logger.info({ command: parsed.command, mentionsCount: mentions.length, groupId: ctx.from }, 'broadcast mentions prepared');
+  const participants = meta.participants || [];
+  const mentions = participants.map((p) => toMentionJid(p.id)).filter(Boolean);
+  
+  logger.info({
+    command: parsed.command,
+    participantCount: participants.length,
+    mentionsCount: mentions.length,
+    sample: mentions.slice(0, 5)
+  }, 'broadcast mentions debug');
+  
   await ctx.sock.sendMessage(ctx.from, { text, mentions });
   await reactSuccess(ctx.sock, ctx.msg);
 }
@@ -104,7 +112,7 @@ async function transactionNote(ctx, statusCode) {
 
   await reactLoading(ctx.sock, ctx.msg);
   await deleteMessageForEveryone(ctx.sock, ctx.msg);
-  const mention = renderMentionText('@user Terima kasih sudah order!', userJid, 'user');
+  const mention = renderMentionText('@user Terima kasih sudah order!', userJid);
   logger.info({ command: statusCode, targetMentionJid: userJid }, 'transaction mention target');
   await ctx.sock.sendMessage(ctx.from, {
     text:
