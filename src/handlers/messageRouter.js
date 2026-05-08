@@ -30,6 +30,8 @@ const commandRegistry = {
   setwelcome: adminCommands.handle,
   h: adminCommands.handle,
   hall: adminCommands.handle,
+  wptagall: adminCommands.handle,
+  everyone: adminCommands.handle,
   p: adminCommands.handle,
   d: adminCommands.handle,
   r: adminCommands.handle,

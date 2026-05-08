@@ -28,8 +28,7 @@ async function handle(ctx, parsed) {
 
   if (parsed.command === 'welcome') return setWelcomeStatus(ctx, parsed);
   if (parsed.command === 'setwelcome') return setWelcomeTemplate(ctx, parsed);
-  if (parsed.command === 'h') return broadcast(ctx, parsed, true);
-  if (parsed.command === 'hall') return broadcast(ctx, parsed, true);
+  if (['h', 'hall', 'wptagall', 'everyone'].includes(parsed.command)) return broadcast(ctx, parsed, true);
   if (['p', 'd', 'r', 'b'].includes(parsed.command)) return transactionNote(ctx, parsed.command);
 }
 

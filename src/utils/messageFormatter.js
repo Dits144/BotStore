@@ -27,8 +27,8 @@ function renderMentionText(textTemplate = '', targetJid = '') {
   const normalized = toMentionJid(targetJid);
   const userNumber = normalized ? normalized.split('@')[0] : 'user';
   
-  // Mengganti @user menjadi @nomor 
-  const renderedText = String(textTemplate || '').replaceAll('@user', `@${userNumber}`);
+  // Mengganti @user menjadi @nomor@s.whatsapp.net sesuai request
+  const renderedText = String(textTemplate || '').replaceAll('@user', `@${userNumber}@s.whatsapp.net`);
 
   return {
     text: renderedText,
