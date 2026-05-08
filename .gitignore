@@ -1,0 +1,6 @@
+node_modules/
+sessions/
+data/*.sqlite
+data/*.sqlite-shm
+data/*.sqlite-wal
+data/media/
