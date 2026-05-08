@@ -65,7 +65,7 @@ async function setWelcomeTemplate(ctx, parsed) {
 async function broadcast(ctx, parsed, withMentionAll) {
   const text = parsed.raw.slice(parsed.command.length).trim();
   if (!text) {
-    await sendMinimalError(ctx.sock, ctx.from, formatWrongExample(`${parsed.command} Haiii`));
+    await sendMinimalError(ctx.sock, ctx.from, formatWrongExample(`${parsed.command} Halo semua`));
     return;
   }
 
@@ -80,7 +80,7 @@ async function broadcast(ctx, parsed, withMentionAll) {
 
   const meta = await ctx.sock.groupMetadata(ctx.from);
   const participants = meta.participants || [];
-  const mentions = participants.map((p) => toMentionJid(p.id)).filter(Boolean);
+  const mentions = [...new Set(participants.map((p) => toMentionJid(p.id)).filter(Boolean))];
   
   logger.info({
     command: parsed.command,
