@@ -80,15 +80,8 @@ async function broadcast(ctx, parsed, withMentionAll) {
 
   const meta = await ctx.sock.groupMetadata(ctx.from);
   const participants = meta.participants || [];
+  const mentions = participants.map((p) => toMentionJid(p.id)).filter(Boolean);
   
-  let textOut = text + '\n\n';
-  let mentions = [];
-
-  for (let participant of participants) {
-    mentions.push(toMentionJid(participant.id));
-    textOut += `@${participant.id.split('@')[0]} `;
-  }
-
   logger.info({
     command: parsed.command,
     participantCount: participants.length,
@@ -96,7 +89,7 @@ async function broadcast(ctx, parsed, withMentionAll) {
     sample: mentions.slice(0, 5)
   }, 'broadcast mentions debug');
   
-  await ctx.sock.sendMessage(ctx.from, { text: textOut.trim(), mentions });
+  await ctx.sock.sendMessage(ctx.from, { text, mentions });
   await reactSuccess(ctx.sock, ctx.msg);
 }
 
