@@ -2,13 +2,40 @@ const logger = require('../config/logger');
 const { normalizeJid } = require('./jid');
 
 async function isBotGroupAdmin(sock, groupId) {
+  const botJid = sock?.user?.id || '';
+  const normalizedBotJid = normalizeJid(botJid);
   try {
-    if (!groupId.endsWith('@g.us')) return false;
+    if (!groupId || !groupId.endsWith('@g.us')) {
+      logger.debug({ groupId }, '[isBotGroupAdmin] invalid or non-group JID');
+      return false;
+    }
     const meta = await sock.groupMetadata(groupId);
-    const myJid = normalizeJid(sock.user?.id || '');
-    const me = (meta.participants || []).find((p) => normalizeJid(p.id) === myJid);
-    return Boolean(me && (me.admin === 'admin' || me.admin === 'superadmin'));
-  } catch {
+    const participants = meta.participants || [];
+    const me = participants.find((p) => normalizeJid(p.id) === normalizedBotJid);
+    const detectedBotAdmin = Boolean(me && (me.admin === 'admin' || me.admin === 'superadmin'));
+
+    const adminList = participants
+      .filter(p => p.admin === 'admin' || p.admin === 'superadmin')
+      .map(p => ({ id: p.id, normalized: normalizeJid(p.id), role: p.admin }));
+
+    logger.info({
+      botJid,
+      normalizedBotJid,
+      groupId,
+      participantCount: participants.length,
+      participantAdminList: adminList,
+      detectedBotAdmin,
+      meParticipant: me ? { id: me.id, normalized: normalizeJid(me.id), role: me.admin } : null
+    }, '[isBotGroupAdmin] bot group admin check result');
+
+    return detectedBotAdmin;
+  } catch (error) {
+    logger.error({
+      err: error,
+      botJid,
+      normalizedBotJid,
+      groupId
+    }, '[isBotGroupAdmin] check failed');
     return false;
   }
 }

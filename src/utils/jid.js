@@ -13,7 +13,7 @@ function normalizeUserJid(input = '') {
 function normalizeGroupJid(input = '') {
   const raw = String(input || '').trim().toLowerCase();
   if (!raw) return '';
-  const user = raw.split('@')[0].replace(/[^0-9]/g, '');
+  const user = raw.split('@')[0].replace(/[^0-9-]/g, '');
   if (!user) return '';
   return `${user}@g.us`;
 }
