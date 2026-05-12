@@ -1,12 +1,11 @@
 const logger = require('../config/logger');
-const { normalizeJid } = require('./jid');
+const { normalizeJid, getBotJids } = require('./jid');
 
 async function getBotGroupAdminDiagnostics(sock, groupId) {
-  const botJid = sock?.user?.id || sock?.user?.jid || sock?.authState?.creds?.me?.id || '';
-  const normalizedBotJid = normalizeJid(botJid);
+  const botJids = getBotJids(sock);
   const diagnostics = {
-    botJid,
-    normalizedBotJid,
+    botJid: sock?.user?.id || sock?.user?.jid || sock?.authState?.creds?.me?.id || '',
+    normalizedBotJid: botJids.join(', '),
     groupId,
     error: null,
     participantCount: 0,
@@ -25,7 +24,7 @@ async function getBotGroupAdminDiagnostics(sock, groupId) {
     const participants = meta.participants || [];
     diagnostics.participantCount = participants.length;
     
-    const me = participants.find((p) => normalizeJid(p.id) === normalizedBotJid);
+    const me = participants.find((p) => botJids.includes(normalizeJid(p.id)));
     if (me) {
       diagnostics.meInParticipants = true;
       diagnostics.meAdminStatus = me.admin;

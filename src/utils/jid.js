@@ -51,6 +51,24 @@ function jidToPhone(jid = '') {
   return normalizeUserJid(jid).split('@')[0] || '-';
 }
 
+function getBotJids(sock) {
+  const jids = new Set();
+  
+  // 1. Phone number based
+  const id = sock?.user?.id || sock?.user?.jid || sock?.authState?.creds?.me?.id || '';
+  if (id) {
+    jids.add(normalizeUserJid(id));
+  }
+  
+  // 2. LID based (WhatsApp LID system)
+  const lid = sock?.user?.lid || sock?.authState?.creds?.me?.lid || '';
+  if (lid) {
+    jids.add(normalizeUserJid(lid));
+  }
+  
+  return Array.from(jids).filter(Boolean);
+}
+
 module.exports = {
   normalizeUserJid,
   normalizeGroupJid,
@@ -58,6 +76,7 @@ module.exports = {
   getSenderJid,
   getChatJid,
   jidToPhone,
+  getBotJids,
   // backward compatibility aliases
   normalizeJid: normalizeAnyJid,
   toMentionJid: normalizeUserJid,

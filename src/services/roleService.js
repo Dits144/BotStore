@@ -1,7 +1,7 @@
 const ownerRepository = require('../repositories/ownerRepository');
 const config = require('../config/env');
 const logger = require('../config/logger');
-const { normalizeUserJid, normalizeGroupJid } = require('../utils/jid');
+const { normalizeUserJid, normalizeGroupJid, getBotJids } = require('../utils/jid');
 
 function isPrimaryOwner(jid) {
   const normalized = normalizeUserJid(jid);
@@ -19,8 +19,8 @@ async function isBotOwner(jid) {
 async function isGroupAdmin(sock, groupId, userJid, metadata = null) {
   const normalizedGroup = normalizeGroupJid(groupId);
   const normalizedUser = normalizeUserJid(userJid);
+  const botJids = getBotJids(sock);
   const botJid = sock?.user?.id || sock?.user?.jid || sock?.authState?.creds?.me?.id || '';
-  const normalizedBotJid = normalizeUserJid(botJid);
 
   try {
     const meta = metadata || await sock.groupMetadata(normalizedGroup);
@@ -29,7 +29,7 @@ async function isGroupAdmin(sock, groupId, userJid, metadata = null) {
     const participant = participants.find((p) => normalizeUserJid(p.id) === normalizedUser);
     const detectedSenderAdmin = Boolean(participant && (participant.admin === 'admin' || participant.admin === 'superadmin'));
 
-    const meParticipant = participants.find((p) => normalizeUserJid(p.id) === normalizedBotJid);
+    const meParticipant = participants.find((p) => botJids.includes(normalizeUserJid(p.id)));
     const detectedBotAdmin = Boolean(meParticipant && (meParticipant.admin === 'admin' || meParticipant.admin === 'superadmin'));
 
     const adminList = participants
@@ -38,7 +38,7 @@ async function isGroupAdmin(sock, groupId, userJid, metadata = null) {
 
     logger.info({
       botJid,
-      normalizedBotJid,
+      normalizedBotJid: botJids.join(', '),
       groupId,
       normalizedGroup,
       userJid,
