@@ -2,7 +2,7 @@ const logger = require('../config/logger');
 const { normalizeJid } = require('./jid');
 
 async function isBotGroupAdmin(sock, groupId) {
-  const botJid = sock?.user?.id || '';
+  const botJid = sock?.user?.id || sock?.user?.jid || sock?.authState?.creds?.me?.id || '';
   const normalizedBotJid = normalizeJid(botJid);
   try {
     if (!groupId || !groupId.endsWith('@g.us')) {

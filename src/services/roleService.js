@@ -19,7 +19,7 @@ async function isBotOwner(jid) {
 async function isGroupAdmin(sock, groupId, userJid, metadata = null) {
   const normalizedGroup = normalizeGroupJid(groupId);
   const normalizedUser = normalizeUserJid(userJid);
-  const botJid = sock?.user?.id || '';
+  const botJid = sock?.user?.id || sock?.user?.jid || sock?.authState?.creds?.me?.id || '';
   const normalizedBotJid = normalizeUserJid(botJid);
 
   try {
