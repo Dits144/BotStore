@@ -3,7 +3,7 @@ const { canManageCatalogue } = require('../../middlewares/roleGuard');
 const { formatWrongExample, renderMentionText } = require('../../utils/messageFormatter');
 const groupSettingsRepository = require('../../repositories/groupSettingsRepository');
 const { nowJakarta, formatDate, formatTime } = require('../../utils/time');
-const { normalizeJid, toMentionJid } = require('../../utils/jid');
+const { normalizeUserJid, toMentionJid } = require('../../utils/jid');
 const logger = require('../../config/logger');
 const {
   reactLoading,
@@ -28,7 +28,7 @@ async function handle(ctx, parsed) {
 
   if (parsed.command === 'welcome') return setWelcomeStatus(ctx, parsed);
   if (parsed.command === 'setwelcome') return setWelcomeTemplate(ctx, parsed);
-  if (['h', 'hall', 'wptagall', 'everyone'].includes(parsed.command)) return broadcast(ctx, parsed, true);
+  if (['h', 'hall', 'wptagall', 'everyone'].includes(parsed.command)) return broadcast(ctx, parsed);
   if (['p', 'd', 'r', 'b'].includes(parsed.command)) return transactionNote(ctx, parsed.command);
 }
 
@@ -43,7 +43,11 @@ async function setWelcomeStatus(ctx, parsed) {
   await groupSettingsRepository.setWelcomeEnabled(ctx.from, action === 'on');
   await deleteMessageForEveryone(ctx.sock, ctx.msg);
   await reactSuccess(ctx.sock, ctx.msg);
-  await sendMinimalSuccess(ctx.sock, ctx.from, action === 'on' ? '✅ Welcome diaktifkan.' : '✅ Welcome dinonaktifkan.');
+  await sendMinimalSuccess(
+    ctx.sock,
+    ctx.from,
+    action === 'on' ? '✅ Welcome diaktifkan.' : '✅ Welcome dinonaktifkan.'
+  );
 }
 
 async function setWelcomeTemplate(ctx, parsed) {
@@ -51,7 +55,11 @@ async function setWelcomeTemplate(ctx, parsed) {
   const [_, templateRaw] = raw.split('@');
 
   if (!templateRaw) {
-    await sendMinimalError(ctx.sock, ctx.from, '❌ Format salah\nContoh:\nsetwelcome@Halo @user, selamat datang di {group}');
+    await sendMinimalError(
+      ctx.sock,
+      ctx.from,
+      '❌ Format salah\nContoh:\nsetwelcome@Halo @user, selamat datang di {group}'
+    );
     return;
   }
 
@@ -62,7 +70,17 @@ async function setWelcomeTemplate(ctx, parsed) {
   await sendMinimalSuccess(ctx.sock, ctx.from, '✅ Welcome diperbarui.');
 }
 
-async function broadcast(ctx, parsed, withMentionAll) {
+// ---------------------------------------------------------------
+// broadcast — HIDDEN TAG-ALL
+//
+// Kirim pesan dengan teks bersih (tanpa @nomor tampil),
+// tapi semua anggota grup masuk ke `mentions` array
+// sehingga WhatsApp notif mereka semua.
+//
+// Contoh: .h halo semua → dikirim "halo semua" + mentions=[semua JID]
+// ---------------------------------------------------------------
+async function broadcast(ctx, parsed) {
+  // Ambil teks setelah nama command
   const text = parsed.raw.slice(parsed.command.length).trim();
   if (!text) {
     await sendMinimalError(ctx.sock, ctx.from, formatWrongExample(`${parsed.command} Halo semua`));
@@ -72,33 +90,80 @@ async function broadcast(ctx, parsed, withMentionAll) {
   await reactLoading(ctx.sock, ctx.msg);
   await deleteMessageForEveryone(ctx.sock, ctx.msg);
 
-  if (!withMentionAll) {
-    await ctx.sock.sendMessage(ctx.from, { text });
-    await reactSuccess(ctx.sock, ctx.msg);
+  // Ambil semua participant dari groupMetadata
+  let mentions = [];
+  let participants = [];
+  try {
+    const meta = await ctx.sock.groupMetadata(ctx.from);
+    participants = meta.participants || [];
+
+    // Map ke JID yang valid — toMentionJid normalizes ke 628xxx@s.whatsapp.net
+    mentions = [...new Set(
+      participants
+        .map((p) => toMentionJid(p.id))
+        .filter(Boolean)
+    )];
+  } catch (err) {
+    logger.error({ err, groupId: ctx.from }, '[broadcast] gagal ambil groupMetadata');
+    await reactError(ctx.sock, ctx.msg);
+    await sendMinimalError(ctx.sock, ctx.from, '❌ Gagal mengambil data anggota grup.');
     return;
   }
 
-  const meta = await ctx.sock.groupMetadata(ctx.from);
-  const participants = meta.participants || [];
-  const mentions = [...new Set(participants.map((p) => toMentionJid(p.id)).filter(Boolean))];
-  
-  logger.info({
-    command: parsed.command,
-    participantCount: participants.length,
-    mentionsCount: mentions.length,
-    sample: mentions.slice(0, 5)
-  }, 'broadcast mentions debug');
-  
-  await ctx.sock.sendMessage(ctx.from, { text, mentions });
+  // Debug log wajib
+  logger.info(
+    {
+      command: parsed.command,
+      groupId: ctx.from,
+      participantCount: participants.length,
+      mentionCount: mentions.length,
+      sampleMentions: mentions.slice(0, 5)
+    },
+    '[broadcast] hidden tag-all debug'
+  );
+
+  // Kirim: text BERSIH (tidak ada @nomor tampil di chat),
+  // tapi mentions array berisi semua JID → semua dapat notif
+  await ctx.sock.sendMessage(ctx.from, {
+    text,      // ← teks murni, tidak ada @user / @semua / @nomor
+    mentions   // ← semua JID anggota grup → hidden tag-all
+  });
+
   await reactSuccess(ctx.sock, ctx.msg);
 }
 
+// ---------------------------------------------------------------
+// transactionNote — reply ke customer dengan mention aktif
+//
+// Bot harus di-reply pesan customer, lalu ketik .p / .d / .r / .b
+// Target mention diambil dari contextInfo.participant (JID pengirim
+// pesan yang di-reply), bukan dari sender command.
+// ---------------------------------------------------------------
 async function transactionNote(ctx, statusCode) {
-  const quoted = ctx.msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-  const participant = ctx.msg.message?.extendedTextMessage?.contextInfo?.participant;
+  // Ambil quoted message dan participant (pengirim pesan yang di-reply)
+  const contextInfo = ctx.msg.message?.extendedTextMessage?.contextInfo;
+  const quoted = contextInfo?.quotedMessage;
 
-  if (!quoted || !participant) {
-    await sendMinimalError(ctx.sock, ctx.from, '❌ Perintah ini harus dipakai dengan me-reply pesan customer.');
+  // participant di contextInfo = JID pengirim pesan yang di-reply
+  const rawParticipant =
+    contextInfo?.participant ||
+    contextInfo?.remoteJid ||
+    '';
+
+  if (!quoted || !rawParticipant) {
+    await sendMinimalError(
+      ctx.sock,
+      ctx.from,
+      '❌ Perintah ini harus dipakai dengan me-reply pesan customer.'
+    );
+    return;
+  }
+
+  // Normalize JID target (orang yang dipesan/di-reply)
+  const userJid = toMentionJid(rawParticipant) || normalizeUserJid(rawParticipant);
+
+  if (!userJid) {
+    await sendMinimalError(ctx.sock, ctx.from, '❌ Gagal membaca JID customer dari pesan yang di-reply.');
     return;
   }
 
@@ -107,12 +172,25 @@ async function transactionNote(ctx, statusCode) {
   const note = extractQuotedText(quoted) || '-';
   const now = nowJakarta();
   const trxId = `TRX-${now.format('YYYYMMDD')}-${crypto.randomInt(1000, 9999)}`;
-  const userJid = toMentionJid(participant);
+
+  // Render mention: @user → @628xxx, mentions=[userJid]
+  const mention = renderMentionText('@user Terima kasih sudah order! 🙏', userJid);
+
+  // Debug log wajib
+  logger.info(
+    {
+      command: statusCode,
+      rawParticipant,
+      targetJid: userJid,
+      renderedText: mention.text,
+      mentions: mention.mentions
+    },
+    '[transactionNote] mention debug'
+  );
 
   await reactLoading(ctx.sock, ctx.msg);
   await deleteMessageForEveryone(ctx.sock, ctx.msg);
-  const mention = renderMentionText('@user Terima kasih sudah order!', userJid);
-  logger.info({ command: statusCode, targetMentionJid: userJid }, 'transaction mention target');
+
   await ctx.sock.sendMessage(ctx.from, {
     text:
       `「 TRANSAKSI ${status.toUpperCase()} 」\n\n` +
@@ -122,8 +200,9 @@ async function transactionNote(ctx, statusCode) {
       `✨ STATUS : ${status}\n\n` +
       `📝 Catatan : ${note}\n\n` +
       `${mention.text}`,
-    mentions: mention.mentions
+    mentions: mention.mentions   // ← JID target ada di sini → mention aktif
   });
+
   await reactSuccess(ctx.sock, ctx.msg);
 }
 

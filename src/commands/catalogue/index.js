@@ -9,7 +9,9 @@ const { nowJakarta, formatDate, formatTime } = require('../../utils/time');
 const { deleteMessageForEveryone } = require('../../utils/admin');
 const { reactLoading, reactSuccess, reactError, sendMinimalSuccess, sendMinimalError } = require('../../utils/chatUx');
 const { suggestClosest } = require('../../utils/typo');
+const { toMentionJid } = require('../../utils/jid');
 const config = require('../../config/env');
+const logger = require('../../config/logger');
 
 async function handle(ctx, parsed) {
   if (!ctx.isGroup) {
@@ -44,25 +46,35 @@ async function listCatalogue(ctx) {
   const listBody = rows.map((r) => `┃ 💎 ${r.item_name}`).join('\n');
   const now = nowJakarta();
 
-  const mention = renderMentionText('@user', ctx.sender, 'user');
-  await ctx.send(
-    `┏━━〔 ⚙ ${groupName} 〕━━┓\n` +
-    `┃ ◆ ◆ ◆ ◆ ◆ ◆\n` +
-    `┗━━━━━━━━━━━━━┛\n` +
-    `       ⋮\n` +
-    `     ${mention.text}\n\n` +
-    `⚡ Available Services\n\n` +
-    `⏱ time : ${formatTime(now)}\n` +
-    `📅 date : ${formatDate(now)}\n\n` +
-    `╭──〔 📦 CATALOGUE 〕──╮\n` +
-    `${listBody}\n` +
-    `╰────────────────────╯\n\n` +
-    `📌 NOTE\n` +
-    `• ketik nama produk untuk melihat detail\n` +
-    `• atau gunakan menu bot yang tersedia\n` +
-    `• transaksi hanya melalui admin`,
-    { mentions: mention.mentions }
+  // FIX: renderMentionText hanya menerima 2 argumen (template, targetJid)
+  // ctx.sender sudah merupakan JID pengirim yang benar (dari getSenderJid di messageRouter)
+  const senderJid = toMentionJid(ctx.sender) || ctx.sender;
+  const mention = renderMentionText('@user', senderJid);
+
+  logger.debug(
+    { senderJid, renderedText: mention.text, mentions: mention.mentions },
+    '[listCatalogue] sender mention debug'
   );
+
+  await ctx.sock.sendMessage(ctx.from, {
+    text:
+      `┏━━〔 ⚙ ${groupName} 〕━━┓\n` +
+      `┃ ◆ ◆ ◆ ◆ ◆ ◆\n` +
+      `┗━━━━━━━━━━━━━┛\n` +
+      `       ⋮\n` +
+      `     ${mention.text}\n\n` +
+      `⚡ Available Services\n\n` +
+      `⏱ time : ${formatTime(now)}\n` +
+      `📅 date : ${formatDate(now)}\n\n` +
+      `╭──〔 📦 CATALOGUE 〕──╮\n` +
+      `${listBody}\n` +
+      `╰────────────────────╯\n\n` +
+      `📌 NOTE\n` +
+      `• ketik nama produk untuk melihat detail\n` +
+      `• atau gunakan menu bot yang tersedia\n` +
+      `• transaksi hanya melalui admin`,
+    mentions: mention.mentions  // ← JID sender ada di sini → mention aktif
+  });
 }
 
 async function addList(ctx, parsed) {
@@ -76,7 +88,6 @@ async function addList(ctx, parsed) {
 
   const name = normalizeText(nameRaw);
   const description = descRaw.trim();
-  const hasImage = Boolean(ctx.msg?.message?.imageMessage);
   await reactLoading(ctx.sock, ctx.msg);
 
   const media = await maybeSaveMedia(ctx, name);
@@ -91,7 +102,11 @@ async function addList(ctx, parsed) {
     await catalogueRepository.addItem(ctx.from, name, description, ctx.sender, media || {});
     await deleteMessageForEveryone(ctx.sock, ctx.msg);
     await reactSuccess(ctx.sock, ctx.msg);
-    await sendMinimalSuccess(ctx.sock, ctx.from, media?.path ? '✅ List + media berhasil ditambahkan.' : '✅ List ditambahkan.');
+    await sendMinimalSuccess(
+      ctx.sock,
+      ctx.from,
+      media?.path ? '✅ List + media berhasil ditambahkan.' : '✅ List ditambahkan.'
+    );
   } catch {
     await reactError(ctx.sock, ctx.msg);
     await sendMinimalError(ctx.sock, ctx.from, '❌ Gagal menambahkan list.');
@@ -150,13 +165,13 @@ async function productTrigger(ctx, rawText) {
   const item = await catalogueRepository.getItem(ctx.from, name);
   if (item) {
     if (item.media_path && fs.existsSync(item.media_path)) {
-      await ctx.sock.sendMessage(ctx.from, {
-        image: fs.readFileSync(item.media_path),
-        caption: item.description
-      }, { quoted: ctx.msg });
+      await ctx.sock.sendMessage(
+        ctx.from,
+        { image: fs.readFileSync(item.media_path), caption: item.description },
+        { quoted: ctx.msg }
+      );
       return;
     }
-
     await ctx.send(item.description);
     return;
   }
@@ -166,15 +181,16 @@ async function productTrigger(ctx, rawText) {
   if (!suggestions.length) return;
 
   const bestMatchName = suggestions[0];
-  const bestMatchItem = rows.find(r => r.item_name === bestMatchName);
-  
+  const bestMatchItem = rows.find((r) => r.item_name === bestMatchName);
+
   if (bestMatchItem) {
     const captionText = `❓ Maksud Anda ${bestMatchName}?\n\n${bestMatchItem.description}`;
     if (bestMatchItem.media_path && fs.existsSync(bestMatchItem.media_path)) {
-      await ctx.sock.sendMessage(ctx.from, {
-        image: fs.readFileSync(bestMatchItem.media_path),
-        caption: captionText
-      }, { quoted: ctx.msg });
+      await ctx.sock.sendMessage(
+        ctx.from,
+        { image: fs.readFileSync(bestMatchItem.media_path), caption: captionText },
+        { quoted: ctx.msg }
+      );
       return;
     }
     await ctx.send(captionText);
