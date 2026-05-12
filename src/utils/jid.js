@@ -4,7 +4,7 @@ function normalizeUserJid(input = '') {
 
   let user = raw;
   if (raw.includes('@')) user = raw.split('@')[0];
-  user = user.split(':')[0].replace(/[^0-9]/g, '');
+  user = user.split(':')[0].split('.')[0].replace(/[^0-9]/g, '');
   if (!user) return '';
 
   return `${user}@s.whatsapp.net`;
