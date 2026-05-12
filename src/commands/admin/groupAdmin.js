@@ -3,7 +3,7 @@
 // Permission: Admin grup ATAU Owner Bot, bot harus admin grup
 
 const { canManageCatalogue } = require('../../middlewares/roleGuard');
-const { isBotGroupAdmin } = require('../../utils/admin');
+const { getBotGroupAdminDiagnostics } = require('../../utils/admin');
 const {
   reactLoading,
   reactSuccess,
@@ -31,13 +31,21 @@ async function handle(ctx, parsed) {
   }
 
   // Bot harus admin grup agar bisa mengubah setting grup
-  const botIsAdmin = await isBotGroupAdmin(ctx.sock, ctx.from);
-  if (!botIsAdmin) {
-    await sendMinimalError(
-      ctx.sock,
-      ctx.from,
-      '❌ Bot harus menjadi admin grup untuk menggunakan command ini.'
-    );
+  const diag = await getBotGroupAdminDiagnostics(ctx.sock, ctx.from);
+  if (!diag.isAdmin) {
+    const diagText = 
+      `❌ *Bot harus menjadi admin grup untuk menggunakan command ini.*\n\n` +
+      `🔍 *𝗖𝗢𝗡𝗦𝗢𝗟𝗘 𝗗𝗜𝗔𝗚𝗡𝗢𝗦𝗧𝗜𝗖𝗦:*\n` +
+      `• *Bot JID:* ${diag.botJid || '-'}\n` +
+      `• *Normalized Bot JID:* ${diag.normalizedBotJid || '-'}\n` +
+      `• *Group ID:* ${diag.groupId || '-'}\n` +
+      `• *Error:* ${diag.error || 'None'}\n` +
+      `• *Total Member:* ${diag.participantCount}\n` +
+      `• *Bot di Member:* ${diag.meInParticipants ? 'Ya' : 'Tidak'}\n` +
+      `• *Status Admin Bot:* ${diag.meAdminStatus || 'Bukan Admin'}\n` +
+      (diag.sampleParticipants && diag.sampleParticipants.length ? `• *Contoh Member:* ${diag.sampleParticipants.join(', ')}` : '');
+
+    await ctx.reply(diagText);
     return;
   }
 

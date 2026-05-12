@@ -1,43 +1,48 @@
 const logger = require('../config/logger');
 const { normalizeJid } = require('./jid');
 
-async function isBotGroupAdmin(sock, groupId) {
+async function getBotGroupAdminDiagnostics(sock, groupId) {
   const botJid = sock?.user?.id || sock?.user?.jid || sock?.authState?.creds?.me?.id || '';
   const normalizedBotJid = normalizeJid(botJid);
+  const diagnostics = {
+    botJid,
+    normalizedBotJid,
+    groupId,
+    error: null,
+    participantCount: 0,
+    meInParticipants: false,
+    meAdminStatus: null,
+    isAdmin: false,
+    sampleParticipants: []
+  };
+
   try {
     if (!groupId || !groupId.endsWith('@g.us')) {
-      logger.debug({ groupId }, '[isBotGroupAdmin] invalid or non-group JID');
-      return false;
+      diagnostics.error = 'Invalid group JID';
+      return diagnostics;
     }
     const meta = await sock.groupMetadata(groupId);
     const participants = meta.participants || [];
+    diagnostics.participantCount = participants.length;
+    
     const me = participants.find((p) => normalizeJid(p.id) === normalizedBotJid);
-    const detectedBotAdmin = Boolean(me && (me.admin === 'admin' || me.admin === 'superadmin'));
-
-    const adminList = participants
-      .filter(p => p.admin === 'admin' || p.admin === 'superadmin')
-      .map(p => ({ id: p.id, normalized: normalizeJid(p.id), role: p.admin }));
-
-    logger.info({
-      botJid,
-      normalizedBotJid,
-      groupId,
-      participantCount: participants.length,
-      participantAdminList: adminList,
-      detectedBotAdmin,
-      meParticipant: me ? { id: me.id, normalized: normalizeJid(me.id), role: me.admin } : null
-    }, '[isBotGroupAdmin] bot group admin check result');
-
-    return detectedBotAdmin;
-  } catch (error) {
-    logger.error({
-      err: error,
-      botJid,
-      normalizedBotJid,
-      groupId
-    }, '[isBotGroupAdmin] check failed');
-    return false;
+    if (me) {
+      diagnostics.meInParticipants = true;
+      diagnostics.meAdminStatus = me.admin;
+      diagnostics.isAdmin = me.admin === 'admin' || me.admin === 'superadmin';
+    } else {
+      diagnostics.sampleParticipants = participants.slice(0, 3).map(p => p.id);
+    }
+  } catch (err) {
+    diagnostics.error = err.message || String(err);
   }
+
+  return diagnostics;
+}
+
+async function isBotGroupAdmin(sock, groupId) {
+  const diag = await getBotGroupAdminDiagnostics(sock, groupId);
+  return diag.isAdmin;
 }
 
 async function deleteMessageForEveryone(sock, msg) {
@@ -60,4 +65,9 @@ async function deleteMessageForEveryone(sock, msg) {
   }
 }
 
-module.exports = { isBotGroupAdmin, deleteMessageForEveryone, deleteCommandMessage: deleteMessageForEveryone };
+module.exports = { 
+  isBotGroupAdmin, 
+  getBotGroupAdminDiagnostics, 
+  deleteMessageForEveryone, 
+  deleteCommandMessage: deleteMessageForEveryone 
+};
