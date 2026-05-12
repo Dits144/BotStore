@@ -9,6 +9,7 @@ const rentalCommands = require('../commands/rental');
 const groupCommands = require('../commands/group');
 const catalogueCommands = require('../commands/catalogue');
 const adminCommands = require('../commands/admin');
+const groupAdminCommands = require('../commands/admin/groupAdmin');
 const menuCommands = require('../commands/menu');
 const config = require('../config/env');
 
@@ -39,8 +40,16 @@ const commandRegistry = {
   list: catalogueCommands.handle,
   addlist: catalogueCommands.handle,
   updatelist: catalogueCommands.handle,
-  dellist: catalogueCommands.handle
+  dellist: catalogueCommands.handle,
+  group: groupAdminCommands.handle
 };
+
+// Command yang boleh jalan meski sewa tidak aktif / di luar grup
+const BYPASS_RENTAL_COMMANDS = new Set([
+  'addsewa', 'renewsewa', 'delsewa', 'listsewa', 'ceksewa',
+  'owner', 'delowner', 'listowner', 'myrole', 'cekrole',
+  'info', 'infogrup', 'allmenu'
+]);
 
 async function routeMessage(sock, msg) {
   const body = extractMessageText(msg);
@@ -96,7 +105,7 @@ async function routeMessage(sock, msg) {
     return;
   }
 
-  if (isGroup && !(parsed.command in { addsewa:1, renewsewa:1, delsewa:1, listsewa:1, ceksewa:1, owner:1, delowner:1, listowner:1, myrole:1, cekrole:1, info:1, infogrup:1, allmenu:1 })) {
+  if (isGroup && !BYPASS_RENTAL_COMMANDS.has(parsed.command)) {
     const allowed = await canRunGroupCommand({ isGroup, isOwner, groupId: chatJid });
     if (!allowed) return;
   }
