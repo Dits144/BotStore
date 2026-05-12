@@ -7,6 +7,9 @@ function normalizeUserJid(input = '') {
   user = user.split(':')[0].split('.')[0].replace(/[^0-9]/g, '');
   if (!user) return '';
 
+  if (raw.endsWith('@lid')) {
+    return `${user}@lid`;
+  }
   return `${user}@s.whatsapp.net`;
 }
 
