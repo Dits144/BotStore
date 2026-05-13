@@ -43,7 +43,7 @@ async function listCatalogue(ctx) {
   }
 
   const groupName = await resolveGroupName(ctx);
-  const listBody = rows.map((r) => `┃ 💎 ${r.item_name}`).join('\n');
+  const listBody = rows.map((r) => `┃ 💠 ${r.item_name}`).join('\n');
   const now = nowJakarta();
 
   // FIX: renderMentionText hanya menerima 2 argumen (template, targetJid)
@@ -58,21 +58,21 @@ async function listCatalogue(ctx) {
 
   await ctx.sock.sendMessage(ctx.from, {
     text:
-      `┏━━〔 ⚙ ${groupName} 〕━━┓\n` +
-      `┃ ◆ ◆ ◆ ◆ ◆ ◆\n` +
-      `┗━━━━━━━━━━━━━┛\n` +
-      `       ⋮\n` +
-      `     ${mention.text}\n\n` +
-      `⚡ Available Services\n\n` +
-      `⏱ time : ${formatTime(now)}\n` +
-      `📅 date : ${formatDate(now)}\n\n` +
-      `╭──〔 📦 CATALOGUE 〕──╮\n` +
+      `╭━━━〔 ⚡️ ${groupName} ⚡️ 〕━━━╮\n` +
+      `┃ ✦ [ LIST_MENU_STORE ] ✦\n` +
+      `╰━━━━━━━━━━━━━━━━━━━━━━╯\n\n` +
+      `💫 Helooo bubss~\n` +
+      `👤 Name : ${mention.text}\n` +
+      `⏱️ Time : ${formatTime(now)}\n` +
+      `📅 Date : ${formatDate(now)}\n\n` +
+      `┌──〔 💎 [ CATALOGUE ] 〕──┐\n` +
       `${listBody}\n` +
-      `╰────────────────────╯\n\n` +
-      `📌 NOTE\n` +
-      `• ketik nama produk untuk melihat detail\n` +
-      `• atau gunakan menu bot yang tersedia\n` +
-      `• transaksi hanya melalui admin`,
+      `└─────────────────────────┘\n\n` +
+      `╭──〔 📌 [ SYSTEM_NOTE ] 〕──╮\n` +
+      `┃ • ketik nama produk untuk melihat detail\n` +
+      `┃ • gunakan menu bot yang tersedia\n` +
+      `┃ • transaksi hanya melalui admin\n` +
+      `╰───────────────────────────╯`,
     mentions: mention.mentions  // ← JID sender ada di sini → mention aktif
   });
 }
@@ -162,17 +162,21 @@ async function productTrigger(ctx, rawText) {
   const name = normalizeText(rawText);
   if (!name || name.includes(' ')) return;
 
+  const groupName = await resolveGroupName(ctx);
+  const footer = `\n\n█▓▒░ ${groupName} ░▒▓█`;
+
   const item = await catalogueRepository.getItem(ctx.from, name);
   if (item) {
+    const detailText = `${item.description}${footer}`;
     if (item.media_path && fs.existsSync(item.media_path)) {
       await ctx.sock.sendMessage(
         ctx.from,
-        { image: fs.readFileSync(item.media_path), caption: item.description },
+        { image: fs.readFileSync(item.media_path), caption: detailText },
         { quoted: ctx.msg }
       );
       return;
     }
-    await ctx.send(item.description);
+    await ctx.send(detailText);
     return;
   }
 
@@ -184,7 +188,7 @@ async function productTrigger(ctx, rawText) {
   const bestMatchItem = rows.find((r) => r.item_name === bestMatchName);
 
   if (bestMatchItem) {
-    const captionText = `❓ Maksud Anda ${bestMatchName}?\n\n${bestMatchItem.description}`;
+    const captionText = `❓ Maksud Anda ${bestMatchName}?\n\n${bestMatchItem.description}${footer}`;
     if (bestMatchItem.media_path && fs.existsSync(bestMatchItem.media_path)) {
       await ctx.sock.sendMessage(
         ctx.from,
