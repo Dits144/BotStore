@@ -12,10 +12,11 @@ const { suggestClosest } = require('../../utils/typo');
 const { toMentionJid } = require('../../utils/jid');
 const config = require('../../config/env');
 const logger = require('../../config/logger');
+const { styled } = require('../../utils/styledText');
 
 async function handle(ctx, parsed) {
   if (!ctx.isGroup) {
-    await ctx.send('⚠️ Command katalog hanya bisa dipakai di grup.');
+    await ctx.send(`⚠️ ${styled('Command katalog hanya bisa dipakai di grup.')}`);
     return;
   }
 
@@ -26,7 +27,7 @@ async function handle(ctx, parsed) {
 
   const canManage = await canManageCatalogue(ctx.sock, ctx.from, ctx.sender);
   if (!canManage) {
-    await ctx.send('❌ Akses ditolak\nPerintah ini khusus untuk Admin Grup atau Owner Bot.');
+    await ctx.send(`❌ ${styled('Akses ditolak')}\n${styled('Perintah ini khusus untuk Admin Grup atau Owner Bot.')}`);
     return;
   }
 
@@ -38,7 +39,7 @@ async function handle(ctx, parsed) {
 async function listCatalogue(ctx) {
   const rows = await catalogueRepository.listByGroup(ctx.from);
   if (!rows.length) {
-    await ctx.send('🛒 Toko kosong, admin belum menambahkan katalog.');
+    await ctx.send(`🛒 ${styled('Toko kosong, admin belum menambahkan katalog.')}`);
     return;
   }
 
@@ -59,20 +60,20 @@ async function listCatalogue(ctx) {
   await ctx.sock.sendMessage(ctx.from, {
     text:
       `╭━━━〔 ⚡️ ${groupName} ⚡️ 〕━━━╮\n` +
-      `┃ ✦ [ LIST_MENU_STORE ] ✦\n` +
+      `┃ ✦ ◟⚡ ׄ 𝅄 𝓛𝗶𝘀𝘁 𝗠𝗲𝗻𝘂 一緒 ˎˊ˗ ✦\n` +
       `╰━━━━━━━━━━━━━━━━━━━━━━╯\n\n` +
       `💫 Helooo bubss~\n` +
       `👤 Name : ${mention.text}\n` +
       `⏱️ Time : ${formatTime(now)}\n` +
       `📅 Date : ${formatDate(now)}\n\n` +
-      `┌──〔 💎 [ CATALOGUE ] 〕──┐\n` +
+      `┌〔 💎 𖹭 𝓒𝗮𝘁𝗮𝗹𝗼𝗴 ✦ ˎˊ˗ 〕┐\n` +
       `${listBody}\n` +
-      `└─────────────────────────┘\n\n` +
-      `╭──〔 📌 [ SYSTEM_NOTE ] 〕──╮\n` +
-      `┃ • ketik nama produk untuk melihat detail\n` +
-      `┃ • gunakan menu bot yang tersedia\n` +
-      `┃ • transaksi hanya melalui admin\n` +
-      `╰───────────────────────────╯`,
+      `└──────────────────┘\n\n` +
+      `╭〔 📌 ◟✦ ׄ 𝅄 𝓝𝗼𝘁𝗲 一緒 ˎˊ˗ 〕╮\n` +
+      `┃ • ketik nama produk\n` +
+      `┃ • gunakan menu bot\n` +
+      `┃ • transaksi via admin\n` +
+      `╰──────────────────╯`,
     mentions: mention.mentions  // ← JID sender ada di sini → mention aktif
   });
 }
@@ -94,7 +95,7 @@ async function addList(ctx, parsed) {
 
   if (media?.error) {
     await reactError(ctx.sock, ctx.msg);
-    await sendMinimalError(ctx.sock, ctx.from, '❌ Gagal menyimpan media.');
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Gagal menyimpan media.')}`);
     return;
   }
 
@@ -105,11 +106,11 @@ async function addList(ctx, parsed) {
     await sendMinimalSuccess(
       ctx.sock,
       ctx.from,
-      media?.path ? '✅ List + media berhasil ditambahkan.' : '✅ List ditambahkan.'
+      media?.path ? `✅ ${styled('List + media berhasil ditambahkan.')}` : `✅ ${styled('List ditambahkan.')}`
     );
   } catch {
     await reactError(ctx.sock, ctx.msg);
-    await sendMinimalError(ctx.sock, ctx.from, '❌ Gagal menambahkan list.');
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Gagal menambahkan list.')}`);
   }
 }
 
@@ -123,7 +124,7 @@ async function delList(ctx, parsed) {
   const item = await catalogueRepository.getItem(ctx.from, name);
   const result = await catalogueRepository.deleteItem(ctx.from, name);
   if (!result.changes) {
-    await sendMinimalError(ctx.sock, ctx.from, '❌ Item tidak ditemukan.');
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Item tidak ditemukan.')}`);
     return;
   }
 
@@ -131,7 +132,7 @@ async function delList(ctx, parsed) {
   await reactLoading(ctx.sock, ctx.msg);
   await deleteMessageForEveryone(ctx.sock, ctx.msg);
   await reactSuccess(ctx.sock, ctx.msg);
-  await sendMinimalSuccess(ctx.sock, ctx.from, '✅ List dihapus.');
+  await sendMinimalSuccess(ctx.sock, ctx.from, `✅ ${styled('List dihapus.')}`);
 }
 
 async function updateList(ctx, parsed) {
@@ -148,14 +149,14 @@ async function updateList(ctx, parsed) {
   const result = await catalogueRepository.updateItem(ctx.from, name, description);
 
   if (!result.changes) {
-    await sendMinimalError(ctx.sock, ctx.from, '❌ Item tidak ditemukan.');
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Item tidak ditemukan.')}`);
     return;
   }
 
   await reactLoading(ctx.sock, ctx.msg);
   await deleteMessageForEveryone(ctx.sock, ctx.msg);
   await reactSuccess(ctx.sock, ctx.msg);
-  await sendMinimalSuccess(ctx.sock, ctx.from, '✅ List diperbarui.');
+  await sendMinimalSuccess(ctx.sock, ctx.from, `✅ ${styled('List diperbarui.')}`);
 }
 
 async function productTrigger(ctx, rawText) {
@@ -163,7 +164,7 @@ async function productTrigger(ctx, rawText) {
   if (!name || name.includes(' ')) return;
 
   const groupName = await resolveGroupName(ctx);
-  const footer = `\n\n█▓▒░ ${groupName} ░▒▓█`;
+  const footer = `\n\n║▌│█║▌│ █║▌│█│║▌║\n◟☁️ ׄ   ${groupName}  𓂃 ࣪˖ ִֶָ`;
 
   const item = await catalogueRepository.getItem(ctx.from, name);
   if (item) {

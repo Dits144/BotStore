@@ -12,6 +12,7 @@ const adminCommands = require('../commands/admin');
 const groupAdminCommands = require('../commands/admin/groupAdmin');
 const menuCommands = require('../commands/menu');
 const config = require('../config/env');
+const { styled } = require('../utils/styledText');
 
 const commandRegistry = {
   owner: ownerCommands.handle,
@@ -86,7 +87,7 @@ async function routeMessage(sock, msg) {
   const isClaimOwnerText = normalizeText(body) === normalizeText(config.ownerClaimCode);
   if (isClaimOwnerText) {
     if (isGroup) {
-      await ctx.sendText('❌ Claim Owner hanya bisa dilakukan di chat pribadi bot.');
+      await ctx.sendText(`❌ ${styled('Claim Owner hanya bisa dilakukan di chat pribadi bot.')}`);
       return;
     }
     await ownerCommands.claimOwner(ctx);

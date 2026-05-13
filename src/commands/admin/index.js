@@ -13,16 +13,17 @@ const {
   sendMinimalSuccess,
   sendMinimalError
 } = require('../../utils/chatUx');
+const { styled } = require('../../utils/styledText');
 
 async function handle(ctx, parsed) {
   if (!ctx.isGroup) {
-    await sendMinimalError(ctx.sock, ctx.from, '⚠️ Command ini hanya bisa dipakai di grup.');
+    await sendMinimalError(ctx.sock, ctx.from, `⚠️ ${styled('Command ini hanya bisa dipakai di grup.')}`);
     return;
   }
 
   const canManage = await canManageCatalogue(ctx.sock, ctx.from, ctx.sender);
   if (!canManage) {
-    await sendMinimalError(ctx.sock, ctx.from, '❌ Akses ditolak\nPerintah ini khusus untuk Admin Grup atau Owner Bot.');
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Akses ditolak')}\n${styled('Perintah ini khusus untuk Admin Grup atau Owner Bot.')}`);
     return;
   }
 
@@ -44,7 +45,7 @@ async function setWelcomeStatus(ctx, parsed) {
   await reactSuccess(ctx.sock, ctx.msg);
   await sendMinimalSuccess(
     ctx.sock, ctx.from,
-    action === 'on' ? '✅ Welcome diaktifkan.' : '✅ Welcome dinonaktifkan.'
+    action === 'on' ? `✅ ${styled('Welcome diaktifkan.')}` : `✅ ${styled('Welcome dinonaktifkan.')}`
   );
 }
 
@@ -52,14 +53,14 @@ async function setWelcomeTemplate(ctx, parsed) {
   const raw = parsed.raw.slice(parsed.raw.toLowerCase().indexOf('setwelcome') + 'setwelcome'.length).trim();
   const [_, templateRaw] = raw.split('@');
   if (!templateRaw) {
-    await sendMinimalError(ctx.sock, ctx.from, '❌ Format salah\nContoh:\nsetwelcome@Halo @user, selamat datang di {group}');
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Format salah')}\n${styled('Contoh:')}\nsetwelcome@Halo @user, selamat datang di {group}`);
     return;
   }
   await reactLoading(ctx.sock, ctx.msg);
   await groupSettingsRepository.setWelcomeMessage(ctx.from, templateRaw.trim());
   await deleteMessageForEveryone(ctx.sock, ctx.msg);
   await reactSuccess(ctx.sock, ctx.msg);
-  await sendMinimalSuccess(ctx.sock, ctx.from, '✅ Welcome diperbarui.');
+  await sendMinimalSuccess(ctx.sock, ctx.from, `✅ ${styled('Welcome diperbarui.')}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -109,7 +110,7 @@ async function broadcast(ctx, parsed) {
   } catch (err) {
     logger.error({ err, groupId: ctx.from }, '[broadcast] gagal ambil groupMetadata');
     await reactError(ctx.sock, ctx.msg);
-    await sendMinimalError(ctx.sock, ctx.from, '❌ Gagal mengambil data anggota grup.');
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Gagal mengambil data anggota grup.')}`);
     return;
   }
 
@@ -187,7 +188,7 @@ async function transactionNote(ctx, statusCode) {
   if (!quoted || !rawParticipant) {
     await sendMinimalError(
       ctx.sock, ctx.from,
-      '❌ Perintah ini harus dipakai dengan me-reply pesan customer.'
+      `❌ ${styled('Perintah ini harus dipakai dengan me-reply pesan customer.')}`
     );
     return;
   }
@@ -204,7 +205,7 @@ async function transactionNote(ctx, statusCode) {
   }
 
   if (!userJid || !userJid.includes('@')) {
-    await sendMinimalError(ctx.sock, ctx.from, '❌ Gagal membaca JID customer dari pesan yang di-reply.');
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Gagal membaca JID customer dari pesan yang di-reply.')}`);
     return;
   }
 

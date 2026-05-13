@@ -12,10 +12,11 @@ const {
   sendMinimalError
 } = require('../../utils/chatUx');
 const logger = require('../../config/logger');
+const { styled } = require('../../utils/styledText');
 
 async function handle(ctx, parsed) {
   if (!ctx.isGroup) {
-    await sendMinimalError(ctx.sock, ctx.from, '⚠️ Command ini hanya bisa dipakai di grup.');
+    await sendMinimalError(ctx.sock, ctx.from, `⚠️ ${styled('Command ini hanya bisa dipakai di grup.')}`);
     return;
   }
 
@@ -25,7 +26,7 @@ async function handle(ctx, parsed) {
     await sendMinimalError(
       ctx.sock,
       ctx.from,
-      '❌ Akses ditolak\nPerintah ini khusus untuk Admin Grup atau Owner Bot.'
+      `❌ ${styled('Akses ditolak')}\n${styled('Perintah ini khusus untuk Admin Grup atau Owner Bot.')}`
     );
     return;
   }
@@ -57,7 +58,7 @@ async function handle(ctx, parsed) {
   await sendMinimalError(
     ctx.sock,
     ctx.from,
-    '❌ Format salah\nContoh:\n• group close\n• group open'
+    `❌ ${styled('Format salah')}\n${styled('Contoh:')}\n• group close\n• group open`
   );
 }
 
@@ -84,7 +85,7 @@ async function groupClose(ctx) {
   } catch (err) {
     logger.error({ err, groupId: ctx.from }, '[groupAdmin] gagal close grup');
     await reactError(ctx.sock, ctx.msg);
-    await sendMinimalError(ctx.sock, ctx.from, '❌ Gagal menutup grup. Pastikan bot adalah admin grup.');
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Gagal menutup grup. Pastikan bot adalah admin grup.')}`);
   }
 }
 
@@ -110,7 +111,7 @@ async function groupOpen(ctx) {
   } catch (err) {
     logger.error({ err, groupId: ctx.from }, '[groupAdmin] gagal open grup');
     await reactError(ctx.sock, ctx.msg);
-    await sendMinimalError(ctx.sock, ctx.from, '❌ Gagal membuka grup. Pastikan bot adalah admin grup.');
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Gagal membuka grup. Pastikan bot adalah admin grup.')}`);
   }
 }
 

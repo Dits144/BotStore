@@ -5,6 +5,7 @@ const { computeRenewalExpiry, refreshRentalStatus } = require('../../services/re
 const { isBotOwner } = require('../../services/roleService');
 const logger = require('../../config/logger');
 const { normalizeJid } = require('../../utils/jid');
+const { styled } = require('../../utils/styledText');
 
 async function handle(ctx, parsed) {
   const senderJid = normalizeJid(ctx.sender);
@@ -20,7 +21,7 @@ async function handle(ctx, parsed) {
 
   if (!owner) {
     logger.warn({ command: parsed.command, senderJid, reason: 'not_owner' }, 'rental command denied');
-    await ctx.send('❌ Akses ditolak\nPerintah ini khusus untuk Owner Bot.');
+    await ctx.send(`❌ ${styled('Akses ditolak')}\n${styled('Perintah ini khusus untuk Owner Bot.')}`);
     return;
   }
 
@@ -54,11 +55,11 @@ async function addSewa(ctx, args) {
   });
 
   await ctx.send(
-    `✅ Grup berhasil ditambahkan ke daftar sewa\n` +
-    `📛 Group : ${groupName}\n` +
-    `🆔 Group ID : ${groupId}\n` +
-    `⏳ Durasi : ${duration} Hari\n` +
-    `📅 Expired : ${formatDateTime(expiredAt)}`
+    `✅ ${styled('Grup berhasil ditambahkan ke daftar sewa')}\n` +
+    `📛 ${styled('Group')} : ${groupName}\n` +
+    `🆔 ${styled('Group ID')} : ${groupId}\n` +
+    `⏳ ${styled('Durasi')} : ${duration} ${styled('Hari')}\n` +
+    `📅 ${styled('Expired')} : ${formatDateTime(expiredAt)}`
   );
 }
 
@@ -84,11 +85,11 @@ async function renewSewa(ctx, args) {
   });
 
   await ctx.send(
-    `♻️ Masa sewa berhasil diperpanjang\n` +
-    `📛 Group : ${groupName}\n` +
-    `🆔 Group ID : ${groupId}\n` +
-    `⏳ Penambahan : ${duration} Hari\n` +
-    `📅 Expired Baru : ${formatDateTime(expiredAt)}`
+    `♻️ ${styled('Masa sewa berhasil diperpanjang')}\n` +
+    `📛 ${styled('Group')} : ${groupName}\n` +
+    `🆔 ${styled('Group ID')} : ${groupId}\n` +
+    `⏳ ${styled('Penambahan')} : ${duration} ${styled('Hari')}\n` +
+    `📅 ${styled('Expired Baru')} : ${formatDateTime(expiredAt)}`
   );
 }
 
@@ -103,16 +104,16 @@ async function delSewa(ctx, args) {
   await rentalRepository.deleteRental(groupId);
 
   await ctx.send(
-    `🗑️ Grup berhasil dihapus dari daftar sewa\n` +
-    `📛 Group : ${existing?.group_name || 'tidak diketahui'}\n` +
-    `🆔 Group ID : ${groupId}`
+    `🗑️ ${styled('Grup berhasil dihapus dari daftar sewa')}\n` +
+    `📛 ${styled('Group')} : ${existing?.group_name || styled('tidak diketahui')}\n` +
+    `🆔 ${styled('Group ID')} : ${groupId}`
   );
 }
 
 async function listSewa(ctx) {
   const rows = await rentalRepository.listRentals();
   if (!rows.length) {
-    await ctx.send('📭 Belum ada grup yang terdaftar sewa.');
+    await ctx.send(`📭 ${styled('Belum ada grup yang terdaftar sewa.')}`);
     return;
   }
 
@@ -132,7 +133,7 @@ async function cekSewa(ctx, args) {
 
   const row = await rentalRepository.getRental(args[0]);
   if (!row) {
-    await ctx.send('❌ Data sewa grup tidak ditemukan.');
+    await ctx.send(`❌ ${styled('Data sewa grup tidak ditemukan.')}`);
     return;
   }
 

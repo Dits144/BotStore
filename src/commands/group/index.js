@@ -3,6 +3,7 @@ const { formatDateTime } = require('../../utils/time');
 const { toMentionJid } = require('../../utils/jid');
 const { renderMentionText } = require('../../utils/messageFormatter');
 const logger = require('../../config/logger');
+const { styled } = require('../../utils/styledText');
 
 async function info(ctx) {
   if (!ctx.isGroup) {
@@ -47,7 +48,7 @@ async function info(ctx) {
       `✅ Gunakan info ini dengan bijak.`
     );
   } catch {
-    await ctx.send('❌ Gagal mengambil info grup. Coba lagi beberapa saat.');
+    await ctx.send(`❌ ${styled('Gagal mengambil info grup. Coba lagi beberapa saat.')}`);
   }
 }
 
