@@ -95,13 +95,19 @@ async function routeMessage(sock, msg) {
 
   const parsed = parseCommand(body);
   if (!parsed.command) {
-    if (isGroup) await catalogueCommands.productTrigger(ctx, body);
+    if (isGroup) {
+      const rentalOk = await canRunGroupCommand({ isGroup, isOwner, groupId: chatJid });
+      if (rentalOk) await catalogueCommands.productTrigger(ctx, body);
+    }
     return;
   }
 
   const handler = commandRegistry[parsed.command];
   if (!handler) {
-    if (isGroup) await catalogueCommands.productTrigger(ctx, body);
+    if (isGroup) {
+      const rentalOk = await canRunGroupCommand({ isGroup, isOwner, groupId: chatJid });
+      if (rentalOk) await catalogueCommands.productTrigger(ctx, body);
+    }
     return;
   }
 

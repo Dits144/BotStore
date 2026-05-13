@@ -203,4 +203,8 @@ function validateRuntime() {
   }
 }
 
-module.exports = { startWhatsApp, validateRuntime };
+function getSock() {
+  return currentSock;
+}
+
+module.exports = { startWhatsApp, validateRuntime, getSock };
