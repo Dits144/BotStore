@@ -65,6 +65,15 @@ async function migrate() {
 
   const now = new Date().toISOString();
   await db.run('INSERT OR IGNORE INTO owners (jid, is_main, created_at) VALUES (?, 1, ?)', [normalizeJid(config.mainOwnerJid), now]);
+
+  // Also register LID-based JID for owner recognition in groups
+  if (config.mainOwnerLid) {
+    const lidNormalized = normalizeJid(config.mainOwnerLid);
+    if (lidNormalized) {
+      await db.run('INSERT OR IGNORE INTO owners (jid, is_main, created_at) VALUES (?, 1, ?)', [lidNormalized, now]);
+    }
+  }
+
   logger.info('database initialized');
 }
 

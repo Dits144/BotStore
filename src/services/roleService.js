@@ -5,8 +5,17 @@ const { normalizeUserJid, normalizeGroupJid, getBotJids } = require('../utils/ji
 
 function isPrimaryOwner(jid) {
   const normalized = normalizeUserJid(jid);
+  if (!normalized) return false;
+
+  // Check against phone-based JID
   const mainOwner = normalizeUserJid(config.mainOwnerJid);
-  return Boolean(normalized && normalized === mainOwner);
+  if (mainOwner && normalized === mainOwner) return true;
+
+  // Check against LID-based JID (WhatsApp uses LID in groups)
+  const mainOwnerLid = config.mainOwnerLid ? normalizeUserJid(config.mainOwnerLid) : '';
+  if (mainOwnerLid && normalized === mainOwnerLid) return true;
+
+  return false;
 }
 
 async function isBotOwner(jid) {
