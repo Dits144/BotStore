@@ -211,6 +211,10 @@ async function transactionNote(ctx, statusCode) {
 
   const userNumber = userJid.split('@')[0];
   const statusMap = { p: 'Pending', d: 'Done', r: 'Refund', b: 'Batal' };
+  const status = statusMap[statusCode] || 'Pending';
+  const note = extractQuotedText(quoted) || '-';
+  const now = nowJakarta();
+  const trxId = `TRX-${now.format('YYYYMMDD')}-${crypto.randomInt(1000, 9999)}`;
   const statusEmoji = { p: '⏳', d: '✅', r: '🔄', b: '❌' };
   const emoji = statusEmoji[statusCode] || '⏳';
 
