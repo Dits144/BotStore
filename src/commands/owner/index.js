@@ -5,19 +5,19 @@ const { formatWrongExample } = require('../../utils/messageFormatter');
 const { normalizeJid, toPhoneNumber } = require('../../utils/jid');
 const { isBotOwner, isGroupAdmin, getUserRole } = require('../../services/roleService');
 const { isGroupRentalActive } = require('../../services/rentalService');
-const { styled } = require('../../utils/styledText');
+const { sans } = require('../../utils/styledText');
 
 async function claimOwner(ctx) {
   if (ctx.isGroup) return;
 
   const senderJid = normalizeJid(ctx.sender);
   if (!senderJid) {
-    await ctx.send(`❌ ${styled('Gagal membaca nomor pengirim. Coba kirim ulang dari chat pribadi.')}`);
+    await ctx.send(`❌ ${sans('Gagal membaca nomor pengirim. Coba kirim ulang dari chat pribadi.')}`);
     return;
   }
 
   if (await isBotOwner(senderJid)) {
-    await ctx.send(`ℹ️ ${styled('Kamu sudah terdaftar sebagai Owner Bot.')}`);
+    await ctx.send(`ℹ️ ${sans('Kamu sudah terdaftar sebagai Owner Bot.')}`);
     return;
   }
 
@@ -25,9 +25,9 @@ async function claimOwner(ctx) {
   logger.info({ senderJid, normalizedSender: senderJid, roleResolved: 'bot_owner' }, 'owner claim saved');
 
   await ctx.send(
-    `✅ ${styled('Owner Bot berhasil diklaim')}\n` +
-    `📱 ${styled('Nomor')} : ${toPhoneNumber(senderJid)}\n` +
-    `🛡️ ${styled('Status')} : ${styled('Owner Bot Aktif')}`
+    `✅ ${sans('Owner Bot berhasil diklaim')}\n` +
+    `📱 ${sans('Nomor')} : ${toPhoneNumber(senderJid)}\n` +
+    `🛡️ ${sans('Status')} : ${sans('Owner Bot Aktif')}`
   );
 }
 
@@ -50,7 +50,7 @@ async function handle(ctx, parsed) {
 
   if (!owner) {
     logger.warn({ command: parsed.command, senderJid, reason: 'not_owner' }, 'owner command denied');
-    await ctx.send(`❌ ${styled('Akses ditolak')}\n${styled('Perintah ini khusus untuk Owner Bot.')}`);
+    await ctx.send(`❌ ${sans('Akses ditolak')}\n${sans('Perintah ini khusus untuk Owner Bot.')}`);
     return;
   }
 
@@ -67,7 +67,7 @@ async function handle(ctx, parsed) {
     }
 
     await ownerRepository.addOwner(jid, 0);
-    await ctx.send(`✅ ${styled('Owner berhasil ditambahkan')}\n👤 ${jid}`);
+    await ctx.send(`✅ ${sans('Owner berhasil ditambahkan')}\n👤 ${jid}`);
     return;
   }
 
@@ -84,12 +84,12 @@ async function handle(ctx, parsed) {
     }
 
     if (jid === normalizeJid(config.mainOwnerJid)) {
-      await ctx.send(`⛔ ${styled('Owner utama tidak bisa dihapus.')}`);
+      await ctx.send(`⛔ ${sans('Owner utama tidak bisa dihapus.')}`);
       return;
     }
 
     await ownerRepository.removeOwner(jid);
-    await ctx.send(`🗑️ ${styled('Owner tambahan berhasil dihapus')}\n👤 ${jid}`);
+    await ctx.send(`🗑️ ${sans('Owner tambahan berhasil dihapus')}\n👤 ${jid}`);
     return;
   }
 

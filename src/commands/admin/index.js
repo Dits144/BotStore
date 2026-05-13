@@ -13,17 +13,17 @@ const {
   sendMinimalSuccess,
   sendMinimalError
 } = require('../../utils/chatUx');
-const { styled } = require('../../utils/styledText');
+const { styled, sans } = require('../../utils/styledText');
 
 async function handle(ctx, parsed) {
   if (!ctx.isGroup) {
-    await sendMinimalError(ctx.sock, ctx.from, `⚠️ ${styled('Command ini hanya bisa dipakai di grup.')}`);
+    await sendMinimalError(ctx.sock, ctx.from, `⚠️ ${sans('Command ini hanya bisa dipakai di grup.')}`);
     return;
   }
 
   const canManage = await canManageCatalogue(ctx.sock, ctx.from, ctx.sender);
   if (!canManage) {
-    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Akses ditolak')}\n${styled('Perintah ini khusus untuk Admin Grup atau Owner Bot.')}`);
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans('Akses ditolak')}\n${sans('Perintah ini khusus untuk Admin Grup atau Owner Bot.')}`);
     return;
   }
 
@@ -45,7 +45,7 @@ async function setWelcomeStatus(ctx, parsed) {
   await reactSuccess(ctx.sock, ctx.msg);
   await sendMinimalSuccess(
     ctx.sock, ctx.from,
-    action === 'on' ? `✅ ${styled('Welcome diaktifkan.')}` : `✅ ${styled('Welcome dinonaktifkan.')}`
+    action === 'on' ? `✅ ${sans('Welcome diaktifkan.')}` : `✅ ${sans('Welcome dinonaktifkan.')}`
   );
 }
 
@@ -53,14 +53,14 @@ async function setWelcomeTemplate(ctx, parsed) {
   const raw = parsed.raw.slice(parsed.raw.toLowerCase().indexOf('setwelcome') + 'setwelcome'.length).trim();
   const [_, templateRaw] = raw.split('@');
   if (!templateRaw) {
-    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Format salah')}\n${styled('Contoh:')}\nsetwelcome@Halo @user, selamat datang di {group}`);
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans('Format salah')}\n${sans('Contoh:')}\nsetwelcome@Halo @user, selamat datang di {group}`);
     return;
   }
   await reactLoading(ctx.sock, ctx.msg);
   await groupSettingsRepository.setWelcomeMessage(ctx.from, templateRaw.trim());
   await deleteMessageForEveryone(ctx.sock, ctx.msg);
   await reactSuccess(ctx.sock, ctx.msg);
-  await sendMinimalSuccess(ctx.sock, ctx.from, `✅ ${styled('Welcome diperbarui.')}`);
+  await sendMinimalSuccess(ctx.sock, ctx.from, `✅ ${sans('Welcome diperbarui.')}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -110,7 +110,7 @@ async function broadcast(ctx, parsed) {
   } catch (err) {
     logger.error({ err, groupId: ctx.from }, '[broadcast] gagal ambil groupMetadata');
     await reactError(ctx.sock, ctx.msg);
-    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Gagal mengambil data anggota grup.')}`);
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans('Gagal mengambil data anggota grup.')}`);
     return;
   }
 
@@ -188,7 +188,7 @@ async function transactionNote(ctx, statusCode) {
   if (!quoted || !rawParticipant) {
     await sendMinimalError(
       ctx.sock, ctx.from,
-      `❌ ${styled('Perintah ini harus dipakai dengan me-reply pesan customer.')}`
+      `❌ ${sans('Perintah ini harus dipakai dengan me-reply pesan customer.')}`
     );
     return;
   }
@@ -205,30 +205,21 @@ async function transactionNote(ctx, statusCode) {
   }
 
   if (!userJid || !userJid.includes('@')) {
-    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Gagal membaca JID customer dari pesan yang di-reply.')}`);
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans('Gagal membaca JID customer dari pesan yang di-reply.')}`);
     return;
   }
 
   const userNumber = userJid.split('@')[0];
   const statusMap = { p: 'Pending', d: 'Done', r: 'Refund', b: 'Batal' };
-  const status = statusMap[statusCode] || 'Pending';
-  const note = extractQuotedText(quoted) || '-';
-  const now = nowJakarta();
-  const trxId = `TRX-${now.format('YYYYMMDD')}-${crypto.randomInt(1000, 9999)}`;
+  const statusEmoji = { p: '⏳', d: '✅', r: '🔄', b: '❌' };
+  const emoji = statusEmoji[statusCode] || '⏳';
 
-  // Render mention text: @nomor di teks + JID di mentions
-  const mentionLine = `@${userNumber} Terima kasih sudah order! 🙏`;
+  // Render mention text
+  const mentionLine = `@${userNumber}`;
   const mentionJids = [userJid];
 
-  // Debug log wajib
   logger.info(
-    {
-      command: statusCode,
-      rawParticipant,
-      userJid,
-      mentionLine,
-      mentionJids
-    },
+    { command: statusCode, rawParticipant, userJid, mentionJids },
     '[transactionNote] mention debug'
   );
 
@@ -237,13 +228,17 @@ async function transactionNote(ctx, statusCode) {
 
   await ctx.sock.sendMessage(ctx.from, {
     text:
-      `「 TRANSAKSI ${status.toUpperCase()} 」\n\n` +
-      `🆔 ID : ${trxId}\n` +
-      `📆 TANGGAL : ${formatDate(now)}\n` +
-      `⌚ JAM : ${formatTime(now)} WIB\n` +
-      `✨ STATUS : ${status}\n\n` +
-      `📝 Catatan : ${note}\n\n` +
-      `${mentionLine}`,
+      `╭〔 ${emoji} ${styled('Transaksi')} ${styled(status)} 〕╮\n` +
+      `┃ 💠 ID : ${trxId}\n` +
+      `┃ 📅 Tanggal : ${formatDate(now)}\n` +
+      `┃ ⏰ Jam : ${formatTime(now)} WIB\n` +
+      `┃ ✨ Status : ${status}\n` +
+      `╰────────────────╯\n\n` +
+      `╭〔 📝 ${styled('Note')} 〕╮\n` +
+      `┃ • ${note}\n` +
+      `╰────────────────╯\n\n` +
+      `𖥻 ׁTerima kasih sudah order bubss~ ✧\n` +
+      `${mentionLine} akan segera memproses pesanan kamu 💠`,
     mentions: mentionJids
   });
 

@@ -1,14 +1,15 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// styledText — Unicode font converter for bot alerts
+// styledText — Unicode font converter for bot messages
 //
-// Converts plain text to stylized Unicode text:
-//   First letter of each word → Mathematical Bold Script Capital (𝓐-𝓩)
-//   Remaining letters → Mathematical Sans-Serif Bold Small (𝗮-𝘇)
+// styled() — Headers/titles: Script Bold first letter + Sans-Serif Bold rest
+//   Example: "Transaksi Pending" → "𝓣𝗿𝗮𝗻𝘀𝗮𝗸𝘀𝗶 𝓟𝗲𝗻𝗱𝗶𝗻𝗴"
 //
-// Example: "Gagal menambahkan list" → "𝓖𝗮𝗴𝗮𝗹 𝓜𝗲𝗻𝗮𝗺𝗯𝗮𝗵𝗸𝗮𝗻 𝓛𝗶𝘀𝘁"
+// sans() — Body/alerts: Mathematical Sans-Serif (regular)
+//   Example: "Ketik nama produk" → "𝖪𝖾𝗍𝗂𝗄 𝗇𝖺𝗆𝖺 𝗉𝗋𝗈𝖽𝗎𝗄"
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Mathematical Bold Script Capital: A-Z → U+1D4D0 to U+1D4E9
+// ══════ styled() maps ══════
+
 const SCRIPT_BOLD_UPPER = {
   A: '𝓐', B: '𝓑', C: '𝓒', D: '𝓓', E: '𝓔', F: '𝓕', G: '𝓖', H: '𝓗',
   I: '𝓘', J: '𝓙', K: '𝓚', L: '𝓛', M: '𝓜', N: '𝓝', O: '𝓞', P: '𝓟',
@@ -16,7 +17,6 @@ const SCRIPT_BOLD_UPPER = {
   Y: '𝓨', Z: '𝓩'
 };
 
-// Mathematical Sans-Serif Bold Small: a-z → U+1D5EE to U+1D607
 const SANS_BOLD_LOWER = {
   a: '𝗮', b: '𝗯', c: '𝗰', d: '𝗱', e: '𝗲', f: '𝗳', g: '𝗴', h: '𝗵',
   i: '𝗶', j: '𝗷', k: '𝗸', l: '𝗹', m: '𝗺', n: '𝗻', o: '𝗼', p: '𝗽',
@@ -24,7 +24,6 @@ const SANS_BOLD_LOWER = {
   y: '𝘆', z: '𝘇'
 };
 
-// Mathematical Sans-Serif Bold Capital: A-Z → U+1D5D4 to U+1D5ED
 const SANS_BOLD_UPPER = {
   A: '𝗔', B: '𝗕', C: '𝗖', D: '𝗗', E: '𝗘', F: '𝗙', G: '𝗚', H: '𝗛',
   I: '𝗜', J: '𝗝', K: '𝗞', L: '𝗟', M: '𝗠', N: '𝗡', O: '𝗢', P: '𝗣',
@@ -32,45 +31,48 @@ const SANS_BOLD_UPPER = {
   Y: '𝗬', Z: '𝗭'
 };
 
-/**
- * Convert a word to styled text:
- * First letter → Script Bold Capital, rest → Sans Bold Lower/Upper
- */
-function styledWord(word) {
-  if (!word) return '';
+// ══════ sans() maps ══════
 
-  let result = '';
-  for (let i = 0; i < word.length; i++) {
-    const ch = word[i];
-    if (i === 0) {
-      // First letter → Script Bold Capital
-      const upper = ch.toUpperCase();
-      result += SCRIPT_BOLD_UPPER[upper] || ch;
-    } else {
-      // Remaining → Sans Bold
-      const lower = ch.toLowerCase();
-      if (SANS_BOLD_LOWER[lower]) {
-        result += ch === ch.toUpperCase() ? (SANS_BOLD_UPPER[ch] || ch) : SANS_BOLD_LOWER[lower];
-      } else {
-        result += ch;
-      }
-    }
-  }
-  return result;
-}
+const SANS_UPPER = {
+  A: '𝖠', B: '𝖡', C: '𝖢', D: '𝖣', E: '𝖤', F: '𝖥', G: '𝖦', H: '𝖧',
+  I: '𝖨', J: '𝖩', K: '𝖪', L: '𝖫', M: '𝖬', N: '𝖭', O: '𝖮', P: '𝖯',
+  Q: '𝖰', R: '𝖱', S: '𝖲', T: '𝖳', U: '𝖴', V: '𝖵', W: '𝖶', X: '𝖷',
+  Y: '𝖸', Z: '𝖹'
+};
 
-/**
- * Convert full text to styled font.
- * Preserves emojis, special characters, and whitespace.
- * Only converts ASCII letter words.
- *
- * @param {string} text - Plain text to convert
- * @returns {string} Styled text
- */
+const SANS_LOWER = {
+  a: '𝖺', b: '𝖻', c: '𝖼', d: '𝖽', e: '𝖾', f: '𝖿', g: '𝗀', h: '𝗁',
+  i: '𝗂', j: '𝗃', k: '𝗄', l: '𝗅', m: '𝗆', n: '𝗇', o: '𝗈', p: '𝗉',
+  q: '𝗊', r: '𝗋', s: '𝗌', t: '𝗍', u: '𝗎', v: '𝗏', w: '𝗐', x: '𝗑',
+  y: '𝗒', z: '𝗓'
+};
+
+// ══════ Functions ══════
+
+/** styled(): Script Bold first letter + Sans Bold rest (for headers/titles) */
 function styled(text) {
   if (!text) return '';
-  // Split by word boundaries while preserving separators
-  return text.replace(/[a-zA-Z]+/g, (match) => styledWord(match));
+  return text.replace(/[a-zA-Z]+/g, (word) => {
+    let result = '';
+    for (let i = 0; i < word.length; i++) {
+      const ch = word[i];
+      if (i === 0) {
+        result += SCRIPT_BOLD_UPPER[ch.toUpperCase()] || ch;
+      } else {
+        const lower = ch.toLowerCase();
+        result += ch === ch.toUpperCase() ? (SANS_BOLD_UPPER[ch] || ch) : (SANS_BOLD_LOWER[lower] || ch);
+      }
+    }
+    return result;
+  });
 }
 
-module.exports = { styled, styledWord };
+/** sans(): Mathematical Sans-Serif regular (for body text/alerts) */
+function sans(text) {
+  if (!text) return '';
+  return text.replace(/[a-zA-Z]/g, (ch) => {
+    return ch === ch.toUpperCase() ? (SANS_UPPER[ch] || ch) : (SANS_LOWER[ch] || ch);
+  });
+}
+
+module.exports = { styled, sans };

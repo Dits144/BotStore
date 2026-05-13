@@ -12,11 +12,11 @@ const { suggestClosest } = require('../../utils/typo');
 const { toMentionJid } = require('../../utils/jid');
 const config = require('../../config/env');
 const logger = require('../../config/logger');
-const { styled } = require('../../utils/styledText');
+const { styled, sans } = require('../../utils/styledText');
 
 async function handle(ctx, parsed) {
   if (!ctx.isGroup) {
-    await ctx.send(`⚠️ ${styled('Command katalog hanya bisa dipakai di grup.')}`);
+    await ctx.send(`⚠️ ${sans('Command katalog hanya bisa dipakai di grup.')}`);
     return;
   }
 
@@ -27,7 +27,7 @@ async function handle(ctx, parsed) {
 
   const canManage = await canManageCatalogue(ctx.sock, ctx.from, ctx.sender);
   if (!canManage) {
-    await ctx.send(`❌ ${styled('Akses ditolak')}\n${styled('Perintah ini khusus untuk Admin Grup atau Owner Bot.')}`);
+    await ctx.send(`❌ ${sans('Akses ditolak')}\n${sans('Perintah ini khusus untuk Admin Grup atau Owner Bot.')}`);
     return;
   }
 
@@ -39,7 +39,7 @@ async function handle(ctx, parsed) {
 async function listCatalogue(ctx) {
   const rows = await catalogueRepository.listByGroup(ctx.from);
   if (!rows.length) {
-    await ctx.send(`🛒 ${styled('Toko kosong, admin belum menambahkan katalog.')}`);
+    await ctx.send(`🛒 ${sans('Toko kosong, admin belum menambahkan katalog.')}`);
     return;
   }
 
@@ -59,22 +59,24 @@ async function listCatalogue(ctx) {
 
   await ctx.sock.sendMessage(ctx.from, {
     text:
-      `╭━━━〔 ⚡️ ${groupName} ⚡️ 〕━━━╮\n` +
-      `┃ ✦ ◟⚡ ׄ 𝅄 𝓛𝗶𝘀𝘁 𝗠𝗲𝗻𝘂 一緒 ˎˊ˗ ✦\n` +
-      `╰━━━━━━━━━━━━━━━━━━━━━━╯\n\n` +
-      `💫 Helooo bubss~\n` +
-      `👤 Name : ${mention.text}\n` +
-      `⏱️ Time : ${formatTime(now)}\n` +
-      `📅 Date : ${formatDate(now)}\n\n` +
-      `┌〔 💎 𖹭 𝓒𝗮𝘁𝗮𝗹𝗼𝗴 ✦ ˎˊ˗ 〕┐\n` +
+      `╭〔 ${styled(groupName)} 〕╮\n` +
+      `┃ 💠═══════💠\n` +
+      `   𖥻 ׁsee the list ! ✧\n` +
+      `💠═══════💠\n` +
+      `╰────────────────╯\n\n` +
+      `𖹭 ${styled('helloo')} ${styled('bubss')}~ ✦\n` +
+      `👤 ${styled('Name')} : ${mention.text}\n` +
+      `╭⸼ 𝖼⃘𐑋 ִ╮${sans('time')} ${formatTime(now)}\n` +
+      `╰⸼ 𝖼⃘𐑋 ִ╯${sans('date')} ${formatDate(now)}\n\n` +
+      `╭〔 ${styled('Catalog')} 〕╮\n` +
       `${listBody}\n` +
-      `└──────────────────┘\n\n` +
-      `╭〔 📌 ◟✦ ׄ 𝅄 𝓝𝗼𝘁𝗲 一緒 ˎˊ˗ 〕╮\n` +
-      `┃ • ketik nama produk\n` +
-      `┃ • gunakan menu bot\n` +
-      `┃ • transaksi via admin\n` +
-      `╰──────────────────╯`,
-    mentions: mention.mentions  // ← JID sender ada di sini → mention aktif
+      `╰────────────────╯\n\n` +
+      `╭〔 ${styled('Note')} ✦ 〕╮\n` +
+      `┃ • ${sans('Ketik nama produk')}\n` +
+      `┃ • ${sans('Gunakan menu bot')}\n` +
+      `┃ • ${sans('Transaksi via admin')}\n` +
+      `╰────────────────╯`,
+    mentions: mention.mentions
   });
 }
 
@@ -95,7 +97,7 @@ async function addList(ctx, parsed) {
 
   if (media?.error) {
     await reactError(ctx.sock, ctx.msg);
-    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Gagal menyimpan media.')}`);
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans('Gagal menyimpan media.')}`);
     return;
   }
 
@@ -106,11 +108,11 @@ async function addList(ctx, parsed) {
     await sendMinimalSuccess(
       ctx.sock,
       ctx.from,
-      media?.path ? `✅ ${styled('List + media berhasil ditambahkan.')}` : `✅ ${styled('List ditambahkan.')}`
+      media?.path ? `✅ ${sans('List + media berhasil ditambahkan.')}` : `✅ ${sans('List ditambahkan.')}`
     );
   } catch {
     await reactError(ctx.sock, ctx.msg);
-    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Gagal menambahkan list.')}`);
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans('Gagal menambahkan list.')}`);
   }
 }
 
@@ -124,7 +126,7 @@ async function delList(ctx, parsed) {
   const item = await catalogueRepository.getItem(ctx.from, name);
   const result = await catalogueRepository.deleteItem(ctx.from, name);
   if (!result.changes) {
-    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Item tidak ditemukan.')}`);
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans('Item tidak ditemukan.')}`);
     return;
   }
 
@@ -132,7 +134,7 @@ async function delList(ctx, parsed) {
   await reactLoading(ctx.sock, ctx.msg);
   await deleteMessageForEveryone(ctx.sock, ctx.msg);
   await reactSuccess(ctx.sock, ctx.msg);
-  await sendMinimalSuccess(ctx.sock, ctx.from, `✅ ${styled('List dihapus.')}`);
+  await sendMinimalSuccess(ctx.sock, ctx.from, `✅ ${sans('List dihapus.')}`);
 }
 
 async function updateList(ctx, parsed) {
@@ -149,14 +151,14 @@ async function updateList(ctx, parsed) {
   const result = await catalogueRepository.updateItem(ctx.from, name, description);
 
   if (!result.changes) {
-    await sendMinimalError(ctx.sock, ctx.from, `❌ ${styled('Item tidak ditemukan.')}`);
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans('Item tidak ditemukan.')}`);
     return;
   }
 
   await reactLoading(ctx.sock, ctx.msg);
   await deleteMessageForEveryone(ctx.sock, ctx.msg);
   await reactSuccess(ctx.sock, ctx.msg);
-  await sendMinimalSuccess(ctx.sock, ctx.from, `✅ ${styled('List diperbarui.')}`);
+  await sendMinimalSuccess(ctx.sock, ctx.from, `✅ ${sans('List diperbarui.')}`);
 }
 
 async function productTrigger(ctx, rawText) {

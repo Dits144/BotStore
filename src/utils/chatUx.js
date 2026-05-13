@@ -5,9 +5,9 @@ const {
   reactError,
   deleteForEveryone
 } = require('./messageActions');
-const { styled } = require('./styledText');
+const { sans } = require('./styledText');
 
-async function sendMinimalSuccess(sock, chatId, text = `✅ ${styled('Berhasil.')}`) {
+async function sendMinimalSuccess(sock, chatId, text = `✅ ${sans('Berhasil.')}`) {
   try {
     await sock.sendMessage(chatId, { text });
   } catch (error) {
@@ -15,7 +15,7 @@ async function sendMinimalSuccess(sock, chatId, text = `✅ ${styled('Berhasil.'
   }
 }
 
-async function sendMinimalError(sock, chatId, text = `❌ ${styled('Terjadi kesalahan.')}`) {
+async function sendMinimalError(sock, chatId, text = `❌ ${sans('Terjadi kesalahan.')}`) {
   try {
     await sock.sendMessage(chatId, { text });
   } catch (error) {

@@ -1,9 +1,9 @@
 const { toMentionJid } = require('./jid');
 const logger = require('../config/logger');
-const { styled } = require('./styledText');
+const { sans } = require('./styledText');
 
 function formatWrongExample(example) {
-  return `❌ ${styled('Format salah')}\n${styled('Contoh:')}\n${example}`;
+  return `❌ ${sans('Format salah')}\n${sans('Contoh:')}\n${example}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
