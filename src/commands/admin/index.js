@@ -162,12 +162,12 @@ async function broadcast(ctx, parsed) {
 // ─────────────────────────────────────────────────────────────────────────────
 // transactionNote — kirim nota transaksi dengan mention customer
 //
-// Format receipt: DITSSTORE ORDER RECEIPT
+// Format receipt: header = Nama Grup
 // Footer dinamis berdasarkan status:
-//   p (Pending) → LOADING... ⏳ Mohon tunggu
-//   d (Done)    → THANK YOU ║▌│█║▌│ █║▌│█│║▌║
-//   r (Refund)  → 🔄 Refund sedang diproses
-//   b (Batal)   → ❌ Transaksi Batal
+//   p (Pending) → LOADING... ⏳ Mohon tunggu  lalu @mention
+//   d (Done)    → THANK YOU @mention  lalu ║▌│█║▌│ █║▌│█│║▌║
+//   r (Refund)  → 🔄 Refund sedang diproses  lalu @mention
+//   b (Batal)   → ❌ Transaksi Batal  lalu @mention
 // ─────────────────────────────────────────────────────────────────────────────
 async function transactionNote(ctx, statusCode) {
   // Ambil contextInfo dari pesan yang di-reply
@@ -208,21 +208,53 @@ async function transactionNote(ctx, statusCode) {
   const now = nowJakarta();
   const trxId = `TRX-${now.format('YYYYMMDD')}-${crypto.randomInt(1000, 9999)}`;
 
-  // Footer dinamis berdasarkan status
-  const footerMap = {
-    p: `Pesanan diproses\n──────────────────\nLOADING... ⏳ Mohon tunggu`,
-    d: `Pesanan diproses\n──────────────────\nTHANK YOU\n║▌│█║▌│ █║▌│█│║▌║`,
-    r: `Pesanan diproses\n──────────────────\n🔄 Refund sedang diproses`,
-    b: `Pesanan dibatalkan\n──────────────────\n❌ Transaksi Batal`
-  };
-  const footer = footerMap[statusCode] || footerMap['p'];
+  // Ambil nama grup sebagai header
+  let groupName = 'DITSSTORE';
+  try {
+    const meta = await ctx.sock.groupMetadata(ctx.from);
+    groupName = meta.subject || groupName;
+  } catch (_) { /* pakai default jika gagal */ }
 
-  // Render mention text
+  // Mention text
   const mentionLine = `@${userNumber}`;
   const mentionJids = [userJid];
 
+  // Susun body receipt (sama untuk semua status)
+  const receiptBody =
+    `${groupName}\n` +
+    `──────────────────\n` +
+    `No   : ${trxId}\n` +
+    `Date : ${formatDate(now)}\n` +
+    `Time : ${formatTime(now)} WIB\n\n` +
+    `📝 Catatan : ${note}\n` +
+    `──────────────────\n` +
+    `         Pesanan diproses\n` +
+    `──────────────────\n`;
+
+  // Footer + mention berbeda per status
+  let receiptFooter;
+  if (statusCode === 'd') {
+    // Done: THANK YOU @mention, lalu barcode di bawah
+    receiptFooter =
+      `THANK YOU ${mentionLine}\n` +
+      `║▌│█║▌│ █║▌│█│║▌║`;
+  } else if (statusCode === 'r') {
+    receiptFooter =
+      `🔄 Refund sedang diproses\n` +
+      `${mentionLine}`;
+  } else if (statusCode === 'b') {
+    receiptFooter =
+      `❌ Transaksi Batal\n` +
+      `${mentionLine}`;
+  } else {
+    // Pending (default)
+    receiptFooter =
+      `LOADING... ⏳ Mohon tunggu\n` +
+      `${mentionLine}`;
+  }
+
   logger.info(
-    { command: statusCode, rawParticipant, userJid, mentionJids },
+    { command: statusCode, rawParticipant, userJid, mentionJids, groupName },
     '[transactionNote] mention debug'
   );
 
@@ -230,18 +262,7 @@ async function transactionNote(ctx, statusCode) {
   await deleteMessageForEveryone(ctx.sock, ctx.msg);
 
   await ctx.sock.sendMessage(ctx.from, {
-    text:
-      `DITSSTORE ORDER RECEIPT\n` +
-      `──────────────────\n` +
-      `No   : ${trxId}\n` +
-      `Date : ${formatDate(now)}\n` +
-      `Time : ${formatTime(now)} WIB\n` +
-      `Status: ${status}\n` +
-      `Pesan : ${note}\n` +
-      `──────────────────\n` +
-      `${footer}\n` +
-      `──────────────────\n` +
-      `${mentionLine}`,
+    text: receiptBody + receiptFooter,
     mentions: mentionJids
   });
 
