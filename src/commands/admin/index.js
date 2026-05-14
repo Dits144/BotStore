@@ -165,7 +165,7 @@ async function broadcast(ctx, parsed) {
 // Format receipt: header = Nama Grup
 // Footer dinamis berdasarkan status:
 //   p (Pending) → LOADING... ⏳ Mohon tunggu  lalu @mention
-//   d (Done)    → THANK YOU @mention  lalu ║▌│█║▌│ █║▌│█│║▌║
+//   d (Done)    → THANK YOU @mention  lalu ❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❘❚❙❘❘❚❙❘❘❚❙❘
 //   r (Refund)  → 🔄 Refund sedang diproses  lalu @mention
 //   b (Batal)   → ❌ Transaksi Batal  lalu @mention
 // ─────────────────────────────────────────────────────────────────────────────
@@ -219,37 +219,52 @@ async function transactionNote(ctx, statusCode) {
   const mentionLine = `@${userNumber}`;
   const mentionJids = [userJid];
 
-  // Susun body receipt (sama untuk semua status)
+  // Separator pendek (12 karakter)
+  const SEP = '────────────';
+
+  // Centering nama grup: padding kiri agar terlihat tengah
+  const pad = ' '.repeat(Math.max(0, Math.floor((12 - groupName.length) / 2) + 2));
+
+  // Receipt body dalam triple backtick → font monospace (tampilan struk)
+  // Mention HARUS di luar code block agar bisa di-tap sebagai @Nama
   const receiptBody =
-    `${groupName}\n` +
-    `──────────────────\n` +
+    `\`\`\`\n` +
+    `${pad}${groupName}\n` +
+    `${SEP}\n` +
     `No   : ${trxId}\n` +
     `Date : ${formatDate(now)}\n` +
     `Time : ${formatTime(now)} WIB\n\n` +
     `📝 Catatan : ${note}\n` +
-    `──────────────────\n` +
-    `         Pesanan diproses\n` +
-    `──────────────────\n`;
+    `${SEP}\n` +
+    `  Pesanan diproses\n` +
+    `${SEP}\n`;
 
   // Footer + mention berbeda per status
+  // - Body ditutup ``` sebelum mention keluar dari code block
   let receiptFooter;
   if (statusCode === 'd') {
-    // Done: THANK YOU @mention, lalu barcode di bawah
+    // Done: tutup code block → THANK YOU @mention → barcode
     receiptFooter =
+      `\`\`\`\n` +
       `THANK YOU ${mentionLine}\n` +
-      `║▌│█║▌│ █║▌│█│║▌║`;
+      `❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❘❚❙❘❘❚❙❘❘❚❙❘`;
   } else if (statusCode === 'r') {
+    // Refund: LOADING di dalam code block → tutup → @mention
     receiptFooter =
       `🔄 Refund sedang diproses\n` +
+      `\`\`\`\n` +
       `${mentionLine}`;
   } else if (statusCode === 'b') {
+    // Batal: status di dalam code block → tutup → @mention
     receiptFooter =
       `❌ Transaksi Batal\n` +
+      `\`\`\`\n` +
       `${mentionLine}`;
   } else {
-    // Pending (default)
+    // Pending: LOADING di dalam code block → tutup → @mention
     receiptFooter =
       `LOADING... ⏳ Mohon tunggu\n` +
+      `\`\`\`\n` +
       `${mentionLine}`;
   }
 

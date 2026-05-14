@@ -60,11 +60,10 @@ async function listCatalogue(ctx) {
   await ctx.sock.sendMessage(ctx.from, {
     text:
       `╭〔 ${styled(groupName)} 〕╮\n` +
-      `┃ 💠═══════💠\n` +
-      `   𖥻 ׁsee the list ! ✧\n` +
       `💠═══════💠\n` +
-      `╰────────────────╯\n\n` +
-      `𖹭 ${styled('helloo')} ${styled('bubss')}~ ✦\n` +
+      `   𖥻 ׁsee the list ! ✧\n` +
+      `💠═══════💠\n\n` +
+      `𖹭 ${styled('Helloo')} ${styled('Bubss')}~ ✦\n` +
       `👤 ${styled('Name')} : ${mention.text}\n` +
       `╭⸼ 𝖼⃘𐑋 ִ╮${sans('time')} ${formatTime(now)}\n` +
       `╰⸼ 𝖼⃘𐑋 ִ╯${sans('date')} ${formatDate(now)}\n\n` +
@@ -72,10 +71,9 @@ async function listCatalogue(ctx) {
       `${listBody}\n` +
       `╰────────────────╯\n\n` +
       `╭〔 ${styled('Note')} ✦ 〕╮\n` +
-      `┃ • ${sans('Ketik nama produk')}\n` +
-      `┃ • ${sans('Gunakan menu bot')}\n` +
-      `┃ • ${sans('Transaksi via admin')}\n` +
-      `╰────────────────╯`,
+      `• 𝖪𝖾𝗍𝗂𝗄 𝗇𝖺𝗆𝖺 𝗉𝗋𝗈𝖽𝗎𝗄\n` +
+      `• 𝖦𝗎𝗇𝖺𝗄𝖺𝗇 𝗆𝖾𝗇𝗎 𝖻𝗈𝗍\n` +
+      `• 𝖳𝗋𝖺𝗇𝗌𝖺𝗄𝗌𝗂 𝗏𝗂𝖺 𝖺𝖽𝗆𝗂𝗇`,
     mentions: mention.mentions
   });
 }
@@ -166,7 +164,7 @@ async function productTrigger(ctx, rawText) {
   if (!name || name.includes(' ')) return;
 
   const groupName = await resolveGroupName(ctx);
-  const footer = `\n\n║▌│█║▌│ █║▌│█│║▌║\n◟☁️ ׄ   ${groupName}  𓂃 ࣪˖ ִֶָ`;
+  const footer = `\n\n❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❘❚❙❘❘❚❙❘❘❚❙❘\n◟☁️ ׄ   ${groupName}  𓂃 ࣪˖ ִֶָ`;
 
   const item = await catalogueRepository.getItem(ctx.from, name);
   if (item) {
