@@ -11,6 +11,7 @@ const catalogueCommands = require('../commands/catalogue');
 const adminCommands = require('../commands/admin');
 const groupAdminCommands = require('../commands/admin/groupAdmin');
 const menuCommands = require('../commands/menu');
+const customerCommands = require('../commands/customer');
 const config = require('../config/env');
 const { sans } = require('../utils/styledText');
 
@@ -42,6 +43,9 @@ const commandRegistry = {
   addlist: catalogueCommands.handle,
   updatelist: catalogueCommands.handle,
   dellist: catalogueCommands.handle,
+  clonelist: adminCommands.handle,
+  level: customerCommands.handle,
+  levelboard: customerCommands.handle,
   group: groupAdminCommands.handle
 };
 

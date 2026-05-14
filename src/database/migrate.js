@@ -58,6 +58,14 @@ async function migrate() {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS customer_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_id TEXT NOT NULL,
+      customer_jid TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'sukses',
+      created_at TEXT NOT NULL
+    );
   `);
 
   await ensureColumn(db, 'catalogues', 'media_path', 'media_path TEXT NOT NULL DEFAULT ""');
