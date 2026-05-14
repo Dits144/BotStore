@@ -162,20 +162,12 @@ async function broadcast(ctx, parsed) {
 // ─────────────────────────────────────────────────────────────────────────────
 // transactionNote — kirim nota transaksi dengan mention customer
 //
-// PENTING TENTANG DISPLAY @+242...:
-// Ketika kode mengirim:
-//   text: "@628xxx Terima kasih..."
-//   mentions: ["628xxx@s.whatsapp.net"]
-//
-// WhatsApp akan MENAMPILKAN:
-//   "@Admin DitsStore Terima kasih..."  ← jika nomor disimpan di kontak
-//   "@+62 812-xxxx Terima kasih..."     ← jika nomor TIDAK disimpan di kontak
-//
-// Format "@+242 176596406332" yang kamu lihat = NORMAL.
-// Itu berarti nomor customer belum tersimpan di kontak HP kamu/bot.
-// Mention-nya AKTIF (customer dapat notif), hanya tampilannya pakai format internasional.
-//
-// Untuk mengubah tampilannya menjadi @nama, customer harus disimpan di kontak.
+// Format receipt: DITSSTORE ORDER RECEIPT
+// Footer dinamis berdasarkan status:
+//   p (Pending) → LOADING... ⏳ Mohon tunggu
+//   d (Done)    → THANK YOU ║▌│█║▌│ █║▌│█│║▌║
+//   r (Refund)  → 🔄 Refund sedang diproses
+//   b (Batal)   → ❌ Transaksi Batal
 // ─────────────────────────────────────────────────────────────────────────────
 async function transactionNote(ctx, statusCode) {
   // Ambil contextInfo dari pesan yang di-reply
@@ -215,8 +207,15 @@ async function transactionNote(ctx, statusCode) {
   const note = extractQuotedText(quoted) || '-';
   const now = nowJakarta();
   const trxId = `TRX-${now.format('YYYYMMDD')}-${crypto.randomInt(1000, 9999)}`;
-  const statusEmoji = { p: '⏳', d: '✅', r: '🔄', b: '❌' };
-  const emoji = statusEmoji[statusCode] || '⏳';
+
+  // Footer dinamis berdasarkan status
+  const footerMap = {
+    p: `Pesanan diproses\n──────────────────\nLOADING... ⏳ Mohon tunggu`,
+    d: `Pesanan diproses\n──────────────────\nTHANK YOU\n║▌│█║▌│ █║▌│█│║▌║`,
+    r: `Pesanan diproses\n──────────────────\n🔄 Refund sedang diproses`,
+    b: `Pesanan dibatalkan\n──────────────────\n❌ Transaksi Batal`
+  };
+  const footer = footerMap[statusCode] || footerMap['p'];
 
   // Render mention text
   const mentionLine = `@${userNumber}`;
@@ -232,17 +231,17 @@ async function transactionNote(ctx, statusCode) {
 
   await ctx.sock.sendMessage(ctx.from, {
     text:
-      `╭〔 ${emoji} ${styled('Transaksi')} ${styled(status)} 〕╮\n` +
-      `┃ 💠 ID : ${trxId}\n` +
-      `┃ 📅 Tanggal : ${formatDate(now)}\n` +
-      `┃ ⏰ Jam : ${formatTime(now)} WIB\n` +
-      `┃ ✨ Status : ${status}\n` +
-      `╰────────────────╯\n\n` +
-      `╭〔 📝 ${styled('Note')} 〕╮\n` +
-      `┃ • ${note}\n` +
-      `╰────────────────╯\n\n` +
-      `𖥻 ׁTerima kasih sudah order bubss~ ✧\n` +
-      `${mentionLine} akan segera memproses pesanan kamu 💠`,
+      `DITSSTORE ORDER RECEIPT\n` +
+      `──────────────────\n` +
+      `No   : ${trxId}\n` +
+      `Date : ${formatDate(now)}\n` +
+      `Time : ${formatTime(now)} WIB\n` +
+      `Status: ${status}\n` +
+      `Pesan : ${note}\n` +
+      `──────────────────\n` +
+      `${footer}\n` +
+      `──────────────────\n` +
+      `${mentionLine}`,
     mentions: mentionJids
   });
 
