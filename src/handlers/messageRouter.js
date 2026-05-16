@@ -43,7 +43,6 @@ const commandRegistry = {
   addlist: catalogueCommands.handle,
   updatelist: catalogueCommands.handle,
   dellist: catalogueCommands.handle,
-  clonelist: adminCommands.handle,
   clone: adminCommands.handle,
   level: customerCommands.handle,
   levelboard: customerCommands.handle,

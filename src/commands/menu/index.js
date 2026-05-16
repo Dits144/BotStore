@@ -23,7 +23,8 @@ const ADMIN_SECTION =
   `• 📦 addlist — tambah produk ke katalog\n` +
   `• 📝 updatelist — edit deskripsi produk\n` +
   `• ❌ dellist — hapus produk dari katalog\n` +
-  `• 📋 clonelist — clone produk dari grup lain\n` +
+  `• 📋 clone — clone produk dari grup lain\n` +
+
   `• 👋 welcome — aktifkan/matikan ucapan welcome\n` +
   `• ✏ setwelcome — set template ucapan welcome\n` +
   `• 📢 h — broadcast tag-all tersembunyi\n` +
