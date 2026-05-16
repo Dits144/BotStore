@@ -292,8 +292,22 @@ async function broadcast(ctx, parsed) {
 //   b (Batal)   → ❌ Transaksi Batal  lalu @mention
 // ─────────────────────────────────────────────────────────────────────────────
 async function transactionNote(ctx, statusCode) {
-  // Ambil contextInfo dari pesan yang di-reply
-  const contextInfo = ctx.msg.message?.extendedTextMessage?.contextInfo;
+  // Ambil contextInfo dari semua tipe pesan yang mungkin membawa reply
+  // Ketika admin ketik 'p' (1 huruf), WhatsApp bisa kirim sebagai:
+  //   - conversation (tanpa extendedTextMessage) → contextInfo ada di level msg.message
+  //   - extendedTextMessage → contextInfo ada di dalamnya
+  // Kita cek semua kemungkinan path agar reply selalu terdeteksi.
+  const msgContent = ctx.msg.message || {};
+  const contextInfo =
+    msgContent.extendedTextMessage?.contextInfo ||
+    msgContent.imageMessage?.contextInfo ||
+    msgContent.videoMessage?.contextInfo ||
+    msgContent.audioMessage?.contextInfo ||
+    msgContent.documentMessage?.contextInfo ||
+    msgContent.stickerMessage?.contextInfo ||
+    msgContent.buttonsResponseMessage?.contextInfo ||
+    null;
+
   const quoted = contextInfo?.quotedMessage;
 
   // participant = JID pengirim pesan yang di-reply (bukan sender command)
@@ -328,7 +342,11 @@ async function transactionNote(ctx, statusCode) {
   const status = statusMap[statusCode] || 'Pending';
   const note = extractQuotedText(quoted) || '-';
   const now = nowJakarta();
-  const trxId = `TRX-${now.format('YYYYMMDD')}-${crypto.randomInt(1000, 9999)}`;\n\n  // Ambil data level customer\n  const { tier } = await customerRepository.getCustomerLevel(ctx.from, userJid);\n
+  const trxId = `TRX-${now.format('YYYYMMDD')}-${crypto.randomInt(1000, 9999)}`;
+
+  // Ambil data level customer
+  const { tier } = await customerRepository.getCustomerLevel(ctx.from, userJid);
+
 
   // Ambil nama grup sebagai header
   let groupName = 'DITSSTORE';
