@@ -39,7 +39,8 @@ async function handle(ctx, parsed) {
   if (parsed.command === 'setwelcome') return setWelcomeTemplate(ctx, parsed);
   if (['h', 'hall', 'wptagall', 'everyone'].includes(parsed.command)) return broadcast(ctx, parsed);
   if (['p', 'd', 'r', 'b'].includes(parsed.command)) return transactionNote(ctx, parsed.command);
-  if (parsed.command === 'clonelist') return cloneList(ctx, parsed);
+  if (['clonelist', 'clone'].includes(parsed.command)) return cloneList(ctx, parsed);
+
 }
 
 async function setWelcomeStatus(ctx, parsed) {

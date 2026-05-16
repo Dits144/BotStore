@@ -23,6 +23,7 @@ const ADMIN_SECTION =
   `• 📦 addlist — tambah produk ke katalog\n` +
   `• 📝 updatelist — edit deskripsi produk\n` +
   `• ❌ dellist — hapus produk dari katalog\n` +
+  `• 📋 clonelist — clone produk dari grup lain\n` +
   `• 👋 welcome — aktifkan/matikan ucapan welcome\n` +
   `• ✏ setwelcome — set template ucapan welcome\n` +
   `• 📢 h — broadcast tag-all tersembunyi\n` +
@@ -33,6 +34,7 @@ const ADMIN_SECTION =
   `• 🔄 r — nota transaksi status Refund\n` +
   `• ❌ b — nota transaksi status Batal\n` +
   `• 🔍 ceksewa — cek status sewa grup ini\n`;
+
 
 const USER_SECTION =
   `\n👥 𝗨𝗦𝗘𝗥 𝗠𝗘𝗡𝗨\n` +
