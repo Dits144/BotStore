@@ -3,12 +3,20 @@ const { formatWrongExample } = require('../../utils/messageFormatter');
 const { dayjs, nowJakarta, formatDateTime } = require('../../utils/time');
 const { computeRenewalExpiry, refreshRentalStatus } = require('../../services/rentalService');
 const { isBotOwner } = require('../../services/roleService');
+const { canManageCatalogue } = require('../../middlewares/roleGuard');
 const logger = require('../../config/logger');
 const { normalizeJid } = require('../../utils/jid');
 const { sans } = require('../../utils/styledText');
 
 async function handle(ctx, parsed) {
   const senderJid = normalizeJid(ctx.sender);
+
+  // ceksewa: owner bisa cek grup manapun, admin grup cukup cek grupnya sendiri
+  if (parsed.command === 'ceksewa') {
+    return handleCekSewa(ctx, parsed, senderJid);
+  }
+
+  // Perintah lain (addsewa, renewsewa, delsewa, listsewa) hanya untuk owner
   const owner = await isBotOwner(senderJid);
   logger.info({
     command: parsed.command,
@@ -31,7 +39,6 @@ async function handle(ctx, parsed) {
   if (parsed.command === 'renewsewa') return renewSewa(ctx, parsed.args);
   if (parsed.command === 'delsewa') return delSewa(ctx, parsed.args);
   if (parsed.command === 'listsewa') return listSewa(ctx);
-  if (parsed.command === 'ceksewa') return cekSewa(ctx, parsed.args);
 }
 
 async function addSewa(ctx, args) {
@@ -125,13 +132,47 @@ async function listSewa(ctx) {
   await ctx.send(`┏━━〔 📦 LIST SEWA GRUP 〕━━┓\n${content}\n┗━━━━━━━━━━━━━━━━━━━━┛`);
 }
 
-async function cekSewa(ctx, args) {
-  if (args.length !== 1) {
-    await ctx.send(formatWrongExample('ceksewa 1203630xxxx@g.us'));
-    return;
+async function resolveGroupName(sock, groupId) {
+  try {
+    const meta = await sock.groupMetadata(groupId);
+    return meta.subject || 'Unknown Group';
+  } catch (error) {
+    return 'Unknown Group';
+  }
+}
+
+// ─── ceksewa: owner bisa cek grup manapun, admin cek grup sendiri ─────────────
+async function handleCekSewa(ctx, parsed, senderJid) {
+  const isOwner = await isBotOwner(senderJid);
+
+  let targetGroupId;
+
+  if (isOwner) {
+    // Owner: boleh masukkan groupId sebagai argumen, atau cek grup saat ini
+    if (parsed.args.length >= 1) {
+      targetGroupId = parsed.args[0];
+    } else if (ctx.isGroup) {
+      targetGroupId = ctx.from;
+    } else {
+      await ctx.send(formatWrongExample('ceksewa 1203630xxxx@g.us'));
+      return;
+    }
+  } else {
+    // Bukan owner — pastikan di grup dan merupakan admin grup
+    if (!ctx.isGroup) {
+      await ctx.send(`❌ ${sans('Perintah ini hanya bisa dipakai di grup.')}`);
+      return;
+    }
+    const isAdmin = await canManageCatalogue(ctx.sock, ctx.from, ctx.sender);
+    if (!isAdmin) {
+      await ctx.send(`❌ ${sans('Akses ditolak')}\n${sans('Perintah ini khusus untuk Admin Grup atau Owner Bot.')}`);
+      return;
+    }
+    // Admin hanya bisa cek grup tempat dia berada
+    targetGroupId = ctx.from;
   }
 
-  const row = await rentalRepository.getRental(args[0]);
+  const row = await rentalRepository.getRental(targetGroupId);
   if (!row) {
     await ctx.send(`❌ ${sans('Data sewa grup tidak ditemukan.')}`);
     return;
@@ -145,15 +186,6 @@ async function cekSewa(ctx, args) {
     `📅 Expired : ${formatDateTime(row.expired_at)}\n` +
     `🔖 Status : ${status}`
   );
-}
-
-async function resolveGroupName(sock, groupId) {
-  try {
-    const meta = await sock.groupMetadata(groupId);
-    return meta.subject || 'Unknown Group';
-  } catch (error) {
-    return 'Unknown Group';
-  }
 }
 
 module.exports = { handle };
