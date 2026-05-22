@@ -30,7 +30,7 @@ export interface AuthSession {
 }
 
 function getAuthHeader() {
-  const sessionData = localStorage.getItem("auth_session");
+  const sessionData = localStorage.getItem("wa-bot-dashboard:session:v1");
   if (!sessionData) return {};
   const session = JSON.parse(sessionData);
   return { Authorization: `Bearer ${session.token}` };
