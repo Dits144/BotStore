@@ -26,11 +26,26 @@ async function dashboard(ctx) {
   }
 
   try {
+    const db = await connectDatabase();
+    const rental = await db.get('SELECT group_password FROM rentals WHERE group_id = ?', [chatJid]);
+    
+    if (!rental) {
+      return sendText(`❌ ${sans('Grup ini belum terdaftar di database sewa.')}`);
+    }
+
+    let groupPassword = rental.group_password;
+    if (!groupPassword) {
+      // Generate random 6-character string
+      const crypto = require('crypto');
+      groupPassword = crypto.randomBytes(3).toString('hex').toUpperCase();
+      await db.run('UPDATE rentals SET group_password = ? WHERE group_id = ?', [groupPassword, chatJid]);
+    }
+
     const webUrl = process.env.WEB_DASHBOARD_URL || 'https://websitegue.my.id/login';
     const message = `Halo! Berikut adalah akses Dashboard Web untuk grup ini:\n\n` +
-      `🌐 *URL:* ${webUrl}\n` +
-      `🔑 *Token Grup:* ${chatJid}\n\n` +
-      `Silakan login menggunakan Email dan Password admin Anda.`;
+      `🌐 *URL Login:* ${webUrl}?token=${encodeURIComponent(chatJid)}\n` +
+      `🔑 *Group Password:* ${groupPassword}\n\n` +
+      `Silakan registrasi/login terlebih dahulu, lalu klik link di atas.`;
 
     // Send private message
     await sock.sendMessage(senderJid, { text: message });

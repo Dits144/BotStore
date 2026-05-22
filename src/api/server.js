@@ -6,6 +6,7 @@ const config = require('../config/env');
 const logger = require('../config/logger');
 const { getSock } = require('../services/whatsappService');
 const { normalizeJid } = require('../utils/jid');
+const crypto = require('crypto');
 
 const app = express();
 app.use(cors());
@@ -30,41 +31,73 @@ const authenticate = (req, res, next) => {
 
 // 1. Auth Login
 app.post('/api/login', async (req, res) => {
-  const { email, password, groupToken } = req.body;
+  const { email, password } = req.body;
+  const db = await connectDatabase();
   
-  if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+  // Seed owner if not exists
+  const hashedAdminPw = crypto.createHash('sha256').update(ADMIN_PASSWORD).digest('hex');
+  await db.run('INSERT OR IGNORE INTO users (email, password, role, created_at) VALUES (?, ?, ?, ?)', [ADMIN_EMAIL, hashedAdminPw, 'owner', new Date().toISOString()]);
+
+  const user = await db.get('SELECT id, email, password, role FROM users WHERE email = ?', [email]);
+  if (!user) return res.status(401).json({ error: 'Email tidak ditemukan' });
+
+  const hashedInput = crypto.createHash('sha256').update(password).digest('hex');
+  if (user.password !== hashedInput && user.password !== password) {
     return res.status(401).json({ error: 'Kredensial salah' });
   }
 
-  const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
   
-  const db = await connectDatabase();
-  const rentals = await db.all('SELECT group_id, group_name, created_at FROM rentals');
-  
-  const groups = rentals.map(r => ({
-    token: r.group_id,
-    name: r.group_name,
-    linkedAt: r.created_at
-  }));
-
-  // If groupToken provided but not in groups, we can add it or just return existing
-  if (groupToken && !groups.find(g => g.token === groupToken)) {
-    groups.push({
-      token: groupToken,
-      name: groupToken.split('@')[0],
-      linkedAt: new Date().toISOString()
-    });
+  let groups = [];
+  if (user.role === 'owner') {
+    const rentals = await db.all('SELECT group_id, group_name, created_at FROM rentals');
+    groups = rentals.map(r => ({ token: r.group_id, name: r.group_name, linkedAt: r.created_at }));
+  } else {
+    const userGroups = await db.all('SELECT r.group_id, r.group_name, ug.created_at FROM user_groups ug JOIN rentals r ON ug.group_id = r.group_id WHERE ug.user_id = ?', [user.id]);
+    groups = userGroups.map(r => ({ token: r.group_id, name: r.group_name, linkedAt: r.created_at }));
   }
 
-  res.json({ email, token, groups });
+  res.json({ email: user.email, role: user.role, token, groups });
+});
+
+// 1.5 Register Admin
+app.post('/api/register', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'Email dan password wajib diisi' });
+
+  const db = await connectDatabase();
+  const existing = await db.get('SELECT id FROM users WHERE email = ?', [email]);
+  if (existing) return res.status(400).json({ error: 'Email sudah terdaftar' });
+
+  const hashedInput = crypto.createHash('sha256').update(password).digest('hex');
+  await db.run('INSERT INTO users (email, password, role, created_at) VALUES (?, ?, ?, ?)', [email, hashedInput, 'admin', new Date().toISOString()]);
+  
+  res.json({ success: true });
 });
 
 // 2. Link Group
 app.post('/api/groups/link', authenticate, async (req, res) => {
-  const { groupToken } = req.body;
+  const { groupToken, groupPassword } = req.body;
+  const db = await connectDatabase();
+  
+  if (req.user.role === 'owner') {
+    const rental = await db.get('SELECT group_id, group_name FROM rentals WHERE group_id = ?', [groupToken]);
+    if (!rental) return res.status(404).json({ error: 'Grup tidak ditemukan di database sewa' });
+    return res.json({ token: rental.group_id, name: rental.group_name, linkedAt: new Date().toISOString() });
+  }
+
+  const rental = await db.get('SELECT group_id, group_name, group_password FROM rentals WHERE group_id = ?', [groupToken]);
+  if (!rental) return res.status(404).json({ error: 'Grup tidak ditemukan' });
+  
+  if (!rental.group_password || rental.group_password !== groupPassword) {
+    return res.status(401).json({ error: 'Password grup salah' });
+  }
+
+  await db.run('INSERT OR IGNORE INTO user_groups (user_id, group_id, created_at) VALUES (?, ?, ?)', [req.user.id, groupToken, new Date().toISOString()]);
+  
   res.json({
-    token: groupToken,
-    name: groupToken.split('@')[0],
+    token: rental.group_id,
+    name: rental.group_name,
     linkedAt: new Date().toISOString()
   });
 });
@@ -73,6 +106,12 @@ app.post('/api/groups/link', authenticate, async (req, res) => {
 app.get('/api/products/:groupToken', authenticate, async (req, res) => {
   const { groupToken } = req.params;
   const db = await connectDatabase();
+  
+  if (req.user.role !== 'owner') {
+    const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+    if (!hasAccess) return res.status(403).json({ error: 'Akses ditolak untuk grup ini' });
+  }
+
   const products = await db.all('SELECT id, item_name, description, in_stock, fast_delivery, is_rare FROM catalogues WHERE group_id = ?', [groupToken]);
   
   res.json(products.map(p => ({
@@ -91,8 +130,13 @@ app.get('/api/products/:groupToken', authenticate, async (req, res) => {
 app.put('/api/products/:groupToken/:id', authenticate, async (req, res) => {
   const { groupToken, id } = req.params;
   const { inStock, fastDelivery, isRare } = req.body;
-  
   const db = await connectDatabase();
+  
+  if (req.user.role !== 'owner') {
+    const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+    if (!hasAccess) return res.status(403).json({ error: 'Akses ditolak' });
+  }
+  
   await db.run(
     'UPDATE catalogues SET in_stock = ?, fast_delivery = ?, is_rare = ?, updated_at = ? WHERE id = ? AND group_id = ?',
     [inStock ? 1 : 0, fastDelivery ? 1 : 0, isRare ? 1 : 0, new Date().toISOString(), id, groupToken]
@@ -105,6 +149,12 @@ app.put('/api/products/:groupToken/:id', authenticate, async (req, res) => {
 app.delete('/api/products/:groupToken/:id', authenticate, async (req, res) => {
   const { groupToken, id } = req.params;
   const db = await connectDatabase();
+  
+  if (req.user.role !== 'owner') {
+    const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+    if (!hasAccess) return res.status(403).json({ error: 'Akses ditolak' });
+  }
+
   await db.run('DELETE FROM catalogues WHERE id = ? AND group_id = ?', [id, groupToken]);
   res.json({ success: true });
 });
@@ -113,8 +163,13 @@ app.delete('/api/products/:groupToken/:id', authenticate, async (req, res) => {
 app.post('/api/products/:groupToken', authenticate, async (req, res) => {
   const { groupToken } = req.params;
   const { name, description, inStock, fastDelivery, isRare } = req.body;
-  
   const db = await connectDatabase();
+  
+  if (req.user.role !== 'owner') {
+    const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+    if (!hasAccess) return res.status(403).json({ error: 'Akses ditolak' });
+  }
+
   const now = new Date().toISOString();
   
   try {
@@ -128,8 +183,9 @@ app.post('/api/products/:groupToken', authenticate, async (req, res) => {
   }
 });
 
-// 7. Get Rentals
+// 7. Get Rentals (Owner Only)
 app.get('/api/rentals', authenticate, async (req, res) => {
+  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
   const db = await connectDatabase();
   const rentals = await db.all('SELECT group_id, group_name, duration_days, expired_at, is_active FROM rentals');
   res.json(rentals);
