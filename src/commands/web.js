@@ -26,7 +26,7 @@ async function dashboard(ctx) {
   }
 
   try {
-    const webUrl = process.env.WEB_DASHBOARD_URL || 'https://web-anda.com/login';
+    const webUrl = process.env.WEB_DASHBOARD_URL || 'https://websitegue.my.id/login';
     const message = `Halo! Berikut adalah akses Dashboard Web untuk grup ini:\n\n` +
       `🌐 *URL:* ${webUrl}\n` +
       `🔑 *Token Grup:* ${chatJid}\n\n` +
