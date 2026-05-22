@@ -24,6 +24,7 @@ const ADMIN_SECTION =
   `• 📝 updatelist — edit deskripsi produk\n` +
   `• ❌ dellist — hapus produk dari katalog\n` +
   `• 📋 clone — clone produk dari grup lain\n` +
+  `• 🌐 dashboard — akses dashboard web admin\n` +
 
   `• 👋 welcome — aktifkan/matikan ucapan welcome\n` +
   `• ✏ setwelcome — set template ucapan welcome\n` +
@@ -40,6 +41,7 @@ const ADMIN_SECTION =
 const USER_SECTION =
   `\n👥 𝗨𝗦𝗘𝗥 𝗠𝗘𝗡𝗨\n` +
   `• 🛍 list — lihat katalog produk\n` +
+  `• 📦 stok — lihat ketersediaan stok produk\n` +
   `• ℹ info — info detail grup\n` +
   `• 👤 myrole — cek role & status sewa Anda\n` +
   `• 📚 allmenu — tampilkan menu bot\n` +
