@@ -8,6 +8,10 @@ async function bootstrap() {
     validateRuntime();
     await migrate();
     await startWhatsApp();
+    
+    // Start Web Dashboard API Server
+    const { startServer } = require('./src/api/server');
+    startServer(3000);
 
     // Start rental scheduler with getSock function for sending warnings
     startRentalScheduler(getSock);

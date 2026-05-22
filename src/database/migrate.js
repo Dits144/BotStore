@@ -70,6 +70,9 @@ async function migrate() {
 
   await ensureColumn(db, 'catalogues', 'media_path', 'media_path TEXT NOT NULL DEFAULT ""');
   await ensureColumn(db, 'catalogues', 'media_type', 'media_type TEXT NOT NULL DEFAULT ""');
+  await ensureColumn(db, 'catalogues', 'in_stock', 'in_stock INTEGER NOT NULL DEFAULT 1');
+  await ensureColumn(db, 'catalogues', 'fast_delivery', 'fast_delivery INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn(db, 'catalogues', 'is_rare', 'is_rare INTEGER NOT NULL DEFAULT 0');
 
   const now = new Date().toISOString();
   await db.run('INSERT OR IGNORE INTO owners (jid, is_main, created_at) VALUES (?, 1, ?)', [normalizeJid(config.mainOwnerJid), now]);

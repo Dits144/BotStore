@@ -12,6 +12,7 @@ const adminCommands = require('../commands/admin');
 const groupAdminCommands = require('../commands/admin/groupAdmin');
 const menuCommands = require('../commands/menu');
 const customerCommands = require('../commands/customer');
+const webCommands = require('../commands/web');
 const config = require('../config/env');
 const { sans } = require('../utils/styledText');
 
@@ -46,14 +47,16 @@ const commandRegistry = {
   clone: adminCommands.handle,
   level: customerCommands.handle,
   levelboard: customerCommands.handle,
-  group: groupAdminCommands.handle
+  group: groupAdminCommands.handle,
+  dashboard: webCommands.handle,
+  stok: webCommands.handle
 };
 
 // Command yang boleh jalan meski sewa tidak aktif / di luar grup
 const BYPASS_RENTAL_COMMANDS = new Set([
   'addsewa', 'renewsewa', 'delsewa', 'listsewa', 'ceksewa',
   'owner', 'delowner', 'listowner', 'myrole', 'cekrole',
-  'info', 'infogrup', 'allmenu'
+  'info', 'infogrup', 'allmenu', 'dashboard', 'stok'
 ]);
 
 async function routeMessage(sock, msg) {
