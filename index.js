@@ -11,7 +11,7 @@ async function bootstrap() {
     
     // Start Web Dashboard API Server
     const { startServer } = require('./src/api/server');
-    startServer(3000);
+    startServer(3010);
 
     // Start rental scheduler with getSock function for sending warnings
     startRentalScheduler(getSock);
