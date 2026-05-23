@@ -21,7 +21,7 @@ async function dashboard(ctx) {
   }
 
   // Check if sender is admin or owner
-  if (role !== 'admin' && role !== 'bot_owner') {
+  if (role !== 'group_admin' && role !== 'bot_owner') {
     return sendText(`❌ ${sans('Hanya admin grup atau owner yang bisa mengakses dashboard.')}`);
   }
 
