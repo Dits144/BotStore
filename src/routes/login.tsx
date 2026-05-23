@@ -22,6 +22,11 @@ import {
 } from "../components/ui/tooltip";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      token: (search.token as string) || undefined,
+    };
+  },
   component: LoginPage,
 });
 
