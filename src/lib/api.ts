@@ -352,3 +352,35 @@ export async function fetchDiagnostics(groupToken: string): Promise<GroupDiagnos
   }
   return res.json();
 }
+
+export function fetchQrisUrl(): string {
+  return `${API_BASE}/qris?t=${new Date().getTime()}`;
+}
+
+export async function uploadQris(base64Image: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/qris`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    body: JSON.stringify({ image: base64Image }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal memperbarui QRIS");
+  }
+}
+
+export async function sendRentalReport(
+  groupToken: string,
+  packageName: string,
+  base64Proof: string,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/rentals/report`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    body: JSON.stringify({ groupToken, packageName, proofImage: base64Proof }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal mengirimkan laporan bukti transfer");
+  }
+}
