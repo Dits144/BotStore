@@ -257,6 +257,33 @@ app.post('/api/groups/:groupToken/setting', authenticate, async (req, res) => {
     if (!sock) return res.status(500).json({ error: 'WhatsApp bot offline' });
 
     await sock.groupSettingUpdate(groupToken, action === 'close' ? 'announcement' : 'not_announcement');
+    
+    // Kirim notifikasi pesan struk ke WhatsApp group sesuai dengan open/close bot
+    if (action === 'close') {
+      await sock.sendMessage(groupToken, {
+        text:
+          '┌─── ⌁ 𝗚𝗥𝗢𝗨𝗣 𝗖𝗟𝗢𝗦𝗘𝗗 ⌁ ───┐\n' +
+          '│ 🔒 Grup ditutup sementara\n' +
+          '│ 👑 Hanya admin yang dapat mengirim pesan\n' +
+          '│ ⏳ Harap tunggu hingga grup dibuka kembali\n' +
+          '│\n' +
+          '│ ⚡ Mohon tidak spam PM admin\n' +
+          '│ • Terima kasih atas pengertiannya\n' +
+          '└───────────────────────────────┘'
+      });
+    } else {
+      await sock.sendMessage(groupToken, {
+        text:
+          '┌─── ⌁ 𝗚𝗥𝗢𝗨𝗣 𝗢𝗣𝗘𝗡𝗘𝗗 ⌁ ───┐\n' +
+          '│ 🔓 Grup telah dibuka kembali\n' +
+          '│ 💬 Semua member sudah dapat mengirim pesan\n' +
+          '│ ⚡ Gunakan grup dengan bijak & jangan spam\n' +
+          '│\n' +
+          '│ • Selamat beraktivitas kembali ✨\n' +
+          '└───────────────────────────────┘'
+      });
+    }
+
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Gagal mengubah setting grup. Pastikan bot adalah admin grup.' });
@@ -320,6 +347,84 @@ app.post('/api/groups/:groupToken/clone', authenticate, async (req, res) => {
     res.json({ success: true, cloned });
   } catch (err) {
     res.status(500).json({ error: 'Gagal melakukan clone.' });
+  }
+});
+
+// 14. List Owners (Owner Only)
+app.get('/api/owners', authenticate, async (req, res) => {
+  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+  try {
+    const ownerRepository = require('../repositories/ownerRepository');
+    const list = await ownerRepository.listOwners();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal memuat daftar owner' });
+  }
+});
+
+// 15. Add Owner (Owner Only)
+app.post('/api/owners', authenticate, async (req, res) => {
+  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+  const { jid } = req.body;
+  if (!jid) return res.status(400).json({ error: 'JID wajib diisi' });
+  try {
+    const ownerRepository = require('../repositories/ownerRepository');
+    await ownerRepository.addOwner(jid);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal menambah owner baru' });
+  }
+});
+
+// 16. Delete Owner (Owner Only)
+app.delete('/api/owners/:jid', authenticate, async (req, res) => {
+  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+  const { jid } = req.params;
+  try {
+    const ownerRepository = require('../repositories/ownerRepository');
+    await ownerRepository.removeOwner(jid);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal menghapus owner' });
+  }
+});
+
+// 17. Add New Rental Group (Owner Only)
+app.post('/api/rentals', authenticate, async (req, res) => {
+  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+  const { group_id, group_name, duration_days } = req.body;
+  if (!group_id || !group_name || !duration_days) {
+    return res.status(400).json({ error: 'Semua kolom (Group ID, Group Name, Durasi) wajib diisi' });
+  }
+  try {
+    const rentalRepository = require('../repositories/rentalRepository');
+    const expiredAt = new Date();
+    expiredAt.setDate(expiredAt.getDate() + parseInt(duration_days));
+    
+    await rentalRepository.upsertRental({
+      group_id,
+      group_name,
+      duration_days: parseInt(duration_days),
+      expired_at: expiredAt.toISOString(),
+      is_active: 1,
+      added_by: req.user.email
+    });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal menambahkan grup sewa baru' });
+  }
+});
+
+// 18. Delete Rental Group (Owner Only)
+app.delete('/api/rentals/:groupToken', authenticate, async (req, res) => {
+  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+  const { groupToken } = req.params;
+  try {
+    const rentalRepository = require('../repositories/rentalRepository');
+    await rentalRepository.deleteRental(groupToken);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal menghapus grup sewa' });
   }
 });
 
