@@ -16,7 +16,7 @@ const OWNER_SECTION =
   `• ♻ renewsewa — perpanjang sewa grup\n` +
   `• 🗑 delsewa — hapus grup dari sewa\n` +
   `• 📋 listsewa — list grup sewa aktif\n` +
-  `• 🔍 ceksewa — cek status sewa grup\n`;
+  `• 🔍 cekaktif — cek status sewa grup\n`;
 
 const ADMIN_SECTION =
   `\n🛡 𝗔𝗗𝗠𝗜𝗡 𝗠𝗘𝗡𝗨\n` +
@@ -24,8 +24,7 @@ const ADMIN_SECTION =
   `• 📝 updatelist — edit deskripsi produk\n` +
   `• ❌ dellist — hapus produk dari katalog\n` +
   `• 📋 clone — clone produk dari grup lain\n` +
-  `• 🌐 dashboard — akses dashboard web admin\n` +
-
+  `• 🌐 dasbor — akses dashboard web admin\n` +
   `• 👋 welcome — aktifkan/matikan ucapan welcome\n` +
   `• ✏ setwelcome — set template ucapan welcome\n` +
   `• 📢 h — broadcast tag-all tersembunyi\n` +
@@ -35,7 +34,7 @@ const ADMIN_SECTION =
   `• 💳 d — nota transaksi status Done\n` +
   `• 🔄 r — nota transaksi status Refund\n` +
   `• ❌ b — nota transaksi status Batal\n` +
-  `• 🔍 ceksewa — cek status sewa grup ini\n`;
+  `• 🔍 cekaktif — cek status sewa grup ini\n`;
 
 
 const USER_SECTION =

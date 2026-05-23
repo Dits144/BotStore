@@ -11,8 +11,8 @@ const { sans } = require('../../utils/styledText');
 async function handle(ctx, parsed) {
   const senderJid = normalizeJid(ctx.sender);
 
-  // ceksewa: owner bisa cek grup manapun, admin grup cukup cek grupnya sendiri
-  if (parsed.command === 'ceksewa') {
+  // ceksewa / cekaktif: owner bisa cek grup manapun, admin grup cukup cek grupnya sendiri
+  if (parsed.command === 'ceksewa' || parsed.command === 'cekaktif') {
     return handleCekSewa(ctx, parsed, senderJid);
   }
 

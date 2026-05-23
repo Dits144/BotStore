@@ -31,6 +31,7 @@ const commandRegistry = {
   delsewa: rentalCommands.handle,
   listsewa: rentalCommands.handle,
   ceksewa: rentalCommands.handle,
+  cekaktif: rentalCommands.handle,
   info: groupCommands.info,
   infogrup: groupCommands.info,
   allmenu: menuCommands.allmenu,
@@ -53,14 +54,15 @@ const commandRegistry = {
   levelboard: customerCommands.handle,
   group: groupAdminCommands.handle,
   dashboard: webCommands.handle,
+  dasbor: webCommands.handle,
   stok: webCommands.handle
 };
 
 // Command yang boleh jalan meski sewa tidak aktif / di luar grup
 const BYPASS_RENTAL_COMMANDS = new Set([
-  'addsewa', 'renewsewa', 'delsewa', 'listsewa', 'ceksewa',
+  'addsewa', 'renewsewa', 'delsewa', 'listsewa', 'ceksewa', 'cekaktif',
   'owner', 'delowner', 'listowner', 'myrole', 'cekrole',
-  'info', 'infogrup', 'allmenu', 'dashboard', 'stok'
+  'info', 'infogrup', 'allmenu', 'dashboard', 'dasbor', 'stok'
 ]);
 
 // Cek apakah ada sewa aktif di Bot Uang untuk grup ini
