@@ -547,6 +547,113 @@ app.get('/api/rentals/:groupToken/diagnostics', authenticate, async (req, res) =
   }
 });
 
+// 20. Serve QRIS Image
+app.get('/api/qris', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  const qrisPath = path.join(__dirname, '../../data/qris.png');
+  
+  if (fs.existsSync(qrisPath)) {
+    res.sendFile(qrisPath);
+  } else {
+    // If not uploaded yet, send 404
+    res.status(404).json({ error: 'QRIS belum diunggah oleh Owner.' });
+  }
+});
+
+// 21. Upload QRIS Image (Owner Only)
+app.post('/api/qris', authenticate, async (req, res) => {
+  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+  const { image } = req.body;
+  if (!image) return res.status(400).json({ error: 'Data gambar wajib disertakan' });
+
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Extract base64
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(base64Data, 'base64');
+    
+    const dir = path.join(__dirname, '../../data');
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    
+    const qrisPath = path.join(dir, 'qris.png');
+    fs.writeFileSync(qrisPath, buffer);
+    
+    logger.info({ qrisPath }, 'QRIS image uploaded and updated successfully');
+    res.json({ success: true, message: 'QRIS berhasil diperbarui!' });
+  } catch (err) {
+    logger.error({ err }, 'Failed to upload QRIS image');
+    res.status(500).json({ error: 'Gagal menyimpan gambar QRIS' });
+  }
+});
+
+// 22. Send Rental Payment Report (Authenticate)
+app.post('/api/rentals/report', authenticate, async (req, res) => {
+  const { groupToken, packageName, proofImage } = req.body;
+  if (!groupToken || !packageName || !proofImage) {
+    return res.status(400).json({ error: 'Semua kolom (grup, paket, bukti) wajib diisi' });
+  }
+
+  try {
+    const fs = require('fs');
+    const db = await connectDatabase();
+    
+    const rental = await db.get('SELECT group_name FROM rentals WHERE group_id = ?', [groupToken]);
+    const groupName = rental?.group_name || 'Tidak Diketahui';
+
+    // Parse base64 proof image
+    const base64Data = proofImage.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    const sock = getSock();
+    if (!sock) return res.status(500).json({ error: 'WhatsApp bot offline' });
+
+    // Join/accept invite to target report group
+    const inviteCode = 'HAy39hfJfkMKDDzAbZNGDW';
+    let targetJid;
+    try {
+      // Resolve the JID or accept the invite
+      const codeInfo = await sock.groupGetInviteInfo(inviteCode);
+      targetJid = codeInfo.id;
+      try {
+        await sock.groupAcceptInvite(inviteCode);
+      } catch (_) {} // ignore if already in group
+    } catch (e) {
+      // Fallback JID if invite lookup fails
+      targetJid = '120363425251480069@g.us';
+      try {
+        await sock.groupAcceptInvite(inviteCode);
+      } catch (_) {}
+    }
+
+    const { formatDateTime } = require('../utils/time');
+    const captionText = 
+      `┌─── ⌁ 𝗟𝗔𝗣𝗢𝗥𝗔𝗡 𝗦𝗘𝗪𝗔 𝗕𝗢𝗧 ⌁ ───┐\n` +
+      `│ 👤 Pengirim: ${req.user.email}\n` +
+      `│ 📛 Nama Grup: ${groupName}\n` +
+      `│ 🆔 Group ID: ${groupToken}\n` +
+      `│ ⏳ Paket Sewa: ${packageName}\n` +
+      `│ 📅 Tanggal: ${formatDateTime(new Date())}\n` +
+      `│\n` +
+      `│ ⚡ Mohon verifikasi bukti pembayaran di atas! ⚡\n` +
+      `└───────────────────────────────┘`;
+
+    await sock.sendMessage(targetJid, {
+      image: buffer,
+      caption: captionText
+    });
+
+    res.json({ success: true, message: 'Laporan sewa berhasil dikirim!' });
+  } catch (err) {
+    logger.error({ err, groupToken }, 'Failed to submit rental report');
+    res.status(500).json({ error: 'Gagal mengirimkan laporan sewa: ' + err.message });
+  }
+});
+
 function startServer(port = 3000) {
   app.listen(port, () => {
     logger.info(`Web API Server running on port ${port}`);
