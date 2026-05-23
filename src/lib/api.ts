@@ -177,3 +177,77 @@ export async function deleteProduct(
   });
   if (!res.ok) throw new Error("Failed to delete product");
 }
+
+// ---- Admin Tools (Group Management) ----
+
+export interface GroupCustomer {
+  rank: number;
+  customerJid: string;
+  phone: string;
+  totalTransactions: number;
+  tier: string;
+  emoji: string;
+}
+
+export async function fetchCustomers(groupToken: string): Promise<GroupCustomer[]> {
+  const res = await fetch(`${API_BASE}/groups/${encodeURIComponent(groupToken)}/customers`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) throw new Error("Gagal mengambil data customer");
+  return res.json();
+}
+
+export async function toggleGroupSetting(
+  groupToken: string,
+  action: "open" | "close",
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/groups/${encodeURIComponent(groupToken)}/setting`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ action }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal mengubah setting grup");
+  }
+}
+
+export async function broadcastMessage(
+  groupToken: string,
+  message: string,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/groups/${encodeURIComponent(groupToken)}/broadcast`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ message }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal mengirim broadcast");
+  }
+}
+
+export async function cloneCatalogue(
+  groupToken: string,
+  sourceGroupToken: string,
+): Promise<{ cloned: number }> {
+  const res = await fetch(`${API_BASE}/groups/${encodeURIComponent(groupToken)}/clone`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ sourceGroupToken }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal melakukan clone");
+  }
+  return res.json();
+}

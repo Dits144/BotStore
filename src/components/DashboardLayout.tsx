@@ -9,6 +9,7 @@ import {
   Package,
   Plus,
   Radio,
+  Shield,
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -40,10 +41,12 @@ const nav: Array<{
   label: string;
   icon: typeof LayoutDashboard;
   end?: boolean;
+  role?: string;
 }> = [
   { to: "/dashboard", label: "Dashboard Home", icon: LayoutDashboard, end: true },
   { to: "/dashboard/price-list", label: "Price List", icon: ListOrdered },
   { to: "/dashboard/stock", label: "Stock Management", icon: Package },
+  { to: "/dashboard/group-tools", label: "Admin Tools", icon: Shield },
   { to: "/dashboard/rentals", label: "Rentals & Groups", icon: LayoutDashboard, role: "owner" },
   { to: "/dashboard/settings", label: "Settings", icon: Cog },
 ];
