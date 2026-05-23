@@ -107,10 +107,10 @@ function GroupToolsPage() {
         <section className="glass rounded-2xl p-6 space-y-4 flex flex-col justify-between">
           <div className="space-y-2">
             <h2 className="text-base font-semibold flex items-center gap-2">
-              <Lock className="h-5 w-5 text-primary" /> Group Lock Control
+              <Lock className="h-5 w-5 text-primary" /> Group Close / Open
             </h2>
             <p className="text-xs text-muted-foreground">
-              Directly lock or unlock sending messages in your WhatsApp group. Only admins will be able to send messages when locked.
+              Directly close or open chat permissions in your WhatsApp group. Only admins will be able to send messages when closed, and an announcement will be sent.
             </p>
           </div>
           <div className="flex gap-3 pt-2">
@@ -124,7 +124,7 @@ function GroupToolsPage() {
               ) : (
                 <Lock className="h-4 w-4" />
               )}
-              Lock Group
+              Group Close
             </Button>
             <Button
               className="flex-1 gap-2 bg-success/15 text-success border border-success/20 hover:bg-success/25"
@@ -136,7 +136,7 @@ function GroupToolsPage() {
               ) : (
                 <Unlock className="h-4 w-4" />
               )}
-              Unlock Group
+              Group Open
             </Button>
           </div>
         </section>

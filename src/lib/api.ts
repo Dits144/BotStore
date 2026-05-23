@@ -251,3 +251,75 @@ export async function cloneCatalogue(
   }
   return res.json();
 }
+
+// ---- Owner Controls (CRUD Owners & CRUD Rentals) ----
+
+export interface BotOwner {
+  jid: string;
+  is_main: number;
+  created_at: string;
+}
+
+export async function fetchOwners(): Promise<BotOwner[]> {
+  const res = await fetch(`${API_BASE}/owners`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) throw new Error("Gagal mengambil data owner");
+  return res.json();
+}
+
+export async function addOwner(jid: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/owners`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ jid }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal menambah owner baru");
+  }
+}
+
+export async function deleteOwner(jid: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/owners/${encodeURIComponent(jid)}`, {
+    method: "DELETE",
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal menghapus owner");
+  }
+}
+
+export async function addRental(
+  group_id: string,
+  group_name: string,
+  duration_days: number,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/rentals`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ group_id, group_name, duration_days }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal menambahkan grup sewa baru");
+  }
+}
+
+export async function deleteRental(groupToken: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/rentals/${encodeURIComponent(groupToken)}`, {
+    method: "DELETE",
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal menghapus grup sewa");
+  }
+}

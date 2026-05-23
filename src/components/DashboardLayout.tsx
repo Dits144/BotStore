@@ -55,6 +55,7 @@ export function DashboardLayout() {
   const { isAuthenticated, session, activeGroup, switchGroup, addGroup, logout } =
     useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const search = useSearch({ from: "/dashboard" }) as { linkToken?: string };
   const [mobileOpen, setMobileOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
