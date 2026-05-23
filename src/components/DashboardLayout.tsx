@@ -60,11 +60,28 @@ export function DashboardLayout() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    if (search?.linkToken) {
-      setNewToken(search.linkToken);
-      setAddOpen(true);
+    if (search?.linkToken && session) {
+      const alreadyLinked = session.groups.some((g) => g.token === search.linkToken);
+      if (alreadyLinked) {
+        switchGroup(search.linkToken);
+        navigate({ to: "/dashboard", search: undefined });
+      } else if (session.role === "owner") {
+        (async () => {
+          try {
+            await addGroup(search.linkToken, "");
+            toast.success("Group automatically linked");
+            navigate({ to: "/dashboard", search: undefined });
+          } catch (e) {
+            setNewToken(search.linkToken);
+            setAddOpen(true);
+          }
+        })();
+      } else {
+        setNewToken(search.linkToken);
+        setAddOpen(true);
+      }
     }
-  }, [search?.linkToken]);
+  }, [search?.linkToken, session, switchGroup, addGroup, navigate]);
 
   useEffect(() => setHydrated(true), []);
   useEffect(() => {
