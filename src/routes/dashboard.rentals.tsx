@@ -14,8 +14,10 @@ import {
   deleteOwner,
   addRental,
   deleteRental,
+  fetchDiagnostics,
   type Rental,
   type BotOwner,
+  type GroupDiagnostics,
 } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -58,6 +60,26 @@ function RentalsPage() {
 
   // State for Add Bot Owner
   const [newOwnerJid, setNewOwnerJid] = useState("");
+
+  // Diagnostics modal state
+  const [inspectRental, setInspectRental] = useState<Rental | null>(null);
+  const [isDiagnosticsLoading, setIsDiagnosticsLoading] = useState(false);
+  const [diagnosticsData, setDiagnosticsData] = useState<GroupDiagnostics | null>(null);
+
+  const handleInspect = async (rental: Rental) => {
+    setInspectRental(rental);
+    setIsDiagnosticsLoading(true);
+    setDiagnosticsData(null);
+    try {
+      const data = await fetchDiagnostics(rental.group_id);
+      setDiagnosticsData(data);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal memuat diagnostik");
+      setInspectRental(null);
+    } finally {
+      setIsDiagnosticsLoading(false);
+    }
+  };
 
   const { data: rentals = [], isLoading } = useQuery({
     queryKey: ["rentals"],
@@ -294,6 +316,15 @@ function RentalsPage() {
                         <Button
                           size="icon"
                           variant="ghost"
+                          onClick={() => handleInspect(r)}
+                          className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/15"
+                          title="Cek Sewa / Diagnostics"
+                        >
+                          <Search className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
                           onClick={() => { setSelectedRental(r); setActionType("add"); }}
                           className="h-8 w-8 text-success hover:text-success hover:bg-success/15"
                           title="Add Rental Days"
@@ -509,6 +540,147 @@ function RentalsPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG FOR CEK SEWA DIAGNOSTICS */}
+      <Dialog open={!!inspectRental} onOpenChange={(o) => !o && setInspectRental(null)}>
+        <DialogContent className="glass-strong border-white/10 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5 text-primary animate-pulse" />
+              <span>Cek Sewa & Group Diagnostics</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {isDiagnosticsLoading && (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="text-xs text-muted-foreground animate-pulse">
+                Mengambil metrik server & database...
+              </span>
+            </div>
+          )}
+
+          {!isDiagnosticsLoading && diagnosticsData && (
+            <div className="space-y-6 pt-2">
+              {/* Group Overview Card */}
+              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 space-y-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold text-base">{diagnosticsData.group_name}</h3>
+                    <p className="font-mono text-[10px] text-muted-foreground line-clamp-1">
+                      {diagnosticsData.group_id}
+                    </p>
+                  </div>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold border ${
+                      new Date(diagnosticsData.expired_at) < new Date() || !diagnosticsData.is_active
+                        ? "bg-destructive/10 text-destructive border-destructive/20"
+                        : "bg-success/10 text-success border-success/20"
+                    }`}
+                  >
+                    {new Date(diagnosticsData.expired_at) < new Date() ? "Expired" : "Active"}
+                  </span>
+                </div>
+
+                <div className="pt-2 border-t border-white/5 grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground block text-[10px] uppercase">Masa Sewa</span>
+                    <span className="font-medium text-foreground">{diagnosticsData.duration_days} Hari</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px] uppercase">Expired At</span>
+                    <span className="font-mono text-foreground">
+                      {new Date(diagnosticsData.expired_at).toLocaleDateString("id-ID", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Database & Catalogue Stats */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">
+                  Database & Catalogue Health
+                </h4>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="rounded-xl border border-white/5 bg-white/[0.01] p-3 space-y-1">
+                    <span className="text-muted-foreground text-[10px] block uppercase leading-tight">Total Produk</span>
+                    <span className="text-lg font-bold tracking-tight text-foreground">
+                      {diagnosticsData.total_products}
+                    </span>
+                  </div>
+                  <div className="rounded-xl border border-white/5 bg-white/[0.01] p-3 space-y-1">
+                    <span className="text-muted-foreground text-[10px] block uppercase leading-tight">Total Transaksi</span>
+                    <span className="text-lg font-bold tracking-tight text-foreground text-success">
+                      {diagnosticsData.total_transactions}
+                    </span>
+                  </div>
+                  <div className="rounded-xl border border-white/5 bg-white/[0.01] p-3 space-y-1">
+                    <span className="text-muted-foreground text-[10px] block uppercase leading-tight">Pelanggan Unik</span>
+                    <span className="text-lg font-bold tracking-tight text-foreground text-primary">
+                      {diagnosticsData.total_customers}
+                    </span>
+                  </div>
+                  <div className="rounded-xl border border-white/5 bg-white/[0.01] p-3 space-y-1">
+                    <span className="text-muted-foreground text-[10px] block uppercase leading-tight">Ukuran Database</span>
+                    <span className="text-lg font-mono font-bold tracking-tight text-foreground">
+                      {diagnosticsData.system.database_size_kb >= 1024
+                        ? `${(diagnosticsData.system.database_size_kb / 1024).toFixed(2)} MB`
+                        : `${diagnosticsData.system.database_size_kb} KB`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Server Performance Section */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">
+                  Server Performance
+                </h4>
+
+                {/* CPU Progress */}
+                <div className="space-y-1 rounded-xl border border-white/5 bg-white/[0.01] p-3">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-muted-foreground">CPU Usage</span>
+                    <span className="text-foreground">{diagnosticsData.system.cpu_usage}%</span>
+                  </div>
+                  <div className="w-full bg-white/5 rounded-full h-1.5 mt-1 overflow-hidden">
+                    <div
+                      className="bg-primary h-1.5 rounded-full transition-all duration-500"
+                      style={{ width: `${diagnosticsData.system.cpu_usage}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* RAM Progress */}
+                <div className="space-y-1 rounded-xl border border-white/5 bg-white/[0.01] p-3">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-muted-foreground">Memory Usage</span>
+                    <span className="text-foreground">
+                      {diagnosticsData.system.memory_usage}% ({diagnosticsData.system.memory_used_mb}MB / {diagnosticsData.system.memory_total_mb}MB)
+                    </span>
+                  </div>
+                  <div className="w-full bg-white/5 rounded-full h-1.5 mt-1 overflow-hidden">
+                    <div
+                      className="bg-success h-1.5 rounded-full transition-all duration-500"
+                      style={{ width: `${diagnosticsData.system.memory_usage}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="pt-2">
+            <Button type="button" className="w-full sm:w-auto" onClick={() => setInspectRental(null)}>
+              Tutup
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

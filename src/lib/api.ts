@@ -323,3 +323,32 @@ export async function deleteRental(groupToken: string): Promise<void> {
     throw new Error(data.error || "Gagal menghapus grup sewa");
   }
 }
+
+export interface GroupDiagnostics {
+  group_id: string;
+  group_name: string;
+  duration_days: number;
+  expired_at: string;
+  is_active: number;
+  total_products: number;
+  total_transactions: number;
+  total_customers: number;
+  system: {
+    cpu_usage: number;
+    memory_usage: number;
+    memory_used_mb: number;
+    memory_total_mb: number;
+    database_size_kb: number;
+  };
+}
+
+export async function fetchDiagnostics(groupToken: string): Promise<GroupDiagnostics> {
+  const res = await fetch(`${API_BASE}/rentals/${encodeURIComponent(groupToken)}/diagnostics`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal mengambil diagnostik grup");
+  }
+  return res.json();
+}
