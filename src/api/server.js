@@ -48,14 +48,8 @@ app.post('/api/login', async (req, res) => {
 
   const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
   
-  let groups = [];
-  if (user.role === 'owner') {
-    const rentals = await db.all('SELECT group_id, group_name, created_at FROM rentals');
-    groups = rentals.map(r => ({ token: r.group_id, name: r.group_name, linkedAt: r.created_at }));
-  } else {
-    const userGroups = await db.all('SELECT r.group_id, r.group_name, ug.created_at FROM user_groups ug JOIN rentals r ON ug.group_id = r.group_id WHERE ug.user_id = ?', [user.id]);
-    groups = userGroups.map(r => ({ token: r.group_id, name: r.group_name, linkedAt: r.created_at }));
-  }
+  const userGroups = await db.all('SELECT r.group_id, r.group_name, ug.created_at FROM user_groups ug JOIN rentals r ON ug.group_id = r.group_id WHERE ug.user_id = ?', [user.id]);
+  const groups = userGroups.map(r => ({ token: r.group_id, name: r.group_name, linkedAt: r.created_at }));
 
   res.json({ email: user.email, role: user.role, token, groups });
 });
@@ -80,17 +74,15 @@ app.post('/api/groups/link', authenticate, async (req, res) => {
   const { groupToken, groupPassword } = req.body;
   const db = await connectDatabase();
   
-  if (req.user.role === 'owner') {
-    const rental = await db.get('SELECT group_id, group_name FROM rentals WHERE group_id = ?', [groupToken]);
-    if (!rental) return res.status(404).json({ error: 'Grup tidak ditemukan di database sewa' });
-    return res.json({ token: rental.group_id, name: rental.group_name, linkedAt: new Date().toISOString() });
-  }
-
   const rental = await db.get('SELECT group_id, group_name, group_password FROM rentals WHERE group_id = ?', [groupToken]);
   if (!rental) return res.status(404).json({ error: 'Grup tidak ditemukan' });
   
-  if (!rental.group_password || rental.group_password !== groupPassword) {
-    return res.status(401).json({ error: 'Password grup salah' });
+  // Allow owner to bypass the group password check
+  const isOwner = req.user.role === 'owner';
+  if (!isOwner) {
+    if (!rental.group_password || rental.group_password !== groupPassword) {
+      return res.status(401).json({ error: 'Password grup salah' });
+    }
   }
 
   await db.run('INSERT OR IGNORE INTO user_groups (user_id, group_id, created_at) VALUES (?, ?, ?)', [req.user.id, groupToken, new Date().toISOString()]);
@@ -107,10 +99,8 @@ app.get('/api/products/:groupToken', authenticate, async (req, res) => {
   const { groupToken } = req.params;
   const db = await connectDatabase();
   
-  if (req.user.role !== 'owner') {
-    const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
-    if (!hasAccess) return res.status(403).json({ error: 'Akses ditolak untuk grup ini' });
-  }
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess) return res.status(403).json({ error: 'Akses ditolak untuk grup ini' });
 
   const products = await db.all('SELECT id, item_name, description, in_stock, fast_delivery, is_rare FROM catalogues WHERE group_id = ?', [groupToken]);
   
@@ -132,10 +122,8 @@ app.put('/api/products/:groupToken/:id', authenticate, async (req, res) => {
   const { inStock, fastDelivery, isRare } = req.body;
   const db = await connectDatabase();
   
-  if (req.user.role !== 'owner') {
-    const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
-    if (!hasAccess) return res.status(403).json({ error: 'Akses ditolak' });
-  }
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess) return res.status(403).json({ error: 'Akses ditolak' });
   
   await db.run(
     'UPDATE catalogues SET in_stock = ?, fast_delivery = ?, is_rare = ?, updated_at = ? WHERE id = ? AND group_id = ?',
@@ -150,10 +138,8 @@ app.delete('/api/products/:groupToken/:id', authenticate, async (req, res) => {
   const { groupToken, id } = req.params;
   const db = await connectDatabase();
   
-  if (req.user.role !== 'owner') {
-    const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
-    if (!hasAccess) return res.status(403).json({ error: 'Akses ditolak' });
-  }
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess) return res.status(403).json({ error: 'Akses ditolak' });
 
   await db.run('DELETE FROM catalogues WHERE id = ? AND group_id = ?', [id, groupToken]);
   res.json({ success: true });
@@ -165,10 +151,8 @@ app.post('/api/products/:groupToken', authenticate, async (req, res) => {
   const { name, description, inStock, fastDelivery, isRare } = req.body;
   const db = await connectDatabase();
   
-  if (req.user.role !== 'owner') {
-    const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
-    if (!hasAccess) return res.status(403).json({ error: 'Akses ditolak' });
-  }
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess) return res.status(403).json({ error: 'Akses ditolak' });
 
   const now = new Date().toISOString();
   
