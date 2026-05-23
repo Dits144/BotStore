@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Package, Search, Zap, Sparkles } from "lucide-react";
+import { Loader2, Package, Search, Zap, AlertTriangle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -105,7 +105,7 @@ function StockPage() {
           value={fastCount}
         />
         <Pill
-          icon={<Sparkles className="h-4 w-4 text-primary" />}
+          icon={<AlertTriangle className="h-4 w-4 text-warning" />}
           label="Langka"
           value={rareCount}
         />
@@ -205,7 +205,7 @@ function StockPage() {
 
                   <ToggleRow
                     label="Langka"
-                    accent="primary"
+                    accent="warning"
                     busy={rareBusy}
                     checked={p.isRare}
                     onChange={(v) =>
@@ -216,10 +216,10 @@ function StockPage() {
                       })
                     }
                     icon={
-                      <Sparkles
+                      <AlertTriangle
                         className={`h-3.5 w-3.5 transition-all ${
                           p.isRare
-                            ? "text-primary drop-shadow-[0_0_6px_oklch(0.78_0.18_155_/_0.6)]"
+                            ? "text-warning drop-shadow-[0_0_6px_rgba(234,179,8,0.6)]"
                             : "text-muted-foreground"
                         }`}
                       />
