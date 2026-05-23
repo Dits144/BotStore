@@ -39,8 +39,8 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) navigate({ to: "/dashboard" });
-  }, [isAuthenticated, navigate]);
+    if (isAuthenticated) navigate({ to: "/dashboard", search: search.token ? { linkToken: search.token } : undefined });
+  }, [isAuthenticated, navigate, search.token]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
