@@ -1,3 +1,7 @@
+const fs = require('fs');
+const path = require('path');
+const sqlite3 = require('sqlite3');
+const { open } = require('sqlite');
 const logger = require('../config/logger');
 const { parseCommand, normalizeText } = require('../utils/parser');
 const { canRunGroupCommand } = require('../middlewares/rentalGuard');
@@ -59,6 +63,41 @@ const BYPASS_RENTAL_COMMANDS = new Set([
   'info', 'infogrup', 'allmenu', 'dashboard', 'stok'
 ]);
 
+// Cek apakah ada sewa aktif di Bot Uang untuk grup ini
+async function isBotUangActive(groupId) {
+  const dbPath = 'c:/xampp/htdocs/BotUang/db/finance.sqlite';
+  if (!fs.existsSync(dbPath)) return false;
+
+  let db;
+  try {
+    db = await open({
+      filename: dbPath,
+      driver: sqlite3.Database
+    });
+
+    const row = await db.get(
+      'SELECT is_active, expire_at FROM group_rentals WHERE group_id = ?',
+      [groupId]
+    );
+
+    if (!row) return false;
+    if (Number(row.is_active) !== 1 || !row.expire_at) return false;
+
+    const expireTime = new Date(row.expire_at).getTime();
+    const nowTime = Date.now();
+    return expireTime > nowTime;
+  } catch (error) {
+    logger.error({ err: error, groupId }, '[BotStore] Error checking BotUang active rental');
+    return false;
+  } finally {
+    if (db) {
+      try {
+        await db.close();
+      } catch (e) {}
+    }
+  }
+}
+
 async function routeMessage(sock, msg) {
   const body = extractMessageText(msg);
   if (!body) return;
@@ -66,6 +105,21 @@ async function routeMessage(sock, msg) {
   const chatJid = getChatJid(msg);
   const senderJid = getSenderJid(msg);
   const isGroup = chatJid.endsWith('@g.us');
+
+  // DIFERENSIASI BOT: Jika grup ini aktif disewa di Bot Uang, Bot Store mengabaikan semua perintah
+  // kecuali perintah general seperti info dan infogrup.
+  if (isGroup) {
+    const botUangActive = await isBotUangActive(chatJid);
+    if (botUangActive) {
+      const parsed = parseCommand(body);
+      const isGeneral = parsed && (parsed.command === 'info' || parsed.command === 'infogrup');
+      if (!isGeneral) {
+        logger.debug({ chatJid }, '[BotStore] Mengabaikan pesan karena sewa aktif di Bot Uang');
+        return;
+      }
+    }
+  }
+
   const role = await getUserRole({ sock, chatJid, senderJid, isGroup });
   const isOwner = role === 'bot_owner';
 
