@@ -112,21 +112,6 @@ async function handle(ctx, parsed) {
     return;
   }
 
-  // ── Daftar Level & Tingkatan: level list ──
-  if (sub === 'list' || sub === 'help') {
-    const listText = 
-      `📋 ${styled('Daftar Tingkatan Level')}\n` +
-      `${'━'.repeat(22)}\n` +
-      `🆕 ${styled('Baru')} : 0 ${sans('transaksi')}\n` +
-      `🥉 ${styled('Bronze')} : 1 – 24 ${sans('transaksi')}\n` +
-      `🥈 ${styled('Silver')} : 25 – 99 ${sans('transaksi')}\n` +
-      `🥇 ${styled('Gold')} : 100 – 499 ${sans('transaksi')}\n` +
-      `💎 ${styled('Platinum')} : 500+ ${sans('transaksi')}\n\n` +
-      `⚡ ${sans('Setiap transaksi sukses yang di- Done (d) oleh admin akan meningkatkan jumlah transaksi dan level customer.')}`;
-    await ctx.sock.sendMessage(ctx.from, { text: listText });
-    return;
-  }
-
   // ── Leaderboard ──
   if (sub === 'board' || parsed.command === 'levelboard') {
     const rows = await customerRepository.getLeaderboard(ctx.from, 10);

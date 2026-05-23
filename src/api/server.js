@@ -213,6 +213,116 @@ app.post('/api/rentals/:groupToken/reduce_time', authenticate, async (req, res) 
   res.json({ success: true, expiredAt: newExpiry });
 });
 
+// 10. Get Group Customers Levels
+app.get('/api/groups/:groupToken/customers', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const db = await connectDatabase();
+  
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+
+  try {
+    const customerRepository = require('../repositories/customerRepository');
+    const rows = await customerRepository.getLeaderboard(groupToken, 200);
+    const customers = rows.map((r, i) => {
+      const tier = customerRepository.resolveLevel(r.total);
+      return {
+        rank: i + 1,
+        customerJid: r.customer_jid,
+        phone: r.customer_jid.split('@')[0],
+        totalTransactions: r.total,
+        tier: tier.name,
+        emoji: tier.emoji
+      };
+    });
+    res.json(customers);
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal mengambil data level customer' });
+  }
+});
+
+// 11. Toggle Group Setting (Lock/Unlock)
+app.post('/api/groups/:groupToken/setting', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const { action } = req.body;
+  const db = await connectDatabase();
+  
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+
+  if (!['open', 'close'].includes(action)) return res.status(400).json({ error: 'Invalid action' });
+
+  try {
+    const sock = getSock();
+    if (!sock) return res.status(500).json({ error: 'WhatsApp bot offline' });
+
+    await sock.groupSettingUpdate(groupToken, action === 'close' ? 'announcement' : 'not_announcement');
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal mengubah setting grup. Pastikan bot adalah admin grup.' });
+  }
+});
+
+// 12. Broadcast Message (Hidden Tag-All)
+app.post('/api/groups/:groupToken/broadcast', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const { message } = req.body;
+  if (!message) return res.status(400).json({ error: 'Pesan wajib diisi' });
+
+  const db = await connectDatabase();
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+
+  try {
+    const sock = getSock();
+    if (!sock) return res.status(500).json({ error: 'WhatsApp bot offline' });
+
+    const meta = await sock.groupMetadata(groupToken);
+    const participants = meta.participants || [];
+    const mentions = [...new Set(
+      participants
+        .map((p) => {
+          const raw = String(p.id || '').trim();
+          if (!raw) return null;
+          if (raw.includes(':') && raw.includes('@')) {
+            const [userPart, domain] = raw.split('@');
+            const cleanUser = userPart.split(':')[0];
+            return `${cleanUser}@${domain}`;
+          }
+          return raw;
+        })
+        .filter(Boolean)
+    )];
+
+    await sock.sendMessage(groupToken, { text: message, mentions });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal mengirim broadcast.' });
+  }
+});
+
+// 13. Clone Products
+app.post('/api/groups/:groupToken/clone', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const { sourceGroupToken } = req.body;
+  if (!sourceGroupToken) return res.status(400).json({ error: 'Grup sumber wajib diisi' });
+
+  const db = await connectDatabase();
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+
+  try {
+    const catalogueRepository = require('../repositories/catalogueRepository');
+    const sourceItems = await catalogueRepository.listByGroup(sourceGroupToken);
+    if (!sourceItems.length) return res.status(400).json({ error: 'Grup sumber tidak memiliki produk.' });
+
+    const { cloned } = await catalogueRepository.cloneToGroup(sourceGroupToken, groupToken, req.user.email);
+    res.json({ success: true, cloned });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal melakukan clone.' });
+  }
+});
+
 function startServer(port = 3000) {
   app.listen(port, () => {
     logger.info(`Web API Server running on port ${port}`);
