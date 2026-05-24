@@ -161,7 +161,7 @@ async function updateList(ctx, parsed) {
 
 async function productTrigger(ctx, rawText) {
   const name = normalizeText(rawText);
-  if (!name || name.includes(' ')) return;
+  if (!name) return;
 
   const groupName = await resolveGroupName(ctx);
   const footer = `\n\n❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❘❚❙❘❘❚❙❘❘❚❙❘\n◟☁️ ׄ   ${groupName}  𓂃 ࣪˖ ִֶָ`;
@@ -180,6 +180,10 @@ async function productTrigger(ctx, rawText) {
     await ctx.send(detailText);
     return;
   }
+
+  // Jika nama produk mengandung spasi, jangan berikan saran (suggestions)
+  // untuk menghindari bot menyahut sembarangan pada percakapan umum grup
+  if (name.includes(' ')) return;
 
   const rows = await catalogueRepository.listByGroup(ctx.from);
   const suggestions = suggestClosest(name, rows.map((r) => r.item_name));
