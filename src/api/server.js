@@ -117,21 +117,57 @@ app.get('/api/products/:groupToken', authenticate, async (req, res) => {
   })));
 });
 
-// 4. Update Product (Toggle Stock/Fast/Rare)
+// 4. Update Product (Toggle Stock/Fast/Rare/Name/Desc)
 app.put('/api/products/:groupToken/:id', authenticate, async (req, res) => {
   const { groupToken, id } = req.params;
-  const { inStock, fastDelivery, isRare } = req.body;
+  const { name, description, inStock, fastDelivery, isRare } = req.body;
   const db = await connectDatabase();
   
   const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
   if (!hasAccess) return res.status(403).json({ error: 'Akses ditolak' });
   
-  await db.run(
-    'UPDATE catalogues SET in_stock = ?, fast_delivery = ?, is_rare = ?, updated_at = ? WHERE id = ? AND group_id = ?',
-    [inStock ? 1 : 0, fastDelivery ? 1 : 0, isRare ? 1 : 0, new Date().toISOString(), id, groupToken]
-  );
-  
-  res.json({ success: true });
+  const updates = [];
+  const params = [];
+
+  if (name !== undefined) {
+    updates.push('item_name = ?');
+    params.push(name.trim());
+  }
+  if (description !== undefined) {
+    updates.push('description = ?');
+    params.push(description.trim());
+  }
+  if (inStock !== undefined) {
+    updates.push('in_stock = ?');
+    params.push(inStock ? 1 : 0);
+  }
+  if (fastDelivery !== undefined) {
+    updates.push('fast_delivery = ?');
+    params.push(fastDelivery ? 1 : 0);
+  }
+  if (isRare !== undefined) {
+    updates.push('is_rare = ?');
+    params.push(isRare ? 1 : 0);
+  }
+
+  if (updates.length === 0) {
+    return res.json({ success: true, message: 'Tidak ada perubahan.' });
+  }
+
+  updates.push('updated_at = ?');
+  params.push(new Date().toISOString());
+
+  // Add WHERE parameters
+  params.push(id);
+  params.push(groupToken);
+
+  try {
+    const query = `UPDATE catalogues SET ${updates.join(', ')} WHERE id = ? AND group_id = ?`;
+    await db.run(query, params);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal memperbarui produk: ' + err.message });
+  }
 });
 
 // 5. Delete Product (from web)
