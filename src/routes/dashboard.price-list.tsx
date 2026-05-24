@@ -45,6 +45,7 @@ const empty: FormState = {
   category: "",
   inStock: true,
   fastDelivery: false,
+  isRare: false,
 };
 
 function PriceListPage() {
@@ -126,6 +127,7 @@ function PriceListPage() {
       category: p.category,
       inStock: p.inStock,
       fastDelivery: p.fastDelivery,
+      isRare: p.isRare,
     });
     setOpen(true);
   }
