@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
   Lock,
@@ -15,12 +15,15 @@ import {
   UserMinus,
   Shield,
   ShieldAlert,
+  FileText,
 } from "lucide-react";
 
 import { useAuth } from "../lib/auth-context";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { Switch } from "../components/ui/switch";
+import { Textarea } from "../components/ui/textarea";
 import {
   fetchCustomers,
   toggleGroupSetting,
@@ -29,6 +32,8 @@ import {
   fetchGroupMembers,
   kickGroupMember,
   addGroupMember,
+  fetchWelcomeSettings,
+  updateWelcomeSettings,
 } from "../lib/api";
 
 export const Route = createFileRoute("/dashboard/group-tools")({
@@ -39,6 +44,48 @@ function GroupToolsPage() {
   const { activeGroup, session } = useAuth();
   const queryClient = useQueryClient();
   const token = activeGroup?.token ?? "";
+
+  // Welcome settings state
+  const [welcomeEnabled, setWelcomeEnabled] = useState(false);
+  const [welcomeMessage, setWelcomeMessage] = useState("");
+  const [loadingWelcome, setLoadingWelcome] = useState(false);
+  const [savingWelcome, setSavingWelcome] = useState(false);
+
+  // Load welcome settings on mount or active group change
+  useEffect(() => {
+    if (!token) return;
+
+    const loadWelcome = async () => {
+      setLoadingWelcome(true);
+      try {
+        const settings = await fetchWelcomeSettings(token);
+        setWelcomeEnabled(settings.welcomeEnabled);
+        setWelcomeMessage(settings.welcomeMessage || "");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Gagal memuat setting welcome");
+      } finally {
+        setLoadingWelcome(false);
+      }
+    };
+
+    loadWelcome();
+  }, [token]);
+
+  const handleSaveWelcome = async () => {
+    if (!token) {
+      toast.error("Pilih grup aktif terlebih dahulu!");
+      return;
+    }
+    setSavingWelcome(true);
+    try {
+      await updateWelcomeSettings(token, welcomeEnabled, welcomeMessage);
+      toast.success("Pengaturan Welcome berhasil disimpan!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menyimpan setting welcome");
+    } finally {
+      setSavingWelcome(false);
+    }
+  };
 
   const [broadcastText, setBroadcastText] = useState("");
   const [sourceJid, setSourceJid] = useState("");
@@ -246,6 +293,73 @@ function GroupToolsPage() {
           </div>
         </section>
       </div>
+
+      {/* Welcome Message Configuration */}
+      <section className="glass rounded-2xl p-6 space-y-4 animate-fade-in-up">
+        <div>
+          <h2 className="text-base font-semibold flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" /> Welcome Message Configuration
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Kelola pesan penyambutan otomatis saat member baru bergabung ke grup WhatsApp ini.
+          </p>
+        </div>
+
+        {loadingWelcome ? (
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span className="text-xs text-muted-foreground ml-2">Memuat pengaturan welcome...</span>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.01] p-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="welcome-toggle" className="text-sm font-medium">Aktifkan Welcome Message</Label>
+                <p className="text-xs text-muted-foreground">
+                  Kirim pesan penyambutan otomatis saat ada anggota baru bergabung.
+                </p>
+              </div>
+              <Switch
+                id="welcome-toggle"
+                checked={welcomeEnabled}
+                onCheckedChange={setWelcomeEnabled}
+              />
+            </div>
+
+            {welcomeEnabled && (
+              <div className="space-y-2 animate-fade-in">
+                <Label htmlFor="welcome-template" className="text-xs font-semibold text-foreground/80">Template Pesan Welcome</Label>
+                <Textarea
+                  id="welcome-template"
+                  placeholder="Halo @user, selamat datang di grup {group}! Jangan lupa baca deskripsi yaa."
+                  value={welcomeMessage}
+                  onChange={(e) => setWelcomeMessage(e.target.value)}
+                  className="min-h-[100px] bg-white/5 font-mono text-sm leading-relaxed"
+                />
+                <div className="rounded-lg bg-white/5 border border-white/10 p-3 text-[11px] text-muted-foreground space-y-1.5 leading-relaxed">
+                  <span className="font-semibold text-foreground/80">Petunjuk Placeholders:</span>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>Gunakan <code className="bg-white/10 px-1 py-0.5 rounded text-primary">@user</code> untuk menyebut/mention member baru yang bergabung (akan ter-tag biru secara otomatis).</li>
+                    <li>Gunakan <code className="bg-white/10 px-1 py-0.5 rounded text-primary">{"{group}"}</code> untuk menampilkan nama grup WhatsApp secara dinamis.</li>
+                    <li>Pesan visual default yang berisi petunjuk price list (`🛍️ *Ketik "list"...*`) akan otomatis ditambahkan ke baris paling bawah.</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end">
+              <Button
+                onClick={handleSaveWelcome}
+                disabled={savingWelcome}
+                className="px-6"
+              >
+                {savingWelcome && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Simpan Perubahan
+              </Button>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Customer Levels & Standings */}
       <section className="glass rounded-2xl p-6 space-y-4">
