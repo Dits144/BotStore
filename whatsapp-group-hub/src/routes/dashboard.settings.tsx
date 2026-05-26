@@ -12,17 +12,21 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "../lib/auth-context";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { Switch } from "../components/ui/switch";
+import { Textarea } from "../components/ui/textarea";
 import {
   fetchQrisUrl,
   uploadQris,
   sendRentalReport,
+  fetchWelcomeSettings,
+  updateWelcomeSettings,
 } from "../lib/api";
 
 export const Route = createFileRoute("/dashboard/settings")({
@@ -33,6 +37,12 @@ function SettingsPage() {
   const { session, activeGroup, switchGroup, addGroup, logout } = useAuth();
   const navigate = useNavigate();
   const [newToken, setNewToken] = useState("");
+
+  // Welcome settings state
+  const [welcomeEnabled, setWelcomeEnabled] = useState(false);
+  const [welcomeMessage, setWelcomeMessage] = useState("");
+  const [loadingWelcome, setLoadingWelcome] = useState(false);
+  const [savingWelcome, setSavingWelcome] = useState(false);
 
   // States & handlers for QRIS & Rent Bot
   const [qrisUrl, setQrisUrl] = useState(fetchQrisUrl());
@@ -47,6 +57,42 @@ function SettingsPage() {
     { id: "3_bulan", name: "3 Bulan / Rp 25.000 (Hemat 15%!)", days: 90 },
     { id: "6_bulan", name: "6 Bulan / Rp 45.000 (Hemat 25%!)", days: 180 },
   ];
+
+  // Load welcome settings on mount or active group change
+  useEffect(() => {
+    if (!activeGroup) return;
+
+    const loadWelcome = async () => {
+      setLoadingWelcome(true);
+      try {
+        const settings = await fetchWelcomeSettings(activeGroup.token);
+        setWelcomeEnabled(settings.welcomeEnabled);
+        setWelcomeMessage(settings.welcomeMessage || "");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Gagal memuat setting welcome");
+      } finally {
+        setLoadingWelcome(false);
+      }
+    };
+
+    loadWelcome();
+  }, [activeGroup]);
+
+  const handleSaveWelcome = async () => {
+    if (!activeGroup) {
+      toast.error("Pilih grup aktif terlebih dahulu!");
+      return;
+    }
+    setSavingWelcome(true);
+    try {
+      await updateWelcomeSettings(activeGroup.token, welcomeEnabled, welcomeMessage);
+      toast.success("Pengaturan Welcome berhasil disimpan!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menyimpan setting welcome");
+    } finally {
+      setSavingWelcome(false);
+    }
+  };
 
   const handleQrisUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -249,6 +295,75 @@ function SettingsPage() {
           </p>
         </div>
       </section>
+
+      {/* WELCOME SETTINGS PANEL */}
+      {activeGroup && (
+        <section className="glass rounded-2xl p-6 animate-fade-in-up space-y-4">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" /> Welcome Message Configuration
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Kelola pesan penyambutan otomatis saat member baru bergabung ke grup WhatsApp ini.
+            </p>
+          </div>
+
+          {loadingWelcome ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <span className="text-xs text-muted-foreground ml-2">Memuat pengaturan welcome...</span>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.01] p-4">
+                <div className="space-y-0.5 animate-fade-in">
+                  <Label htmlFor="welcome-toggle" className="text-sm font-medium">Aktifkan Welcome Message</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Kirim pesan penyambutan otomatis saat ada anggota baru bergabung.
+                  </p>
+                </div>
+                <Switch
+                  id="welcome-toggle"
+                  checked={welcomeEnabled}
+                  onCheckedChange={setWelcomeEnabled}
+                />
+              </div>
+
+              {welcomeEnabled && (
+                <div className="space-y-2 animate-fade-in">
+                  <Label htmlFor="welcome-template" className="text-xs font-semibold text-foreground/80">Template Pesan Welcome</Label>
+                  <Textarea
+                    id="welcome-template"
+                    placeholder="Halo @user, selamat datang di grup {group}! Jangan lupa baca deskripsi yaa."
+                    value={welcomeMessage}
+                    onChange={(e) => setWelcomeMessage(e.target.value)}
+                    className="min-h-[120px] bg-white/5 font-mono text-sm leading-relaxed"
+                  />
+                  <div className="rounded-lg bg-white/5 border border-white/10 p-3 text-[11px] text-muted-foreground space-y-1.5 leading-relaxed">
+                    <span className="font-semibold text-foreground/80">Petunjuk Placeholders:</span>
+                    <ul className="list-disc pl-4 space-y-1">
+                      <li>Gunakan <code className="bg-white/10 px-1 py-0.5 rounded text-primary">@user</code> untuk menyebut/mention member baru yang bergabung (akan ter-tag biru secara otomatis).</li>
+                      <li>Gunakan <code className="bg-white/10 px-1 py-0.5 rounded text-primary">{"{group}"}</code> untuk menampilkan nama grup WhatsApp secara dinamis.</li>
+                      <li>Pesan visual default yang berisi petunjuk price list (`🛍️ *Ketik "list"...*`) akan otomatis ditambahkan ke baris paling bawah.</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleSaveWelcome}
+                  disabled={savingWelcome}
+                  className="px-6"
+                >
+                  {savingWelcome && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Simpan Perubahan
+                </Button>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* OWNER QRIS PANEL */}
       {session.role === "owner" && (

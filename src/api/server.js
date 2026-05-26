@@ -303,6 +303,49 @@ app.get('/api/groups/:groupToken/customers', authenticate, async (req, res) => {
   }
 });
 
+// 10b. Get Group Welcome Message Settings
+app.get('/api/groups/:groupToken/welcome', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const db = await connectDatabase();
+  
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+
+  try {
+    const groupSettingsRepository = require('../repositories/groupSettingsRepository');
+    const settings = await groupSettingsRepository.get(groupToken);
+    res.json({
+      welcomeEnabled: settings ? settings.welcome_enabled === 1 : false,
+      welcomeMessage: settings ? settings.welcome_message : ''
+    });
+  } catch (err) {
+    logger.error({ err, groupToken }, 'Failed to fetch welcome settings');
+    res.status(500).json({ error: 'Gagal memuat setting welcome grup' });
+  }
+});
+
+// 10c. Update Group Welcome Message Settings
+app.post('/api/groups/:groupToken/welcome', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const { welcomeEnabled, welcomeMessage } = req.body;
+  const db = await connectDatabase();
+  
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+
+  try {
+    const groupSettingsRepository = require('../repositories/groupSettingsRepository');
+    await groupSettingsRepository.setWelcomeEnabled(groupToken, welcomeEnabled);
+    if (welcomeMessage !== undefined) {
+      await groupSettingsRepository.setWelcomeMessage(groupToken, welcomeMessage);
+    }
+    res.json({ success: true, message: 'Setting welcome berhasil diperbarui!' });
+  } catch (err) {
+    logger.error({ err, groupToken }, 'Failed to update welcome settings');
+    res.status(500).json({ error: 'Gagal memperbarui setting welcome grup' });
+  }
+});
+
 // 11. Toggle Group Setting (Lock/Unlock)
 app.post('/api/groups/:groupToken/setting', authenticate, async (req, res) => {
   const { groupToken } = req.params;

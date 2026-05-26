@@ -384,3 +384,35 @@ export async function sendRentalReport(
     throw new Error(data.error || "Gagal mengirimkan laporan bukti transfer");
   }
 }
+
+export interface WelcomeSettings {
+  welcomeEnabled: boolean;
+  welcomeMessage: string;
+}
+
+export async function fetchWelcomeSettings(groupToken: string): Promise<WelcomeSettings> {
+  const res = await fetch(`${API_BASE}/groups/${encodeURIComponent(groupToken)}/welcome`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal memuat setting welcome");
+  }
+  return res.json();
+}
+
+export async function updateWelcomeSettings(
+  groupToken: string,
+  welcomeEnabled: boolean,
+  welcomeMessage: string
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/groups/${encodeURIComponent(groupToken)}/welcome`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    body: JSON.stringify({ welcomeEnabled, welcomeMessage }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal memperbarui setting welcome");
+  }
+}
