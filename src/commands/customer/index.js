@@ -107,7 +107,8 @@ async function handle(ctx, parsed) {
     const targetJid = `${rawTarget}@s.whatsapp.net`;
     const { total, tier } = await customerRepository.getCustomerLevel(ctx.from, targetJid);
     await ctx.sock.sendMessage(ctx.from, {
-      text: `🔍 ${styled('Cek Level Customer')}\n${'━'.repeat(20)}\n` + formatLevelCard(`+${rawTarget}`, total, tier)
+      text: `🔍 ${styled('Cek Level Customer')}\n${'━'.repeat(20)}\n` + formatLevelCard(`@${rawTarget}`, total, tier),
+      mentions: [targetJid]
     });
     return;
   }
@@ -144,8 +145,8 @@ async function handle(ctx, parsed) {
     text:
       `🎖️ ${styled('Level Kamu')}\n` +
       `${'━'.repeat(20)}\n` +
-      formatLevelCard(`+${phone}`, total, tier) + '\n\n' +
-      `${sans('Ketik')} d ${sans('pada nota transaksi untuk tambah poin.')}`
+      formatLevelCard(`@${phone}`, total, tier),
+    mentions: [ctx.sender]
   });
 }
 

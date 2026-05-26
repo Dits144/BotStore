@@ -62,7 +62,11 @@ async function setWelcomeStatus(ctx, parsed) {
 
 async function setWelcomeTemplate(ctx, parsed) {
   const raw = parsed.raw.slice(parsed.raw.toLowerCase().indexOf('setwelcome') + 'setwelcome'.length).trim();
-  const [_, templateRaw] = raw.split('@');
+  if (!raw.startsWith('@')) {
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans('Format salah')}\n${sans('Contoh:')}\nsetwelcome@Halo @user, selamat datang di {group}`);
+    return;
+  }
+  const templateRaw = raw.slice(1).trim();
   if (!templateRaw) {
     await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans('Format salah')}\n${sans('Contoh:')}\nsetwelcome@Halo @user, selamat datang di {group}`);
     return;

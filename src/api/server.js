@@ -11,7 +11,8 @@ const { formatDate } = require('../utils/time');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey144';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'dits144@gmail.com';
