@@ -29,7 +29,8 @@ export interface AuthSession {
   groups: LinkedGroup[];
 }
 
-function getAuthHeader() {
+function getAuthHeader(): Record<string, string> {
+  if (typeof localStorage === "undefined") return {};
   const sessionData = localStorage.getItem("wa-bot-dashboard:session:v1");
   if (!sessionData) return {};
   const session = JSON.parse(sessionData);
