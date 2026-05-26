@@ -422,6 +422,23 @@ app.post('/api/groups/:groupToken/members/add', authenticate, async (req, res) =
   }
 });
 
+// Temporary Contacts Debug Route
+app.get('/api/contacts-debug', authenticate, async (req, res) => {
+  try {
+    const sock = getSock();
+    if (!sock) return res.status(500).json({ error: 'WhatsApp bot offline' });
+    const contacts = sock.contacts || {};
+    res.json({
+      totalContacts: Object.keys(contacts).length,
+      sampleKeys: Object.keys(contacts).slice(0, 20),
+      sampleContacts: Object.values(contacts).slice(0, 10)
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // 11. Toggle Group Setting (Lock/Unlock)
 app.post('/api/groups/:groupToken/setting', authenticate, async (req, res) => {
   const { groupToken } = req.params;
