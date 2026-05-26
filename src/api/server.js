@@ -346,6 +346,82 @@ app.post('/api/groups/:groupToken/welcome', authenticate, async (req, res) => {
   }
 });
 
+// 10d. Get Group Members
+app.get('/api/groups/:groupToken/members', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const db = await connectDatabase();
+  
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+
+  try {
+    const sock = getSock();
+    if (!sock) return res.status(500).json({ error: 'WhatsApp bot offline' });
+
+    const meta = await sock.groupMetadata(groupToken);
+    const participants = (meta.participants || []).map(p => {
+      const phone = p.id.split('@')[0];
+      return {
+        jid: p.id,
+        phone,
+        isAdmin: p.admin === 'admin' || p.admin === 'superadmin',
+        isSuperAdmin: p.admin === 'superadmin'
+      };
+    });
+    res.json(participants);
+  } catch (err) {
+    logger.error({ err, groupToken }, 'Failed to fetch group members');
+    res.status(500).json({ error: 'Gagal memuat daftar anggota grup' });
+  }
+});
+
+// 10e. Kick Group Member
+app.post('/api/groups/:groupToken/members/kick', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const { participantJid } = req.body;
+  if (!participantJid) return res.status(400).json({ error: 'JID anggota wajib diisi' });
+
+  const db = await connectDatabase();
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+
+  try {
+    const sock = getSock();
+    if (!sock) return res.status(500).json({ error: 'WhatsApp bot offline' });
+
+    await sock.groupParticipantsUpdate(groupToken, [participantJid], 'remove');
+    res.json({ success: true, message: 'Anggota berhasil dikeluarkan dari grup!' });
+  } catch (err) {
+    logger.error({ err, groupToken, participantJid }, 'Failed to kick group member');
+    res.status(500).json({ error: 'Gagal mengeluarkan anggota dari grup. Pastikan bot adalah admin.' });
+  }
+});
+
+// 10f. Add Group Member
+app.post('/api/groups/:groupToken/members/add', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const { phone } = req.body;
+  if (!phone) return res.status(400).json({ error: 'Nomor telepon wajib diisi' });
+
+  const db = await connectDatabase();
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+
+  try {
+    const sock = getSock();
+    if (!sock) return res.status(500).json({ error: 'WhatsApp bot offline' });
+
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const participantJid = `${cleanPhone}@s.whatsapp.net`;
+
+    await sock.groupParticipantsUpdate(groupToken, [participantJid], 'add');
+    res.json({ success: true, message: 'Anggota berhasil ditambahkan ke grup!' });
+  } catch (err) {
+    logger.error({ err, groupToken, phone }, 'Failed to add group member');
+    res.status(500).json({ error: 'Gagal menambahkan anggota. Pastikan nomor terdaftar di WA dan bot adalah admin.' });
+  }
+});
+
 // 11. Toggle Group Setting (Lock/Unlock)
 app.post('/api/groups/:groupToken/setting', authenticate, async (req, res) => {
   const { groupToken } = req.params;
