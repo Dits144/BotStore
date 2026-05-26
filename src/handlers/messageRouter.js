@@ -68,6 +68,15 @@ async function routeMessage(sock, msg) {
 
   const chatJid = getChatJid(msg);
   const senderJid = getSenderJid(msg);
+
+  // Cache user pushName in our contacts database
+  if (msg.pushName && senderJid) {
+    const contactRepository = require('../repositories/contactRepository');
+    contactRepository.upsert(senderJid, msg.pushName).catch(err => {
+      logger.warn({ err, senderJid, pushName: msg.pushName }, 'failed to upsert contact');
+    });
+  }
+
   const isGroup = chatJid.endsWith('@g.us');
   const role = await getUserRole({ sock, chatJid, senderJid, isGroup });
   const isOwner = role === 'bot_owner';

@@ -358,12 +358,25 @@ app.get('/api/groups/:groupToken/members', authenticate, async (req, res) => {
     const sock = getSock();
     if (!sock) return res.status(500).json({ error: 'WhatsApp bot offline' });
 
+    // Fetch all cached contact names from our database
+    const contactRepository = require('../repositories/contactRepository');
+    const contacts = await contactRepository.getAll();
+    const contactMap = {};
+    contacts.forEach(c => {
+      contactMap[c.jid] = c.name;
+      const phone = c.jid.split('@')[0];
+      contactMap[`${phone}@s.whatsapp.net`] = c.name;
+      contactMap[`${phone}@lid`] = c.name;
+    });
+
     const meta = await sock.groupMetadata(groupToken);
     const participants = (meta.participants || []).map(p => {
       const phone = p.id.split('@')[0];
+      const name = contactMap[p.id] || contactMap[`${phone}@s.whatsapp.net`] || contactMap[`${phone}@lid`] || '';
       return {
         jid: p.id,
         phone,
+        name,
         isAdmin: p.admin === 'admin' || p.admin === 'superadmin',
         isSuperAdmin: p.admin === 'superadmin'
       };

@@ -421,6 +421,7 @@ export async function updateWelcomeSettings(
 export interface GroupMember {
   jid: string;
   phone: string;
+  name?: string;
   isAdmin: boolean;
   isSuperAdmin: boolean;
 }

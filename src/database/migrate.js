@@ -81,6 +81,12 @@ async function migrate() {
       created_at TEXT NOT NULL,
       UNIQUE(user_id, group_id)
     );
+
+    CREATE TABLE IF NOT EXISTS contacts (
+      jid TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
 
   await ensureColumn(db, 'catalogues', 'media_path', 'media_path TEXT NOT NULL DEFAULT ""');
