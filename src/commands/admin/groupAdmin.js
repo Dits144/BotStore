@@ -50,6 +50,9 @@ async function handle(ctx, parsed) {
     return;
   }
 
+  if (parsed.command === 'kick') return groupKick(ctx, parsed);
+  if (parsed.command === 'add') return groupAdd(ctx, parsed);
+
   const sub = String(parsed.args[0] || '').toLowerCase();
 
   if (sub === 'close') return groupClose(ctx);
@@ -58,7 +61,7 @@ async function handle(ctx, parsed) {
   await sendMinimalError(
     ctx.sock,
     ctx.from,
-    `❌ ${sans('Format salah')}\n${sans('Contoh:')}\n• group close\n• group open`
+    `❌ ${sans('Format salah')}\n${sans('Contoh:')}\n• group close\n• group open\n• kick @user\n• add 628xxx`
   );
 }
 
@@ -112,6 +115,110 @@ async function groupOpen(ctx) {
     logger.error({ err, groupId: ctx.from }, '[groupAdmin] gagal open grup');
     await reactError(ctx.sock, ctx.msg);
     await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans('Gagal membuka grup. Pastikan bot adalah admin grup.')}`);
+  }
+}
+
+async function groupKick(ctx, parsed) {
+  try {
+    let targetJid = '';
+
+    // 1. Quoted message (reply)
+    const contextInfo = ctx.msg?.message?.extendedTextMessage?.contextInfo;
+    const rawParticipant = contextInfo?.participant;
+    if (contextInfo?.quotedMessage && rawParticipant) {
+      const rawStr = String(rawParticipant).trim();
+      if (rawStr.includes(':') && rawStr.includes('@')) {
+        const [userPart, domain] = rawStr.split('@');
+        const cleanUser = userPart.split(':')[0];
+        targetJid = `${cleanUser}@${domain}`;
+      } else {
+        targetJid = rawStr.includes('@') ? rawStr : `${rawStr.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
+      }
+    }
+
+    // 2. Mentions
+    if (!targetJid) {
+      const mentions = contextInfo?.mentionedJid || [];
+      if (mentions.length > 0) {
+        targetJid = mentions[0];
+      }
+    }
+
+    // 3. Arguments (phone number)
+    if (!targetJid && parsed.args.length > 0) {
+      const cleanPhone = parsed.args[0].replace(/[^0-9]/g, '');
+      if (cleanPhone) {
+        targetJid = `${cleanPhone}@s.whatsapp.net`;
+      }
+    }
+
+    if (!targetJid) {
+      await sendMinimalError(
+        ctx.sock,
+        ctx.from,
+        `❌ ${sans('Format salah')}\n${sans('Contoh:')}\n• Reply chat target lalu ketik: kick\n• Tag target: kick @user\n• Ketik nomor: kick 628xxx`
+      );
+      return;
+    }
+
+    // Prevent kicking the bot itself
+    const botNumber = ctx.sock.user.id.split(':')[0] + '@s.whatsapp.net';
+    if (targetJid === botNumber) {
+      await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans('Gagal: Bot tidak dapat mengeluarkan dirinya sendiri.')}`);
+      return;
+    }
+
+    await reactLoading(ctx.sock, ctx.msg);
+    await ctx.sock.groupParticipantsUpdate(ctx.from, [targetJid], 'remove');
+    await reactSuccess(ctx.sock, ctx.msg);
+
+    const cleanNumber = targetJid.split('@')[0];
+    await ctx.sock.sendMessage(ctx.from, {
+      text: `✅ ${sans('Berhasil mengeluarkan')} @${cleanNumber} ${sans('dari grup!')}`,
+      mentions: [targetJid]
+    });
+  } catch (err) {
+    logger.error({ err, groupId: ctx.from }, '[groupAdmin] gagal kick anggota');
+    await reactError(ctx.sock, ctx.msg);
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans('Gagal mengeluarkan anggota. Pastikan bot adalah admin grup.')}`);
+  }
+}
+
+async function groupAdd(ctx, parsed) {
+  try {
+    if (!parsed.args.length) {
+      await sendMinimalError(
+        ctx.sock,
+        ctx.from,
+        `❌ ${sans('Format salah')}\n${sans('Contoh:')}\n• add 62899xxxxxxx`
+      );
+      return;
+    }
+
+    const cleanPhone = parsed.args[0].replace(/[^0-9]/g, '');
+    if (!cleanPhone) {
+      await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans('Nomor telepon tidak valid.')}`);
+      return;
+    }
+
+    const targetJid = `${cleanPhone}@s.whatsapp.net`;
+
+    await reactLoading(ctx.sock, ctx.msg);
+    await ctx.sock.groupParticipantsUpdate(ctx.from, [targetJid], 'add');
+    await reactSuccess(ctx.sock, ctx.msg);
+
+    await ctx.sock.sendMessage(ctx.from, {
+      text: `✅ ${sans('Berhasil menambahkan')} @${cleanPhone} ${sans('ke dalam grup!')}`,
+      mentions: [targetJid]
+    });
+  } catch (err) {
+    logger.error({ err, groupId: ctx.from }, '[groupAdmin] gagal add anggota');
+    await reactError(ctx.sock, ctx.msg);
+    await sendMinimalError(
+      ctx.sock,
+      ctx.from,
+      `❌ ${sans('Gagal menambahkan anggota. Pastikan nomor terdaftar di WA dan bot adalah admin grup.')}`
+    );
   }
 }
 

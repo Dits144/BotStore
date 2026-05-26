@@ -49,6 +49,8 @@ const commandRegistry = {
   level: customerCommands.handle,
   levelboard: customerCommands.handle,
   group: groupAdminCommands.handle,
+  kick: groupAdminCommands.handle,
+  add: groupAdminCommands.handle,
   dashboard: webCommands.handle,
   stok: webCommands.handle
 };

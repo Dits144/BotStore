@@ -416,3 +416,45 @@ export async function updateWelcomeSettings(
     throw new Error(data.error || "Gagal memperbarui setting welcome");
   }
 }
+
+export interface GroupMember {
+  jid: string;
+  phone: string;
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
+}
+
+export async function fetchGroupMembers(groupToken: string): Promise<GroupMember[]> {
+  const res = await fetch(`${API_BASE}/groups/${encodeURIComponent(groupToken)}/members`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal memuat daftar anggota grup");
+  }
+  return res.json();
+}
+
+export async function kickGroupMember(groupToken: string, participantJid: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/groups/${encodeURIComponent(groupToken)}/members/kick`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    body: JSON.stringify({ participantJid }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal mengeluarkan anggota grup");
+  }
+}
+
+export async function addGroupMember(groupToken: string, phone: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/groups/${encodeURIComponent(groupToken)}/members/add`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    body: JSON.stringify({ phone }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal menambahkan anggota grup");
+  }
+}

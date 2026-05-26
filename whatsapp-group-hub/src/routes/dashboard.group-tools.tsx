@@ -11,6 +11,10 @@ import {
   Loader2,
   Sparkles,
   Trophy,
+  UserPlus,
+  UserMinus,
+  Shield,
+  ShieldAlert,
 } from "lucide-react";
 
 import { useAuth } from "../lib/auth-context";
@@ -22,6 +26,9 @@ import {
   toggleGroupSetting,
   broadcastMessage,
   cloneCatalogue,
+  fetchGroupMembers,
+  kickGroupMember,
+  addGroupMember,
 } from "../lib/api";
 
 export const Route = createFileRoute("/dashboard/group-tools")({
@@ -72,6 +79,37 @@ function GroupToolsPage() {
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to clone catalogue");
+    },
+  });
+
+  const [newMemberPhone, setNewMemberPhone] = useState("");
+
+  const { data: members = [], isLoading: loadingMembers } = useQuery({
+    queryKey: ["group-members", token],
+    queryFn: () => fetchGroupMembers(token),
+    enabled: !!token,
+  });
+
+  const addMemberMutation = useMutation({
+    mutationFn: () => addGroupMember(token, newMemberPhone.trim()),
+    onSuccess: () => {
+      toast.success("Anggota baru berhasil ditambahkan!");
+      setNewMemberPhone("");
+      queryClient.invalidateQueries({ queryKey: ["group-members", token] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Gagal menambahkan anggota");
+    },
+  });
+
+  const kickMemberMutation = useMutation({
+    mutationFn: (jid: string) => kickGroupMember(token, jid),
+    onSuccess: () => {
+      toast.success("Anggota berhasil dikeluarkan dari grup!");
+      queryClient.invalidateQueries({ queryKey: ["group-members", token] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Gagal mengeluarkan anggota");
     },
   });
 
@@ -256,6 +294,103 @@ function GroupToolsPage() {
                       <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 text-xs font-medium border border-white/5">
                         <span>{c.emoji}</span> <span>{c.tier}</span>
                       </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Group Members Administration */}
+      <section className="glass rounded-2xl p-6 space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" /> Group Members & Administration
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Kelola anggota aktif di dalam grup WhatsApp Anda. Tambahkan anggota baru atau keluarkan anggota secara langsung.
+            </p>
+          </div>
+          
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center w-full sm:w-auto">
+            <Input
+              placeholder="Nomor WA (contoh: 628xxx)"
+              value={newMemberPhone}
+              onChange={(e) => setNewMemberPhone(e.target.value)}
+              className="font-mono text-xs w-full sm:w-56"
+            />
+            <Button
+              onClick={() => addMemberMutation.mutate()}
+              disabled={addMemberMutation.isPending || !newMemberPhone.trim()}
+              className="gap-2 shrink-0"
+            >
+              {addMemberMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <UserPlus className="h-4 w-4" />
+              )}
+              Add Member
+            </Button>
+          </div>
+        </div>
+
+        {loadingMembers ? (
+          <div className="flex h-48 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : members.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-white/10 p-8 text-center text-sm text-muted-foreground">
+            Tidak ada anggota yang terdaftar di grup ini.
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.01]">
+            <table className="w-full border-collapse text-left text-sm text-foreground">
+              <thead>
+                <tr className="border-b border-white/5 bg-white/[0.02] text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  <th className="px-4 py-3 w-12 text-center">#</th>
+                  <th className="px-4 py-3">Phone Number</th>
+                  <th className="px-4 py-3">Role</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {members.map((m, idx) => (
+                  <tr key={m.jid} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="px-4 py-3.5 text-center font-semibold text-muted-foreground">{idx + 1}</td>
+                    <td className="px-4 py-3.5 font-mono">+{m.phone}</td>
+                    <td className="px-4 py-3.5">
+                      {m.isAdmin ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary border border-primary/20">
+                          <Shield className="h-3 w-3" /> Admin Grup
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground border border-white/5">
+                          Member
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5 text-right">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive gap-1 text-xs"
+                        disabled={kickMemberMutation.isPending}
+                        onClick={() => {
+                          if (confirm(`Apakah Anda yakin ingin mengeluarkan nomor +${m.phone} dari grup?`)) {
+                            kickMemberMutation.mutate(m.jid);
+                          }
+                        }}
+                      >
+                        {kickMemberMutation.isPending && kickMemberMutation.variables === m.jid ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <UserMinus className="h-3.5 w-3.5" />
+                        )}
+                        Kick
+                      </Button>
                     </td>
                   </tr>
                 ))}
