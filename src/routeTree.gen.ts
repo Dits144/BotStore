@@ -18,6 +18,7 @@ import { Route as DashboardStockRouteImport } from './routes/dashboard.stock'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardRentalsRouteImport } from './routes/dashboard.rentals'
 import { Route as DashboardPriceListRouteImport } from './routes/dashboard.price-list'
+import { Route as DashboardGroupToolsRouteImport } from './routes/dashboard.group-tools'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -64,12 +65,18 @@ const DashboardPriceListRoute = DashboardPriceListRouteImport.update({
   path: '/price-list',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardGroupToolsRoute = DashboardGroupToolsRouteImport.update({
+  id: '/group-tools',
+  path: '/group-tools',
+  getParentRoute: () => DashboardRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/dashboard/group-tools': typeof DashboardGroupToolsRoute
   '/dashboard/price-list': typeof DashboardPriceListRoute
   '/dashboard/rentals': typeof DashboardRentalsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/dashboard/group-tools': typeof DashboardGroupToolsRoute
   '/dashboard/price-list': typeof DashboardPriceListRoute
   '/dashboard/rentals': typeof DashboardRentalsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/dashboard/group-tools': typeof DashboardGroupToolsRoute
   '/dashboard/price-list': typeof DashboardPriceListRoute
   '/dashboard/rentals': typeof DashboardRentalsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/register'
+    | '/dashboard/group-tools'
     | '/dashboard/price-list'
     | '/dashboard/rentals'
     | '/dashboard/settings'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/dashboard/group-tools'
     | '/dashboard/price-list'
     | '/dashboard/rentals'
     | '/dashboard/settings'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/register'
+    | '/dashboard/group-tools'
     | '/dashboard/price-list'
     | '/dashboard/rentals'
     | '/dashboard/settings'
@@ -205,10 +217,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardPriceListRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/group-tools': {
+      id: '/dashboard/group-tools'
+      path: '/group-tools'
+      fullPath: '/dashboard/group-tools'
+      preLoaderRoute: typeof DashboardGroupToolsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
 interface DashboardRouteChildren {
+  DashboardGroupToolsRoute: typeof DashboardGroupToolsRoute
   DashboardPriceListRoute: typeof DashboardPriceListRoute
   DashboardRentalsRoute: typeof DashboardRentalsRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
@@ -217,6 +237,7 @@ interface DashboardRouteChildren {
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardGroupToolsRoute: DashboardGroupToolsRoute,
   DashboardPriceListRoute: DashboardPriceListRoute,
   DashboardRentalsRoute: DashboardRentalsRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
@@ -237,13 +258,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
