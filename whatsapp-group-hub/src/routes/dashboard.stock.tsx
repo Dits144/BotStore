@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Package, Search, Zap } from "lucide-react";
+import { Loader2, Package, Search, Zap, AlertTriangle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -52,7 +52,9 @@ function StockPage() {
       toast.success(
         vars.patch.inStock !== undefined
           ? `${vars.patch.inStock ? "Marked in stock" : "Marked out of stock"}`
-          : `Fast delivery ${vars.patch.fastDelivery ? "enabled" : "disabled"}`,
+          : vars.patch.fastDelivery !== undefined
+            ? `Fast delivery ${vars.patch.fastDelivery ? "enabled" : "disabled"}`
+            : `Status langka ${vars.patch.isRare ? "diaktifkan" : "dimatikan"}`
       );
     },
     onSettled: (_d, _e, vars) => {
@@ -76,6 +78,7 @@ function StockPage() {
 
   const inStockCount = products.filter((p) => p.inStock).length;
   const fastCount = products.filter((p) => p.fastDelivery).length;
+  const rareCount = products.filter((p) => p.isRare).length;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -89,7 +92,7 @@ function StockPage() {
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3 animate-fade-in-up">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in-up">
         <Pill icon={<Package className="h-4 w-4" />} label="Total" value={products.length} />
         <Pill
           icon={<span className="h-2 w-2 rounded-full bg-success shadow-[0_0_8px] shadow-success" />}
@@ -100,6 +103,11 @@ function StockPage() {
           icon={<Zap className="h-4 w-4 text-warning" />}
           label="Fast delivery"
           value={fastCount}
+        />
+        <Pill
+          icon={<AlertTriangle className="h-4 w-4 text-warning" />}
+          label="Langka"
+          value={rareCount}
         />
       </div>
 
@@ -130,12 +138,14 @@ function StockPage() {
           {filtered.map((p, i) => {
             const stockKey = `${p.id}:stock`;
             const fastKey = `${p.id}:fast`;
+            const rareKey = `${p.id}:rare`;
             const stockBusy = pending[stockKey];
             const fastBusy = pending[fastKey];
+            const rareBusy = pending[rareKey];
             return (
               <div
                 key={p.id}
-                className="flex flex-col gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-4 transition-all hover:bg-white/[0.04] sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-4 transition-all hover:bg-white/[0.04] lg:flex-row lg:items-center lg:justify-between"
                 style={{ animationDelay: `${i * 30}ms` }}
               >
                 <div className="min-w-0 flex-1">
@@ -192,6 +202,29 @@ function StockPage() {
                       />
                     }
                   />
+
+                  <ToggleRow
+                    label="Langka"
+                    accent="warning"
+                    busy={rareBusy}
+                    checked={p.isRare}
+                    onChange={(v) =>
+                      mut.mutate({
+                        id: p.id,
+                        patch: { isRare: v },
+                        key: rareKey,
+                      })
+                    }
+                    icon={
+                      <AlertTriangle
+                        className={`h-3.5 w-3.5 transition-all ${
+                          p.isRare
+                            ? "text-warning drop-shadow-[0_0_6px_rgba(234,179,8,0.6)]"
+                            : "text-muted-foreground"
+                        }`}
+                      />
+                    }
+                  />
                 </div>
               </div>
             );
@@ -211,7 +244,7 @@ function ToggleRow({
   busy,
 }: {
   label: string;
-  accent: "success" | "destructive" | "warning";
+  accent: "success" | "destructive" | "warning" | "primary";
   checked: boolean;
   onChange: (v: boolean) => void;
   icon: React.ReactNode;
@@ -222,10 +255,12 @@ function ToggleRow({
       ? "data-[state=checked]:bg-success"
       : accent === "warning"
         ? "data-[state=checked]:bg-warning"
-        : "data-[state=checked]:bg-destructive";
+        : accent === "primary"
+          ? "data-[state=checked]:bg-primary"
+          : "data-[state=checked]:bg-destructive";
 
   return (
-    <label className="flex min-w-[170px] cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2 transition-all hover:border-white/10">
+    <label className="flex min-w-[150px] cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2 transition-all hover:border-white/10">
       <span className="flex items-center gap-2 text-xs font-medium">
         {icon}
         {label}

@@ -122,7 +122,8 @@ async function welcomeNewMembers(sock, update) {
     const caption =
       `┏━━〔 👋 SELAMAT DATANG 〕━━┓\n` +
       `┗━━━━━━━━━━━━━━━━━━━━┛\n\n` +
-      `${mention.text}`;
+      `${mention.text}\n\n` +
+      `🛍️ *Ketik "list" untuk melihat daftar produk & price list kami!*`;
 
     try {
       // Coba kirim dengan foto profil member baru

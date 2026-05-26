@@ -90,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!session) return;
       if (session.groups.some((g) => g.token === groupToken)) {
         setActiveToken(groupToken);
+        localStorage.setItem(ACTIVE_KEY, groupToken);
         return;
       }
       const linked = await linkAdditionalGroup(groupToken, groupPassword);

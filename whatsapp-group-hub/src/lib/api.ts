@@ -30,7 +30,7 @@ export interface AuthSession {
 }
 
 function getAuthHeader() {
-  const sessionData = localStorage.getItem("auth_session");
+  const sessionData = localStorage.getItem("wa-bot-dashboard:session:v1");
   if (!sessionData) return {};
   const session = JSON.parse(sessionData);
   return { Authorization: `Bearer ${session.token}` };
@@ -176,4 +176,211 @@ export async function deleteProduct(
     headers: getAuthHeader(),
   });
   if (!res.ok) throw new Error("Failed to delete product");
+}
+
+// ---- Admin Tools (Group Management) ----
+
+export interface GroupCustomer {
+  rank: number;
+  customerJid: string;
+  phone: string;
+  totalTransactions: number;
+  tier: string;
+  emoji: string;
+}
+
+export async function fetchCustomers(groupToken: string): Promise<GroupCustomer[]> {
+  const res = await fetch(`${API_BASE}/groups/${encodeURIComponent(groupToken)}/customers`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) throw new Error("Gagal mengambil data customer");
+  return res.json();
+}
+
+export async function toggleGroupSetting(
+  groupToken: string,
+  action: "open" | "close",
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/groups/${encodeURIComponent(groupToken)}/setting`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ action }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal mengubah setting grup");
+  }
+}
+
+export async function broadcastMessage(
+  groupToken: string,
+  message: string,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/groups/${encodeURIComponent(groupToken)}/broadcast`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ message }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal mengirim broadcast");
+  }
+}
+
+export async function cloneCatalogue(
+  groupToken: string,
+  sourceGroupToken: string,
+): Promise<{ cloned: number }> {
+  const res = await fetch(`${API_BASE}/groups/${encodeURIComponent(groupToken)}/clone`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ sourceGroupToken }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal melakukan clone");
+  }
+  return res.json();
+}
+
+// ---- Owner Controls (CRUD Owners & CRUD Rentals) ----
+
+export interface BotOwner {
+  jid: string;
+  is_main: number;
+  created_at: string;
+}
+
+export async function fetchOwners(): Promise<BotOwner[]> {
+  const res = await fetch(`${API_BASE}/owners`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) throw new Error("Gagal mengambil data owner");
+  return res.json();
+}
+
+export async function addOwner(jid: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/owners`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ jid }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal menambah owner baru");
+  }
+}
+
+export async function deleteOwner(jid: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/owners/${encodeURIComponent(jid)}`, {
+    method: "DELETE",
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal menghapus owner");
+  }
+}
+
+export async function addRental(
+  group_id: string,
+  group_name: string,
+  duration_days: number,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/rentals`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ group_id, group_name, duration_days }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal menambahkan grup sewa baru");
+  }
+}
+
+export async function deleteRental(groupToken: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/rentals/${encodeURIComponent(groupToken)}`, {
+    method: "DELETE",
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal menghapus grup sewa");
+  }
+}
+
+export interface GroupDiagnostics {
+  group_id: string;
+  group_name: string;
+  duration_days: number;
+  expired_at: string;
+  is_active: number;
+  total_products: number;
+  total_transactions: number;
+  total_customers: number;
+  system: {
+    cpu_usage: number;
+    memory_usage: number;
+    memory_used_mb: number;
+    memory_total_mb: number;
+    database_size_kb: number;
+  };
+}
+
+export async function fetchDiagnostics(groupToken: string): Promise<GroupDiagnostics> {
+  const res = await fetch(`${API_BASE}/rentals/${encodeURIComponent(groupToken)}/diagnostics`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal mengambil diagnostik grup");
+  }
+  return res.json();
+}
+
+export function fetchQrisUrl(): string {
+  return `${API_BASE}/qris?t=${new Date().getTime()}`;
+}
+
+export async function uploadQris(base64Image: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/qris`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    body: JSON.stringify({ image: base64Image }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal memperbarui QRIS");
+  }
+}
+
+export async function sendRentalReport(
+  groupToken: string,
+  packageName: string,
+  base64Proof: string,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/rentals/report`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    body: JSON.stringify({ groupToken, packageName, proofImage: base64Proof }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal mengirimkan laporan bukti transfer");
+  }
 }

@@ -25,6 +25,11 @@ async function handle(ctx, parsed) {
     return;
   }
 
+  if (parsed.command === 'payment') {
+    await sendPaymentInfo(ctx);
+    return;
+  }
+
   const canManage = await canManageCatalogue(ctx.sock, ctx.from, ctx.sender);
   if (!canManage) {
     await ctx.send(`❌ ${sans('Akses ditolak')}\n${sans('Perintah ini khusus untuk Admin Grup atau Owner Bot.')}`);
@@ -168,7 +173,8 @@ async function productTrigger(ctx, rawText) {
 
   const item = await catalogueRepository.getItem(ctx.from, name);
   if (item) {
-    const detailText = `${item.description}${footer}`;
+    const paymentNote = '\n\n💳 *Ketik "payment" untuk melanjutkan pembayaran!*';
+    const detailText = `${item.description}${paymentNote}${footer}`;
     if (item.media_path && fs.existsSync(item.media_path)) {
       await ctx.sock.sendMessage(
         ctx.from,
@@ -193,7 +199,8 @@ async function productTrigger(ctx, rawText) {
   const bestMatchItem = rows.find((r) => r.item_name === bestMatchName);
 
   if (bestMatchItem) {
-    const captionText = `❓ Maksud Anda ${bestMatchName}?\n\n${bestMatchItem.description}${footer}`;
+    const paymentNote = '\n\n💳 *Ketik "payment" untuk melanjutkan pembayaran!*';
+    const captionText = `❓ Maksud Anda ${bestMatchName}?\n\n${bestMatchItem.description}${paymentNote}${footer}`;
     if (bestMatchItem.media_path && fs.existsSync(bestMatchItem.media_path)) {
       await ctx.sock.sendMessage(
         ctx.from,
@@ -244,6 +251,20 @@ async function resolveGroupName(ctx) {
   } catch {
     return 'Unknown Group';
   }
+}
+
+async function sendPaymentInfo(ctx) {
+  const messageText = 
+    `┌─── ⌁ 𝗜𝗡𝗙𝗢 𝗣𝗘𝗠𝗕𝗔𝗬𝗔𝗥𝗔𝗡 ⌁ ───┐\n` +
+    `│ 💳 Untuk melanjutkan pembayaran & transaksi:\n` +
+    `│ 👤 Silakan hubungi langsung Admin Grup ini.\n` +
+    `│\n` +
+    `│ ⚡ Kirimkan screenshot produk yang ingin Anda beli,\n` +
+    `│   lalu selesaikan pembayaran sesuai instruksi Admin.\n` +
+    `│\n` +
+    `│ ✨ Terima kasih telah berbelanja! ✨\n` +
+    `└───────────────────────────────┘`;
+  await ctx.send(messageText);
 }
 
 module.exports = { handle, productTrigger };

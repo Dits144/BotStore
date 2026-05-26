@@ -9,6 +9,7 @@ import {
   Package,
   Plus,
   Radio,
+  Shield,
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -40,10 +41,12 @@ const nav: Array<{
   label: string;
   icon: typeof LayoutDashboard;
   end?: boolean;
+  role?: string;
 }> = [
   { to: "/dashboard", label: "Dashboard Home", icon: LayoutDashboard, end: true },
   { to: "/dashboard/price-list", label: "Price List", icon: ListOrdered },
   { to: "/dashboard/stock", label: "Stock Management", icon: Package },
+  { to: "/dashboard/group-tools", label: "Admin Tools", icon: Shield },
   { to: "/dashboard/rentals", label: "Rentals & Groups", icon: LayoutDashboard, role: "owner" },
   { to: "/dashboard/settings", label: "Settings", icon: Cog },
 ];
@@ -52,6 +55,7 @@ export function DashboardLayout() {
   const { isAuthenticated, session, activeGroup, switchGroup, addGroup, logout } =
     useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const search = useSearch({ from: "/dashboard" }) as { linkToken?: string };
   const [mobileOpen, setMobileOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -249,57 +253,53 @@ export function DashboardLayout() {
                   );
                 })}
                 <DropdownMenuSeparator />
-                <Dialog open={addOpen} onOpenChange={setAddOpen}>
-                  <DialogTrigger asChild>
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setAddOpen(true);
-                      }}
-                      className="gap-2 text-primary focus:text-primary"
-                    >
-                      <Plus className="h-4 w-4" /> Link another group
-                    </DropdownMenuItem>
-                  </DialogTrigger>
-                  <DialogContent className="glass-strong border-white/10">
-                    <DialogHeader>
-                      <DialogTitle>Link a new WhatsApp group</DialogTitle>
-                      <DialogDescription>
-                        Paste the Group Token (JID) shown by your bot's dashboard
-                        command.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <div className="mb-1 text-xs font-medium text-muted-foreground">Group Token (JID)</div>
-                        <Input
-                          autoFocus
-                          placeholder="120363012345678901@g.us"
-                          value={newToken}
-                          onChange={(e) => setNewToken(e.target.value)}
-                          className="font-mono"
-                        />
-                      </div>
-                      <div>
-                        <div className="mb-1 text-xs font-medium text-muted-foreground">Group Password</div>
-                        <Input
-                          placeholder="12345"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          className="font-mono"
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="ghost" onClick={() => setAddOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handleAddGroup}>Link group</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <DropdownMenuItem
+                  onClick={() => setAddOpen(true)}
+                  className="gap-2 text-primary focus:text-primary cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" /> Link another group
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* DIALOG FOR LINK NEW GROUP */}
+            <Dialog open={addOpen} onOpenChange={setAddOpen}>
+              <DialogContent className="glass-strong border-white/10">
+                <DialogHeader>
+                  <DialogTitle>Link a new WhatsApp group</DialogTitle>
+                  <DialogDescription>
+                    Paste the Group Token (JID) shown by your bot's dashboard command.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <div className="mb-1 text-xs font-medium text-muted-foreground">Group Token (JID)</div>
+                    <Input
+                      autoFocus
+                      placeholder="120363012345678901@g.us"
+                      value={newToken}
+                      onChange={(e) => setNewToken(e.target.value)}
+                      className="font-mono"
+                    />
+                  </div>
+                  <div>
+                    <div className="mb-1 text-xs font-medium text-muted-foreground">Group Password</div>
+                    <Input
+                      placeholder="12345"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="font-mono"
+                    />
+                  </div>
+                </div>
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button variant="ghost" onClick={() => setAddOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddGroup}>Link group</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             <div className="ml-auto flex items-center gap-3">
               <DropdownMenu>

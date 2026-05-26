@@ -41,6 +41,7 @@ const commandRegistry = {
   r: adminCommands.handle,
   b: adminCommands.handle,
   list: catalogueCommands.handle,
+  payment: catalogueCommands.handle,
   addlist: catalogueCommands.handle,
   updatelist: catalogueCommands.handle,
   dellist: catalogueCommands.handle,
