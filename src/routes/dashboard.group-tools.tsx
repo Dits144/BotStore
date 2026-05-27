@@ -16,6 +16,8 @@ import {
   Shield,
   ShieldAlert,
   FileText,
+  Image,
+  X,
 } from "lucide-react";
 
 import { useAuth } from "../lib/auth-context";
@@ -89,7 +91,51 @@ function GroupToolsPage() {
   };
 
   const [broadcastText, setBroadcastText] = useState("");
+  const [broadcastImage, setBroadcastImage] = useState<string | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [sourceJid, setSourceJid] = useState("");
+
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+    };
+  }, [imagePreviewUrl]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("File harus berupa gambar!");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran gambar maksimal 5MB!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setBroadcastImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+    }
+    setImagePreviewUrl(URL.createObjectURL(file));
+  };
+
+  const clearBroadcastImage = () => {
+    setBroadcastImage(null);
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+      setImagePreviewUrl(null);
+    }
+  };
 
   const { data: customers = [], isLoading: loadingCustomers, error: customersError } = useQuery({
     queryKey: ["group-customers", token],
@@ -109,10 +155,11 @@ function GroupToolsPage() {
   });
 
   const broadcastMutation = useMutation({
-    mutationFn: () => broadcastMessage(token, broadcastText.trim()),
+    mutationFn: () => broadcastMessage(token, broadcastText.trim(), broadcastImage || undefined),
     onSuccess: () => {
       toast.success("Broadcast successfully sent to group");
       setBroadcastText("");
+      clearBroadcastImage();
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to send broadcast");
@@ -254,19 +301,63 @@ function GroupToolsPage() {
                   <Megaphone className="h-5 w-5 text-primary" /> Hidden Tag-All Broadcast
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  Send a message that tags ALL participants in the group silently (hidden mentions). Perfect for announcements!
+                  Send a message (and optional photo) that tags ALL group participants silently (hidden mentions). Perfect for announcements!
                 </p>
               </div>
               <div className="space-y-3">
                 <textarea
                   className="w-full min-h-[80px] rounded-xl border border-white/10 bg-white/5 p-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60 transition-all resize-none"
-                  placeholder="Type your announcement here..."
+                  placeholder="Ketik pesan pengumuman di sini..."
                   value={broadcastText}
                   onChange={(e) => setBroadcastText(e.target.value)}
                 />
+
+                {/* Premium Image Uploader Area */}
+                <div className="relative">
+                  {imagePreviewUrl ? (
+                    <div className="relative group rounded-xl overflow-hidden border border-white/10 bg-white/5 p-2 transition-all duration-300 hover:border-primary/30">
+                      <img
+                        src={imagePreviewUrl}
+                        alt="Pratinjau Broadcast"
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="text-xs text-white/90 bg-black/60 px-2 py-1 rounded-md font-medium">Pratinjau Gambar</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={clearBroadcastImage}
+                        className="absolute top-4 right-4 bg-red-500/80 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg backdrop-blur-sm transition-all hover:scale-110 active:scale-95"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-24 rounded-xl border border-dashed border-white/15 bg-white/5 hover:bg-white/10 hover:border-primary/50 cursor-pointer transition-all duration-300 group">
+                      <div className="flex flex-col items-center justify-center pt-4 pb-4 space-y-1 text-center px-4">
+                        <div className="p-1.5 bg-primary/10 rounded-lg group-hover:scale-110 transition-transform duration-300">
+                          <Image className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="text-[11px] text-muted-foreground group-hover:text-foreground transition-colors font-medium">
+                          Unggah Gambar Pendukung
+                        </span>
+                        <span className="text-[9px] text-muted-foreground/65">
+                          PNG, JPG, WEBP maks 5MB (Opsional)
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+
                 <Button
-                  className="w-full gap-2"
-                  disabled={broadcastMutation.isPending || !broadcastText.trim()}
+                  className="w-full gap-2 transition-all hover:shadow-[0_0_15px_rgba(var(--primary),0.3)]"
+                  disabled={broadcastMutation.isPending || (!broadcastText.trim() && !broadcastImage)}
                   onClick={() => broadcastMutation.mutate()}
                 >
                   {broadcastMutation.isPending ? (
@@ -274,7 +365,7 @@ function GroupToolsPage() {
                   ) : (
                     <Megaphone className="h-4 w-4" />
                   )}
-                  Send Tag-All Broadcast
+                  Kirim Tag-All Broadcast
                 </Button>
               </div>
             </section>

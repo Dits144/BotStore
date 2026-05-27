@@ -219,6 +219,7 @@ export async function toggleGroupSetting(
 export async function broadcastMessage(
   groupToken: string,
   message: string,
+  image?: string,
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/groups/${encodeURIComponent(groupToken)}/broadcast`, {
     method: "POST",
@@ -226,7 +227,7 @@ export async function broadcastMessage(
       "Content-Type": "application/json",
       ...getAuthHeader(),
     },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, image }),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
