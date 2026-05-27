@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const baileys = require('@whiskeysockets/baileys');
 const { canManageCatalogue } = require('../../middlewares/roleGuard');
 const { formatWrongExample, renderMentionText } = require('../../utils/messageFormatter');
 const groupSettingsRepository = require('../../repositories/groupSettingsRepository');
@@ -193,20 +194,54 @@ async function cloneList(ctx, parsed) {
   });
 }
 
+async function getImageBuffer(ctx) {
+  const directImage = ctx.msg?.message?.imageMessage;
+  if (directImage) {
+    if (typeof ctx.sock.downloadMediaMessage === 'function') {
+      return await ctx.sock.downloadMediaMessage(ctx.msg, 'buffer', {}, {});
+    }
+    return await baileys.downloadMediaMessage(
+      ctx.msg,
+      'buffer',
+      {},
+      { logger: undefined, reuploadRequest: ctx.sock.updateMediaMessage }
+    );
+  }
+
+  const quotedMsg = ctx.msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+  if (quotedMsg?.imageMessage) {
+    const downloadMsg = { message: quotedMsg };
+    if (typeof ctx.sock.downloadMediaMessage === 'function') {
+      return await ctx.sock.downloadMediaMessage(downloadMsg, 'buffer', {}, {});
+    }
+    return await baileys.downloadMediaMessage(
+      downloadMsg,
+      'buffer',
+      {},
+      { logger: undefined, reuploadRequest: ctx.sock.updateMediaMessage }
+    );
+  }
+
+  return null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // broadcast — HIDDEN TAG-ALL
 // ─────────────────────────────────────────────────────────────────────────────
 async function broadcast(ctx, parsed) {
   let text = parsed.raw.slice(parsed.command.length).trim();
 
-  if (!text) {
-    await sendMinimalError(ctx.sock, ctx.from, formatWrongExample(`${parsed.command} Halo semua`));
-    return;
-  }
-
+  // Bersihkan dari mention manual dan spasi berlebih
   text = text.replace(/@\d+/g, '').replace(/\s{2,}/g, ' ').trim();
 
-  if (!text) {
+  let imageBuffer = null;
+  try {
+    imageBuffer = await getImageBuffer(ctx);
+  } catch (err) {
+    logger.error({ err, groupId: ctx.from }, '[broadcast] gagal mengambil gambar');
+  }
+
+  if (!text && !imageBuffer) {
     await sendMinimalError(ctx.sock, ctx.from, formatWrongExample(`${parsed.command} Halo semua`));
     return;
   }
@@ -248,17 +283,31 @@ async function broadcast(ctx, parsed) {
       participantCount: participants.length,
       mentionCount: mentions.length,
       sampleMentions: mentions.slice(0, 5),
-      text
+      text,
+      hasImage: !!imageBuffer
     },
     '[broadcast] hidden tag-all debug'
   );
 
-  await ctx.sock.sendMessage(ctx.from, {
-    text,
-    mentions
-  });
-
-  await reactSuccess(ctx.sock, ctx.msg);
+  try {
+    if (imageBuffer) {
+      await ctx.sock.sendMessage(ctx.from, {
+        image: imageBuffer,
+        caption: text || '',
+        mentions
+      });
+    } else {
+      await ctx.sock.sendMessage(ctx.from, {
+        text,
+        mentions
+      });
+    }
+    await reactSuccess(ctx.sock, ctx.msg);
+  } catch (err) {
+    logger.error({ err, groupId: ctx.from }, '[broadcast] gagal kirim pesan');
+    await reactError(ctx.sock, ctx.msg);
+    await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans('Gagal mengirimkan pesan broadcast.')}`);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

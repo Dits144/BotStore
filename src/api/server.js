@@ -487,8 +487,8 @@ app.post('/api/groups/:groupToken/setting', authenticate, async (req, res) => {
 // 12. Broadcast Message (Hidden Tag-All)
 app.post('/api/groups/:groupToken/broadcast', authenticate, async (req, res) => {
   const { groupToken } = req.params;
-  const { message } = req.body;
-  if (!message) return res.status(400).json({ error: 'Pesan wajib diisi' });
+  const { message, image } = req.body;
+  if (!message && !image) return res.status(400).json({ error: 'Pesan atau Gambar wajib diisi' });
 
   const db = await connectDatabase();
   const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
@@ -515,9 +515,24 @@ app.post('/api/groups/:groupToken/broadcast', authenticate, async (req, res) => 
         .filter(Boolean)
     )];
 
-    await sock.sendMessage(groupToken, { text: message, mentions });
+    let imageBuffer = null;
+    if (image) {
+      const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+      imageBuffer = Buffer.from(base64Data, 'base64');
+    }
+
+    if (imageBuffer) {
+      await sock.sendMessage(groupToken, {
+        image: imageBuffer,
+        caption: message || '',
+        mentions
+      });
+    } else {
+      await sock.sendMessage(groupToken, { text: message, mentions });
+    }
     res.json({ success: true });
   } catch (err) {
+    logger.error({ err, groupToken }, '[api broadcast] Gagal mengirim broadcast');
     res.status(500).json({ error: 'Gagal mengirim broadcast.' });
   }
 });
