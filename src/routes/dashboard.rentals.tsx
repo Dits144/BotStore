@@ -224,13 +224,13 @@ function RentalsPage() {
     <div className="mx-auto max-w-7xl space-y-8 animate-fade-in-up">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Rentals & Bot Control</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Sewa & Kontrol Bot</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage active WhatsApp group rentals, add/delete groups, and configure bot owner access levels.
+            Kelola sewa grup WhatsApp yang aktif, tambah/hapus grup, dan konfigurasikan tingkat akses pemilik bot.
           </p>
         </div>
         <Button onClick={() => setAddRentalOpen(true)} className="gap-2 shrink-0 self-start sm:self-auto">
-          <Plus className="h-4 w-4" /> Add Rental Group
+          <Plus className="h-4 w-4" /> Tambah Grup Sewa
         </Button>
       </div>
 
@@ -238,19 +238,19 @@ function RentalsPage() {
       <section className="glass rounded-2xl p-2 sm:p-5">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
           <h2 className="px-2 text-base font-semibold flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" /> Active Group Rentals
+            <Calendar className="h-5 w-5 text-primary" /> Sewa Grup Aktif
           </h2>
           <div className="relative max-w-xs flex-1 sm:ml-auto">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search JID or group name…"
+              placeholder="Cari JID atau nama grup…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="h-10 rounded-xl border-white/10 bg-white/5 pl-9"
             />
           </div>
           <div className="px-2 text-xs text-muted-foreground self-end sm:self-auto">
-            {filtered.length} of {rentals.length} groups
+            {filtered.length} dari {rentals.length} grup
           </div>
         </div>
 
@@ -258,10 +258,10 @@ function RentalsPage() {
           <Table>
             <TableHeader>
               <TableRow className="border-white/5 hover:bg-transparent">
-                <TableHead>Group details</TableHead>
+                <TableHead>Detail Grup</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Expiration Date</TableHead>
-                <TableHead className="w-[160px] text-right">Actions</TableHead>
+                <TableHead>Tanggal Kedaluwarsa</TableHead>
+                <TableHead className="w-[160px] text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -269,14 +269,14 @@ function RentalsPage() {
                 <TableRow>
                   <TableCell colSpan={4} className="py-10 text-center text-sm text-muted-foreground">
                     <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
-                    <span className="mt-2 block text-xs">Loading rentals database…</span>
+                    <span className="mt-2 block text-xs">Memuat database sewa…</span>
                   </TableCell>
                 </TableRow>
               )}
               {!isLoading && filtered.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={4} className="py-10 text-center text-sm text-muted-foreground">
-                    No rentals registered.
+                    Tidak ada sewa yang terdaftar.
                   </TableCell>
                 </TableRow>
               )}
@@ -301,7 +301,7 @@ function RentalsPage() {
                             : "bg-success/10 text-success border-success/20"
                         }`}
                       >
-                        {isExpired ? "Expired" : "Active"}
+                        {isExpired ? "Kedaluwarsa" : "Aktif"}
                       </span>
                     </TableCell>
                     <TableCell className="font-mono text-sm tabular-nums">
@@ -318,7 +318,7 @@ function RentalsPage() {
                           variant="ghost"
                           onClick={() => handleInspect(r)}
                           className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/15"
-                          title="Cek Sewa / Diagnostics"
+                          title="Cek Sewa / Diagnostik"
                         >
                           <Search className="h-4 w-4" />
                         </Button>
@@ -327,7 +327,7 @@ function RentalsPage() {
                           variant="ghost"
                           onClick={() => { setSelectedRental(r); setActionType("add"); }}
                           className="h-8 w-8 text-success hover:text-success hover:bg-success/15"
-                          title="Add Rental Days"
+                          title="Tambah Hari Sewa"
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
@@ -336,7 +336,7 @@ function RentalsPage() {
                           variant="ghost"
                           onClick={() => { setSelectedRental(r); setActionType("reduce"); }}
                           className="h-8 w-8 text-warning hover:text-warning hover:bg-warning/15"
-                          title="Reduce Rental Days"
+                          title="Kurangi Hari Sewa"
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
@@ -349,7 +349,7 @@ function RentalsPage() {
                             }
                           }}
                           className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/15"
-                          title="Delete Rental"
+                          title="Hapus Sewa"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -367,10 +367,10 @@ function RentalsPage() {
       <section className="grid gap-6 md:grid-cols-3">
         <div className="glass rounded-2xl p-5 md:col-span-1 space-y-4">
           <h2 className="text-base font-semibold flex items-center gap-2">
-            <UserPlus className="h-5 w-5 text-primary" /> Add Bot Owner
+            <UserPlus className="h-5 w-5 text-primary" /> Tambah Pemilik Bot
           </h2>
           <p className="text-xs text-muted-foreground">
-            Bot owners have global system access, bypass linked group password checks, and can view all rental details.
+            Pemilik bot memiliki akses sistem global, melewati pemeriksaan kata sandi grup terhubung, dan dapat melihat semua detail sewa.
           </p>
           <form onSubmit={submitAddOwner} className="space-y-3">
             <div className="space-y-1">
@@ -386,22 +386,22 @@ function RentalsPage() {
               </span>
             </div>
             <Button type="submit" disabled={addOwnerMut.isPending} className="w-full">
-              {addOwnerMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add Bot Owner"}
+              {addOwnerMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Tambah Pemilik Bot"}
             </Button>
           </form>
         </div>
 
         <div className="glass rounded-2xl p-5 md:col-span-2 space-y-4">
           <h2 className="text-base font-semibold flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" /> Bot Owners Registry
+            <Shield className="h-5 w-5 text-primary" /> Registri Pemilik Bot
           </h2>
           <div className="overflow-x-auto rounded-xl border border-white/5 bg-white/[0.01]">
             <Table>
               <TableHeader>
                 <TableRow className="border-white/5 hover:bg-transparent">
-                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase text-left">Owner WhatsApp JID</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase text-left">Type</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase text-right">Action</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase text-left">JID WhatsApp Pemilik</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase text-left">Tipe</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase text-right">Aksi</th>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -415,7 +415,7 @@ function RentalsPage() {
                 {!isLoadingOwners && owners.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={3} className="py-6 text-center text-xs text-muted-foreground">
-                      No secondary owners registered.
+                      Tidak ada pemilik sekunder yang terdaftar.
                     </TableCell>
                   </TableRow>
                 )}
@@ -425,11 +425,11 @@ function RentalsPage() {
                     <td className="px-4 py-3 text-xs">
                       {o.is_main === 1 ? (
                         <span className="rounded bg-primary/20 px-2 py-0.5 text-[9px] font-bold text-primary border border-primary/20">
-                          Main Owner
+                          Pemilik Utama
                         </span>
                       ) : (
                         <span className="rounded bg-white/5 px-2 py-0.5 text-[9px] text-muted-foreground border border-white/10">
-                          Secondary
+                          Sekunder
                         </span>
                       )}
                     </td>
@@ -467,7 +467,7 @@ function RentalsPage() {
           </DialogHeader>
           <form onSubmit={submit} className="space-y-4">
             <div className="text-sm text-muted-foreground">
-              Group: <span className="font-medium text-foreground">{selectedRental?.group_name}</span>
+              Grup: <span className="font-medium text-foreground">{selectedRental?.group_name}</span>
             </div>
             <div>
               <div className="mb-1 text-xs font-medium text-muted-foreground">Jumlah Hari</div>
@@ -497,11 +497,11 @@ function RentalsPage() {
       <Dialog open={addRentalOpen} onOpenChange={setAddRentalOpen}>
         <DialogContent className="glass-strong border-white/10 sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add New Rental Group</DialogTitle>
+            <DialogTitle>Tambah Grup Sewa Baru</DialogTitle>
           </DialogHeader>
           <form onSubmit={submitAddRental} className="space-y-4">
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">WhatsApp Group JID (Token)</Label>
+              <Label className="text-xs text-muted-foreground">JID Grup WhatsApp (Token)</Label>
               <Input
                 placeholder="120363012345678901@g.us"
                 value={newGroupId}
@@ -511,7 +511,7 @@ function RentalsPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Group Name</Label>
+              <Label className="text-xs text-muted-foreground">Nama Grup</Label>
               <Input
                 placeholder="DitsStore Customer"
                 value={newGroupName}
@@ -520,7 +520,7 @@ function RentalsPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Duration (Days)</Label>
+              <Label className="text-xs text-muted-foreground">Durasi (Hari)</Label>
               <Input
                 type="number"
                 min="1"
@@ -532,11 +532,11 @@ function RentalsPage() {
             </div>
             <DialogFooter className="pt-2">
               <Button type="button" variant="ghost" onClick={() => setAddRentalOpen(false)}>
-                Cancel
+                Batal
               </Button>
               <Button type="submit" disabled={addRentalMut.isPending}>
                 {addRentalMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Add Rental Group
+                Tambah Grup Sewa
               </Button>
             </DialogFooter>
           </form>
@@ -549,7 +549,7 @@ function RentalsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Search className="h-5 w-5 text-primary animate-pulse" />
-              <span>Cek Sewa & Group Diagnostics</span>
+              <span>Cek Sewa & Diagnostik Grup</span>
             </DialogTitle>
           </DialogHeader>
 
@@ -580,7 +580,7 @@ function RentalsPage() {
                         : "bg-success/10 text-success border-success/20"
                     }`}
                   >
-                    {new Date(diagnosticsData.expired_at) < new Date() ? "Expired" : "Active"}
+                    {new Date(diagnosticsData.expired_at) < new Date() ? "Kedaluwarsa" : "Aktif"}
                   </span>
                 </div>
 
@@ -590,7 +590,7 @@ function RentalsPage() {
                     <span className="font-medium text-foreground">{diagnosticsData.duration_days} Hari</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block text-[10px] uppercase">Expired At</span>
+                    <span className="text-muted-foreground block text-[10px] uppercase">Kedaluwarsa Pada</span>
                     <span className="font-mono text-foreground">
                       {new Date(diagnosticsData.expired_at).toLocaleDateString("id-ID", {
                         year: "numeric",
@@ -605,7 +605,7 @@ function RentalsPage() {
               {/* Database & Catalogue Stats */}
               <div className="space-y-2">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">
-                  Database & Catalogue Health
+                  Kesehatan Database & Katalog
                 </h4>
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="rounded-xl border border-white/5 bg-white/[0.01] p-3 space-y-1">
@@ -640,13 +640,13 @@ function RentalsPage() {
               {/* Server Performance Section */}
               <div className="space-y-3">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">
-                  Server Performance
+                  Performa Server
                 </h4>
 
                 {/* CPU Progress */}
                 <div className="space-y-1 rounded-xl border border-white/5 bg-white/[0.01] p-3">
                   <div className="flex justify-between text-xs font-medium">
-                    <span className="text-muted-foreground">CPU Usage</span>
+                    <span className="text-muted-foreground">Penggunaan CPU</span>
                     <span className="text-foreground">{diagnosticsData.system.cpu_usage}%</span>
                   </div>
                   <div className="w-full bg-white/5 rounded-full h-1.5 mt-1 overflow-hidden">
@@ -660,7 +660,7 @@ function RentalsPage() {
                 {/* RAM Progress */}
                 <div className="space-y-1 rounded-xl border border-white/5 bg-white/[0.01] p-3">
                   <div className="flex justify-between text-xs font-medium">
-                    <span className="text-muted-foreground">Memory Usage</span>
+                    <span className="text-muted-foreground">Penggunaan Memori</span>
                     <span className="text-foreground">
                       {diagnosticsData.system.memory_usage}% ({diagnosticsData.system.memory_used_mb}MB / {diagnosticsData.system.memory_total_mb}MB)
                     </span>

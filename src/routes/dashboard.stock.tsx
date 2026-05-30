@@ -46,15 +46,15 @@ function StockPage() {
     },
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(["products", token], ctx.prev);
-      toast.error("Failed to sync — restored previous state.");
+      toast.error("Gagal sinkronisasi — memulihkan status sebelumnya.");
     },
     onSuccess: (_d, vars) => {
       toast.success(
         vars.patch.inStock !== undefined
-          ? `${vars.patch.inStock ? "Marked in stock" : "Marked out of stock"}`
+          ? `${vars.patch.inStock ? "Stok ditandai tersedia" : "Stok ditandai habis"}`
           : vars.patch.fastDelivery !== undefined
-            ? `Fast delivery ${vars.patch.fastDelivery ? "enabled" : "disabled"}`
-            : `Status langka ${vars.patch.isRare ? "diaktifkan" : "dimatikan"}`
+            ? `Pengiriman cepat ${vars.patch.fastDelivery ? "diaktifkan" : "dimatikan"}`
+            : `Status barang langka ${vars.patch.isRare ? "diaktifkan" : "dimatikan"}`
       );
     },
     onSettled: (_d, _e, vars) => {
@@ -84,10 +84,10 @@ function StockPage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="animate-fade-in-up">
         <h1 className="text-3xl font-semibold tracking-tight">
-          Stock Management
+          Kelola Stok Produk
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Real-time toggles sync to your bot. Changes scoped to{" "}
+          Ubah ketersediaan stok & pengiriman kilat secara instan. Diselaraskan langsung ke bot di grup{" "}
           <span className="text-foreground/80">{activeGroup?.name}</span>.
         </p>
       </div>
@@ -96,12 +96,12 @@ function StockPage() {
         <Pill icon={<Package className="h-4 w-4" />} label="Total" value={products.length} />
         <Pill
           icon={<span className="h-2 w-2 rounded-full bg-success shadow-[0_0_8px] shadow-success" />}
-          label="In stock"
+          label="Tersedia"
           value={inStockCount}
         />
         <Pill
           icon={<Zap className="h-4 w-4 text-warning" />}
-          label="Fast delivery"
+          label="Kirim Cepat"
           value={fastCount}
         />
         <Pill
@@ -116,7 +116,7 @@ function StockPage() {
           <div className="relative max-w-xs flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Find a product…"
+              placeholder="Cari produk…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="h-10 rounded-xl border-white/10 bg-white/5 pl-9"
@@ -127,12 +127,12 @@ function StockPage() {
         <div className="space-y-2">
           {isLoading && (
             <div className="py-10 text-center text-sm text-muted-foreground">
-              Loading stock…
+              Memuat data stok…
             </div>
           )}
           {!isLoading && filtered.length === 0 && (
             <div className="rounded-xl border border-dashed border-white/10 p-8 text-center text-sm text-muted-foreground">
-              No products to manage yet.
+              Belum ada produk untuk dikelola.
             </div>
           )}
           {filtered.map((p, i) => {
@@ -156,13 +156,13 @@ function StockPage() {
                     </span>
                   </div>
                   <div className="mt-0.5 text-xs text-muted-foreground">
-                    ${p.price.toFixed(2)}
+                    Rp{p.price.toLocaleString("id-ID")}
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
                   <ToggleRow
-                    label={p.inStock ? "In Stock" : "Out of Stock"}
+                    label={p.inStock ? "Tersedia" : "Habis"}
                     accent={p.inStock ? "success" : "destructive"}
                     busy={stockBusy}
                     checked={p.inStock}
@@ -181,7 +181,7 @@ function StockPage() {
                   />
 
                   <ToggleRow
-                    label="Fast Delivery"
+                    label="Kirim Cepat"
                     accent="warning"
                     busy={fastBusy}
                     checked={p.fastDelivery}

@@ -35,31 +35,31 @@ function DashboardHome() {
 
   const stats = [
     {
-      label: "Products",
+      label: "Total Produk",
       value: products.length,
       icon: ListOrdered,
-      hint: "in catalog",
+      hint: "dalam katalog",
       tint: "from-primary/30 to-primary/0",
     },
     {
-      label: "In Stock",
+      label: "Stok Tersedia",
       value: inStock,
       icon: Package,
-      hint: `${oos} out of stock`,
+      hint: `${oos} habis`,
       tint: "from-success/30 to-success/0",
     },
     {
-      label: "Fast Delivery",
+      label: "Pengiriman Cepat",
       value: fast,
       icon: Zap,
-      hint: "lightning-tagged",
+      hint: "kilat aktif",
       tint: "from-warning/30 to-warning/0",
     },
     {
-      label: "Avg. Price",
-      value: `$${avgPrice.toFixed(2)}`,
+      label: "Rata-rata Harga",
+      value: `Rp${avgPrice.toLocaleString("id-ID")}`,
       icon: TrendingUp,
-      hint: "across catalog",
+      hint: "di seluruh katalog",
       tint: "from-accent/30 to-accent/0",
     },
   ];
@@ -69,17 +69,17 @@ function DashboardHome() {
       <header className="animate-fade-in-up">
         <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
-          Live · {activeGroup?.name ?? "No group"}
+          Live · {activeGroup?.name ?? "Tidak ada grup"}
         </div>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Welcome back,{" "}
+          Selamat datang kembali,{" "}
           <span className="text-gradient">
             {session?.email.split("@")[0]}
           </span>
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Here's a snapshot of your bot's store. Switch groups any time from the
-          selector at the top — every change is scoped to the active group.
+          Berikut adalah ringkasan performa toko bot Anda. Anda dapat beralih grup kapan saja
+          melalui pemilih di bagian atas — setiap perubahan disesuaikan dengan grup aktif.
         </p>
       </header>
 
@@ -111,33 +111,33 @@ function DashboardHome() {
         <QuickAction
           to="/dashboard/price-list"
           icon={<ListOrdered className="h-5 w-5" />}
-          title="Manage price list"
-          body="Add, edit, or remove products and categories for this group."
+          title="Kelola daftar harga"
+          body="Tambah, ubah, atau hapus produk dan kategori untuk grup ini."
         />
         <QuickAction
           to="/dashboard/stock"
           icon={<Package className="h-5 w-5" />}
-          title="Update stock"
-          body="Flip availability and fast-delivery toggles — synced live to the bot."
+          title="Perbarui stok"
+          body="Atur ketersediaan dan status pengiriman cepat secara langsung ke bot."
         />
         <QuickAction
           to="/dashboard/settings"
           icon={<Zap className="h-5 w-5" />}
-          title="Group settings"
-          body="Manage linked groups, account, and connection preferences."
+          title="Pengaturan grup"
+          body="Kelola grup terhubung, akun, dan preferensi koneksi."
         />
       </section>
 
       <section className="glass rounded-2xl p-5 animate-fade-in-up">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Recent products
+            Produk terbaru
           </h2>
           <Link
             to="/dashboard/price-list"
             className="text-xs text-primary hover:underline"
           >
-            View all
+            Lihat semua
           </Link>
         </div>
         <div className="grid gap-2">
@@ -149,7 +149,7 @@ function DashboardHome() {
               <div className="min-w-0">
                 <div className="truncate text-sm font-medium">{p.name}</div>
                 <div className="truncate text-xs text-muted-foreground">
-                  {p.category} · ${p.price.toFixed(2)}
+                  {p.category}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -160,11 +160,11 @@ function DashboardHome() {
                       : "bg-destructive/15 text-destructive"
                   }`}
                 >
-                  {p.inStock ? "In stock" : "Out"}
+                  {p.inStock ? "Tersedia" : "Habis"}
                 </span>
                 {p.fastDelivery && (
                   <span className="flex items-center gap-1 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning">
-                    <Zap className="h-3 w-3" /> Fast
+                    <Zap className="h-3 w-3" /> Kilat
                   </span>
                 )}
               </div>
@@ -172,7 +172,7 @@ function DashboardHome() {
           ))}
           {products.length === 0 && (
             <div className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-muted-foreground">
-              No products yet — add your first one in Price List.
+              Belum ada produk — tambahkan produk pertama Anda di Daftar Harga.
             </div>
           )}
         </div>

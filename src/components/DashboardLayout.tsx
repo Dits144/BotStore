@@ -43,12 +43,12 @@ const nav: Array<{
   end?: boolean;
   role?: string;
 }> = [
-  { to: "/dashboard", label: "Dashboard Home", icon: LayoutDashboard, end: true },
-  { to: "/dashboard/price-list", label: "Price List", icon: ListOrdered },
-  { to: "/dashboard/stock", label: "Stock Management", icon: Package },
-  { to: "/dashboard/group-tools", label: "Admin Tools", icon: Shield },
-  { to: "/dashboard/rentals", label: "Rentals & Groups", icon: LayoutDashboard, role: "owner" },
-  { to: "/dashboard/settings", label: "Settings", icon: Cog },
+  { to: "/dashboard", label: "Beranda Dasbor", icon: LayoutDashboard, end: true },
+  { to: "/dashboard/price-list", label: "Daftar Harga", icon: ListOrdered },
+  { to: "/dashboard/stock", label: "Kelola Stok", icon: Package },
+  { to: "/dashboard/group-tools", label: "Alat Grup", icon: Shield },
+  { to: "/dashboard/rentals", label: "Sewa & Pemilik", icon: LayoutDashboard, role: "owner" },
+  { to: "/dashboard/settings", label: "Pengaturan", icon: Cog },
 ];
 
 export function DashboardLayout() {
@@ -74,7 +74,7 @@ export function DashboardLayout() {
         (async () => {
           try {
             await addGroup(linkToken, "");
-            toast.success("Group automatically linked");
+            toast.success("Grup otomatis dihubungkan");
             navigate({ to: "/dashboard", search: undefined });
           } catch (e) {
             setNewToken(linkToken);
@@ -100,13 +100,13 @@ export function DashboardLayout() {
     if (!newToken.trim()) return;
     try {
       await addGroup(newToken.trim(), newPassword.trim());
-      toast.success("Group linked");
+      toast.success("Grup berhasil dihubungkan");
       setNewToken("");
       setNewPassword("");
       setAddOpen(false);
       navigate({ to: "/dashboard", search: undefined });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to link group");
+      toast.error(e instanceof Error ? e.message : "Gagal menghubungkan grup");
     }
   }
 
@@ -128,7 +128,7 @@ export function DashboardLayout() {
               <div className="leading-tight">
                 <div className="text-sm font-semibold">Bot Store</div>
                 <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  Store Command
+                  Komando Toko
                 </div>
               </div>
             </Link>
@@ -175,9 +175,9 @@ export function DashboardLayout() {
           <div className="mt-4 rounded-xl border border-white/5 bg-white/[0.03] p-3 text-xs text-muted-foreground">
             <div className="mb-1 flex items-center gap-1.5 font-medium text-foreground/80">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
-              Bot online
+              Bot aktif
             </div>
-            Active group:{" "}
+            Grup aktif:{" "}
             <span className="font-mono text-foreground/70">
               {truncate(activeGroup?.token ?? "—", 22)}
             </span>
@@ -215,7 +215,7 @@ export function DashboardLayout() {
                   </div>
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium">
-                      {activeGroup?.name ?? "No group"}
+                      {activeGroup?.name ?? "Tidak ada grup"}
                     </div>
                     <div className="truncate font-mono text-[10px] text-muted-foreground">
                       {activeGroup?.token ?? "—"}
@@ -229,7 +229,7 @@ export function DashboardLayout() {
                 className="w-80 border-white/10 bg-popover/90 backdrop-blur-xl"
               >
                 <DropdownMenuLabel className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Your linked groups
+                  Grup terhubung Anda
                 </DropdownMenuLabel>
                 {session.groups.map((g) => {
                   const isActive = g.token === activeGroup?.token;
@@ -258,7 +258,7 @@ export function DashboardLayout() {
                   onClick={() => setAddOpen(true)}
                   className="gap-2 text-primary focus:text-primary cursor-pointer"
                 >
-                  <Plus className="h-4 w-4" /> Link another group
+                  <Plus className="h-4 w-4" /> Hubungkan grup baru
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -267,14 +267,14 @@ export function DashboardLayout() {
             <Dialog open={addOpen} onOpenChange={setAddOpen}>
               <DialogContent className="glass-strong border-white/10">
                 <DialogHeader>
-                  <DialogTitle>Link a new WhatsApp group</DialogTitle>
+                  <DialogTitle>Hubungkan Grup WhatsApp Baru</DialogTitle>
                   <DialogDescription>
-                    Paste the Group Token (JID) shown by your bot's dashboard command.
+                    Tempelkan Token Grup (JID) yang didapat dari perintah dasbor bot Anda.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <div className="mb-1 text-xs font-medium text-muted-foreground">Group Token (JID)</div>
+                    <div className="mb-1 text-xs font-medium text-muted-foreground">Token Grup (JID)</div>
                     <Input
                       autoFocus
                       placeholder="120363012345678901@g.us"
@@ -284,7 +284,7 @@ export function DashboardLayout() {
                     />
                   </div>
                   <div>
-                    <div className="mb-1 text-xs font-medium text-muted-foreground">Group Password</div>
+                    <div className="mb-1 text-xs font-medium text-muted-foreground">Kata Sandi Grup</div>
                     <Input
                       placeholder="12345"
                       value={newPassword}
@@ -295,9 +295,9 @@ export function DashboardLayout() {
                 </div>
                 <DialogFooter className="gap-2 sm:gap-0">
                   <Button variant="ghost" onClick={() => setAddOpen(false)}>
-                    Cancel
+                    Batal
                   </Button>
-                  <Button onClick={handleAddGroup}>Link group</Button>
+                  <Button onClick={handleAddGroup}>Hubungkan grup</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -314,8 +314,7 @@ export function DashboardLayout() {
                         {session.email}
                       </div>
                       <div className="text-[10px] text-muted-foreground">
-                        {session.groups.length} group
-                        {session.groups.length === 1 ? "" : "s"}
+                        {session.groups.length} grup
                       </div>
                     </div>
                   </button>
@@ -330,18 +329,18 @@ export function DashboardLayout() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link to="/dashboard/settings" className="flex items-center gap-2">
-                      <Cog className="h-4 w-4" /> Settings
+                      <Cog className="h-4 w-4" /> Pengaturan
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => {
                       logout();
-                      toast.success("Signed out");
+                      toast.success("Keluar berhasil");
                       navigate({ to: "/login" });
                     }}
                     className="gap-2 text-destructive focus:text-destructive"
                   >
-                    <LogOut className="h-4 w-4" /> Log out
+                    <LogOut className="h-4 w-4" /> Keluar
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

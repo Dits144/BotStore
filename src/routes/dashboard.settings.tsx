@@ -159,28 +159,28 @@ function SettingsPage() {
     try {
       await addGroup(newToken.trim());
       setNewToken("");
-      toast.success("Group linked");
+      toast.success("Grup berhasil dihubungkan");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed");
+      toast.error(e instanceof Error ? e.message : "Gagal menghubungkan grup");
     }
   }
 
   function copy(text: string) {
-    navigator.clipboard.writeText(text).then(() => toast.success("Copied"));
+    navigator.clipboard.writeText(text).then(() => toast.success("Token disalin"));
   }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="animate-fade-in-up">
-        <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Pengaturan</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your account and linked WhatsApp groups.
+          Kelola akun dan grup WhatsApp yang terhubung.
         </p>
       </div>
 
       <section className="glass rounded-2xl p-6 animate-fade-in-up">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Account
+          Akun
         </h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
@@ -188,7 +188,7 @@ function SettingsPage() {
             <Input readOnly value={session.email} className="bg-white/5" />
           </div>
           <div className="grid gap-2">
-            <Label className="text-xs text-muted-foreground">Session token</Label>
+            <Label className="text-xs text-muted-foreground">Token Sesi</Label>
             <Input
               readOnly
               value={session.token}
@@ -205,7 +205,7 @@ function SettingsPage() {
             }}
             className="text-destructive hover:bg-destructive/10 hover:text-destructive"
           >
-            <LogOut className="h-4 w-4" /> Log out
+            <LogOut className="h-4 w-4" /> Keluar
           </Button>
         </div>
       </section>
@@ -213,10 +213,10 @@ function SettingsPage() {
       <section className="glass rounded-2xl p-6 animate-fade-in-up">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Linked groups
+            Grup Terhubung
           </h2>
           <span className="text-xs text-muted-foreground">
-            {session.groups.length} total
+            Total {session.groups.length} grup
           </span>
         </div>
 
@@ -241,7 +241,7 @@ function SettingsPage() {
                       {g.name}
                       {isActive && (
                         <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-medium text-primary">
-                          Active
+                          Aktif
                         </span>
                       )}
                     </div>
@@ -256,7 +256,7 @@ function SettingsPage() {
                     variant="ghost"
                     onClick={() => copy(g.token)}
                     className="h-8 w-8"
-                    aria-label="Copy token"
+                    aria-label="Salin token"
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
@@ -266,7 +266,7 @@ function SettingsPage() {
                       variant="ghost"
                       onClick={() => switchGroup(g.token)}
                     >
-                      Switch
+                      Beralih
                     </Button>
                   )}
                 </div>
@@ -277,7 +277,7 @@ function SettingsPage() {
 
         <div className="mt-5 rounded-xl border border-dashed border-white/10 p-4">
           <Label className="text-xs text-muted-foreground">
-            Link a new group
+            Hubungkan grup baru
           </Label>
           <div className="mt-2 flex flex-col gap-2 sm:flex-row">
             <Input
@@ -287,11 +287,11 @@ function SettingsPage() {
               className="font-mono"
             />
             <Button onClick={onAdd} className="shrink-0">
-              <Plus className="h-4 w-4" /> Link group
+              <Plus className="h-4 w-4" /> Hubungkan grup
             </Button>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Run the dashboard command in your WhatsApp group to get its token.
+            Jalankan perintah dashboard di grup WhatsApp Anda untuk mendapatkan tokennya.
           </p>
         </div>
       </section>
@@ -301,7 +301,7 @@ function SettingsPage() {
         <section className="glass rounded-2xl p-6 animate-fade-in-up space-y-4">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" /> Welcome Message Configuration
+              <FileText className="h-5 w-5 text-primary" /> Konfigurasi Pesan Sambutan
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
               Kelola pesan penyambutan otomatis saat member baru bergabung ke grup WhatsApp ini.
@@ -370,7 +370,7 @@ function SettingsPage() {
         <section className="glass rounded-2xl p-6 animate-fade-in-up space-y-4">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <ImageIcon className="h-5 w-5 text-primary" /> Owner QRIS Configuration
+              <ImageIcon className="h-5 w-5 text-primary" /> Konfigurasi QRIS Owner
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
               Unggah kode pembayaran QRIS Anda. Gambar QRIS ini akan ditampilkan secara real-time kepada semua Admin Grup saat mereka ingin memperpanjang/menyewa bot.
@@ -415,7 +415,7 @@ function SettingsPage() {
         <section className="glass rounded-2xl p-6 animate-fade-in-up space-y-6">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <Plus className="h-5 w-5 text-primary" /> Sewa Bot / Extend Subscription
+              <Plus className="h-5 w-5 text-primary" /> Sewa Bot / Perpanjang Langganan
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
               Pilih paket berlangganan untuk memperpanjang waktu sewa bot pada grup aktif Anda.
@@ -544,10 +544,10 @@ function SettingsPage() {
 
       <section className="glass rounded-2xl border border-destructive/20 p-6 animate-fade-in-up">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-destructive/80">
-          Danger zone
+          Zona Bahaya
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Removing the session unlinks this device only. Your bot data is safe.
+          Menghapus sesi hanya memutuskan tautan perangkat ini. Data bot Anda tetap aman.
         </p>
         <Button
           variant="ghost"
@@ -557,7 +557,7 @@ function SettingsPage() {
           }}
           className="mt-4 text-destructive hover:bg-destructive/10 hover:text-destructive"
         >
-          <Trash2 className="h-4 w-4" /> Reset local session
+          <Trash2 className="h-4 w-4" /> Reset sesi lokal
         </Button>
       </section>
     </div>
