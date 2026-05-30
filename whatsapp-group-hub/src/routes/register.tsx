@@ -40,16 +40,16 @@ function RegisterPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email || !password) {
-      toast.error("Please fill in every field.");
+      toast.error("Harap isi semua kolom.");
       return;
     }
     setLoading(true);
     try {
       await registerRequest(email.trim(), password);
-      toast.success("Account created. Please sign in.");
+      toast.success("Akun berhasil dibuat. Silakan masuk.");
       navigate({ to: "/login", search: search.token ? { token: search.token } : undefined });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Registration failed");
+      toast.error(err instanceof Error ? err.message : "Pendaftaran gagal");
     } finally {
       setLoading(false);
     }
@@ -73,18 +73,18 @@ function RegisterPage() {
           <h1 className="text-5xl font-bold leading-tight tracking-tight">
             <span className="text-gradient">Bot Store</span>
             <br />
-            <span className="text-foreground/90">Command Center</span>
+            <span className="text-foreground/90">Pusat Kendali</span>
           </h1>
           <p className="max-w-md text-muted-foreground">
-            Link a WhatsApp group, manage its catalog, and toggle live stock
-            updates in real-time — all from one polished cockpit.
+            Hubungkan grup WhatsApp, kelola katalog produk, dan perbarui stok secara
+            instan dalam real-time — semuanya dari dasbor premium.
           </p>
 
           <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
             {[
-              "Real-time stock & fast-delivery toggles",
-              "Multi-group accounts with one click switching",
-              "Built for the road — fully responsive",
+              "Kelola stok & pengiriman cepat secara real-time",
+              "Multi-grup dengan peralihan satu klik",
+              "Didesain responsif untuk semua perangkat",
             ].map((line) => (
               <li key={line} className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px] shadow-primary" />
@@ -98,10 +98,10 @@ function RegisterPage() {
         <div className="glass-strong rounded-3xl p-8 shadow-2xl animate-fade-in-up sm:p-10">
           <div className="mb-8">
             <h2 className="text-2xl font-semibold tracking-tight">
-              Create an account
+              Daftar Akun Baru
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Sign up as an admin to manage your group's catalog.
+              Daftar sebagai admin untuk mengelola katalog grup Anda.
             </p>
           </div>
 
@@ -111,14 +111,14 @@ function RegisterPage() {
               label="Email"
               icon={<AtSign className="h-4 w-4" />}
               type="email"
-              placeholder="you@example.com"
+              placeholder="nama@email.com"
               value={email}
               onChange={setEmail}
               autoComplete="email"
             />
             <Field
               id="password"
-              label="Password"
+              label="Kata Sandi"
               icon={<KeyRound className="h-4 w-4" />}
               type="password"
               placeholder="••••••••"
@@ -134,18 +134,18 @@ function RegisterPage() {
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Creating account…
+                  Mendaftar…
                 </>
               ) : (
-                <>Sign Up</>
+                <>Daftar</>
               )}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            Sudah punya akun?{" "}
             <Link to="/login" search={search} className="text-primary hover:underline">
-              Sign in
+              Masuk
             </Link>
           </p>
         </div>

@@ -81,10 +81,10 @@ function PriceListPage() {
     mutationFn: (input: FormState) => createProduct(token, input),
     onSuccess: () => {
       invalidate();
-      toast.success("Product added");
+      toast.success("Produk berhasil ditambahkan");
       reset();
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal menambahkan produk"),
   });
 
   const updateMut = useMutation({
@@ -92,17 +92,17 @@ function PriceListPage() {
       updateProduct(token, id, patch),
     onSuccess: () => {
       invalidate();
-      toast.success("Product updated");
+      toast.success("Produk berhasil diperbarui");
       reset();
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal memperbarui produk"),
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteProduct(token, id),
     onSuccess: () => {
       invalidate();
-      toast.success("Product removed");
+      toast.success("Produk berhasil dihapus");
     },
   });
 
@@ -135,7 +135,7 @@ function PriceListPage() {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim() || form.price < 0) {
-      toast.error("Please fill name and a valid price.");
+      toast.error("Silakan isi nama dan harga yang valid.");
       return;
     }
     if (editing) updateMut.mutate({ id: editing.id, patch: form });
@@ -146,9 +146,9 @@ function PriceListPage() {
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4 animate-fade-in-up">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Price List</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Daftar Harga</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage products for{" "}
+            Kelola produk untuk{" "}
             <span className="text-foreground/80">{activeGroup?.name}</span>.
           </p>
         </div>
@@ -158,18 +158,18 @@ function PriceListPage() {
               onClick={openCreate}
               className="h-11 rounded-xl bg-primary text-primary-foreground transition-all hover:scale-[1.02] hover:shadow-[0_10px_40px_-10px_oklch(0.78_0.18_155_/_0.5)]"
             >
-              <Plus className="h-4 w-4" /> Add product
+              <Plus className="h-4 w-4" /> Tambah produk
             </Button>
           </DialogTrigger>
           <DialogContent className="glass-strong border-white/10 sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>
-                {editing ? "Edit product" : "Add a new product"}
+                {editing ? "Edit produk" : "Tambah produk baru"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={submit} className="space-y-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Product name</Label>
+                <Label htmlFor="name">Nama produk</Label>
                 <Input
                   id="name"
                   value={form.name}
@@ -180,11 +180,11 @@ function PriceListPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="price">Price (USD)</Label>
+                  <Label htmlFor="price">Harga (Rp)</Label>
                   <Input
                     id="price"
                     type="number"
-                    step="0.01"
+                    step="1"
                     min="0"
                     value={form.price}
                     onChange={(e) =>
@@ -194,7 +194,7 @@ function PriceListPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="category">Category</Label>
+                  <Label htmlFor="category">Kategori</Label>
                   <Input
                     id="category"
                     value={form.category}
@@ -206,7 +206,7 @@ function PriceListPage() {
                 </div>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="desc">Description</Label>
+                <Label htmlFor="desc">Deskripsi</Label>
                 <Textarea
                   id="desc"
                   rows={3}
@@ -219,13 +219,13 @@ function PriceListPage() {
               </div>
               <DialogFooter className="gap-2">
                 <Button type="button" variant="ghost" onClick={reset}>
-                  Cancel
+                  Batal
                 </Button>
                 <Button
                   type="submit"
                   disabled={createMut.isPending || updateMut.isPending}
                 >
-                  {editing ? "Save changes" : "Create product"}
+                  {editing ? "Simpan perubahan" : "Tambah produk"}
                 </Button>
               </DialogFooter>
             </form>
@@ -238,14 +238,14 @@ function PriceListPage() {
           <div className="relative max-w-xs flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search products…"
+              placeholder="Cari produk…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="h-10 rounded-xl border-white/10 bg-white/5 pl-9"
             />
           </div>
           <div className="ml-auto text-xs text-muted-foreground">
-            {filtered.length} of {products.length}
+            {filtered.length} dari {products.length}
           </div>
         </div>
 
@@ -253,25 +253,25 @@ function PriceListPage() {
           <Table>
             <TableHeader>
               <TableRow className="border-white/5 hover:bg-transparent">
-                <TableHead>Product</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">Price</TableHead>
+                <TableHead>Produk</TableHead>
+                <TableHead>Kategori</TableHead>
+                <TableHead className="text-right">Harga</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="w-[100px] text-right">Actions</TableHead>
+                <TableHead className="w-[100px] text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading && (
                 <TableRow>
                   <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
-                    Loading products…
+                    Memuat produk…
                   </TableCell>
                 </TableRow>
               )}
               {!isLoading && filtered.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
-                    No products match your search.
+                    Tidak ada produk yang cocok dengan pencarian Anda.
                   </TableCell>
                 </TableRow>
               )}
@@ -292,7 +292,7 @@ function PriceListPage() {
                     </span>
                   </TableCell>
                   <TableCell className="text-right font-mono tabular-nums">
-                    ${p.price.toFixed(2)}
+                    Rp{p.price.toLocaleString("id-ID")}
                   </TableCell>
                   <TableCell>
                     <span
@@ -302,7 +302,7 @@ function PriceListPage() {
                           : "bg-destructive/15 text-destructive"
                       }`}
                     >
-                      {p.inStock ? "In stock" : "Out of stock"}
+                      {p.inStock ? "Tersedia" : "Habis"}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
