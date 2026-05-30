@@ -8,7 +8,7 @@ db.get('SELECT id, email, role FROM users LIMIT 1', (e, user) => {
   if (e) return console.error(e);
   if (!user) return console.error('No users found');
 
-  db.get('SELECT group_id FROM catalogues LIMIT 1', (e2, catalogue) => {
+  db.get('SELECT group_id FROM catalogues WHERE group_id = "120363406698441310@g.us" LIMIT 1', (e2, catalogue) => {
     if (e2) return console.error(e2);
     if (!catalogue) return console.error('No catalogue items found');
 
