@@ -1,6 +1,5 @@
 const sqlite3 = require('sqlite3');
 const jwt = require('jsonwebtoken');
-const fetch = require('node-fetch'); // node-fetch might not be installed, we can use raw http instead
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey144'; // From server.js
 const db = new sqlite3.Database('./data/botstore.sqlite');
