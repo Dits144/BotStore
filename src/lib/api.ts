@@ -461,3 +461,114 @@ export async function addGroupMember(groupToken: string, phone: string): Promise
     throw new Error(data.error || "Gagal menambahkan anggota grup");
   }
 }
+
+// ─── Transaction API ──────────────────────────────────────────────────────────
+
+export interface Transaction {
+  id: number;
+  trx_id: string;
+  group_id: string;
+  group_name: string;
+  customer_jid: string;
+  admin_jid: string;
+  product: string;
+  amount: number;
+  status: "pending" | "done" | "refund" | "batal";
+  ocr_raw: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TransactionStats {
+  today: { total_count: number; revenue_done: number; revenue_all: number };
+  month: { total_count: number; revenue_done: number; revenue_all: number };
+  allTime: { total_count: number; revenue_done: number };
+}
+
+export interface ChartData {
+  month: string;
+  total_count: number;
+  revenue_done: number;
+}
+
+export interface TopProduct {
+  product: string;
+  count: number;
+  revenue: number;
+}
+
+export interface GroupSummary {
+  group_id: string;
+  group_name: string;
+  total_count: number;
+  revenue_done: number;
+}
+
+export async function fetchTransactions(
+  groupToken: string,
+  opts: { status?: string; limit?: number; offset?: number } = {}
+): Promise<Transaction[]> {
+  const params = new URLSearchParams();
+  if (opts.status) params.set("status", opts.status);
+  if (opts.limit) params.set("limit", String(opts.limit));
+  if (opts.offset) params.set("offset", String(opts.offset));
+  const qs = params.toString() ? `?${params}` : "";
+  const res = await fetch(
+    `${API_BASE}/transactions/${encodeURIComponent(groupToken)}${qs}`,
+    { headers: getAuthHeader() }
+  );
+  if (!res.ok) throw new Error("Gagal mengambil riwayat transaksi");
+  return res.json();
+}
+
+export async function fetchTransactionStats(groupToken: string): Promise<TransactionStats> {
+  const res = await fetch(
+    `${API_BASE}/transactions/${encodeURIComponent(groupToken)}/stats`,
+    { headers: getAuthHeader() }
+  );
+  if (!res.ok) throw new Error("Gagal mengambil statistik transaksi");
+  return res.json();
+}
+
+export async function fetchTransactionChart(groupToken: string, year?: number): Promise<ChartData[]> {
+  const qs = year ? `?year=${year}` : "";
+  const res = await fetch(
+    `${API_BASE}/transactions/${encodeURIComponent(groupToken)}/chart${qs}`,
+    { headers: getAuthHeader() }
+  );
+  if (!res.ok) throw new Error("Gagal mengambil data chart");
+  return res.json();
+}
+
+export async function fetchTopProducts(groupToken: string, limit = 10): Promise<TopProduct[]> {
+  const res = await fetch(
+    `${API_BASE}/transactions/${encodeURIComponent(groupToken)}/products?limit=${limit}`,
+    { headers: getAuthHeader() }
+  );
+  if (!res.ok) throw new Error("Gagal mengambil produk terlaris");
+  return res.json();
+}
+
+export async function fetchDashboardSummary(): Promise<GroupSummary[]> {
+  const res = await fetch(`${API_BASE}/dashboard/summary`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) throw new Error("Gagal mengambil ringkasan dashboard");
+  return res.json();
+}
+
+export async function updateTransactionStatus(
+  trxId: string,
+  status: "pending" | "done" | "refund" | "batal"
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/transactions/${encodeURIComponent(trxId)}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal memperbarui status transaksi");
+  }
+}
+

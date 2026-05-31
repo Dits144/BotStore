@@ -9,6 +9,7 @@ import {
   Package,
   Plus,
   Radio,
+  Receipt,
   Shield,
   X,
 } from "lucide-react";
@@ -46,6 +47,7 @@ const nav: Array<{
   { to: "/dashboard", label: "Beranda Dasbor", icon: LayoutDashboard, end: true },
   { to: "/dashboard/price-list", label: "Daftar Harga", icon: ListOrdered },
   { to: "/dashboard/stock", label: "Kelola Stok", icon: Package },
+  { to: "/dashboard/transactions", label: "Transaksi", icon: Receipt },
   { to: "/dashboard/group-tools", label: "Alat Grup", icon: Shield },
   { to: "/dashboard/rentals", label: "Sewa & Pemilik", icon: LayoutDashboard, role: "owner" },
   { to: "/dashboard/settings", label: "Pengaturan", icon: Cog },
