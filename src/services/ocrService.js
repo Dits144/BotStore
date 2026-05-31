@@ -22,40 +22,72 @@ function parseRupiahString(raw) {
   return isNaN(num) ? 0 : num;
 }
 
+const MAX_AMOUNT = 5000000; // Rp 5.000.000 (Safe ceiling to avoid serial numbers/large noise)
+const MIN_AMOUNT = 1000;    // Rp 1.000
+
 /**
  * Ekstrak semua nominal Rupiah dari teks mentah OCR/caption
  * @param {string} text
- * @returns {number} nominal terbesar >= 1000, atau 0 jika tidak ditemukan
+ * @returns {number} nominal terbesar >= 1000 dan <= 5.000.000, atau 0 jika tidak ditemukan
  */
 function extractAmountFromText(text) {
   if (!text) return 0;
 
-  const patterns = [
+  // Tier 1: Pola eksplisit dengan konteks nominal (Rp, IDR, total/jumlah dll.)
+  const tier1Patterns = [
     // Rp50.000 / Rp 50.000 / Rp50,000
     /Rp\.?\s?([\d.,]+)/gi,
     // IDR 50.000 / IDR50000
     /IDR\.?\s?([\d.,]+)/gi,
-    // Total: 50.000 / Total 50.000
-    /(?:total|jumlah|nominal|bayar|transfer)[^\d]*([\d.,]{4,})/gi,
-    // Bare numbers 4+ digits (fallback)
-    /\b([\d]{1,3}(?:[.,][\d]{3})+)\b/g,
-    /\b([\d]{5,})\b/g,
+    // total/jumlah/nominal/bayar/transfer: 50.000
+    /(?:total|jumlah|nominal|bayar|transfer|nilai|harga|sebesar)[^\d]*([\d.,]{4,})/gi
   ];
 
-  const candidates = [];
-
-  for (const pattern of patterns) {
+  const tier1Candidates = [];
+  for (const pattern of tier1Patterns) {
     let match;
     const regex = new RegExp(pattern.source, pattern.flags);
     while ((match = regex.exec(text)) !== null) {
       const captured = match[1] || match[0];
       const amount = parseRupiahString(captured);
-      if (amount >= 1000) candidates.push(amount);
+      if (amount >= MIN_AMOUNT && amount <= MAX_AMOUNT) {
+        tier1Candidates.push(amount);
+      }
     }
   }
 
-  if (candidates.length === 0) return 0;
-  return Math.max(...candidates);
+  // Jika ada kandidat Tier 1 dalam rentang valid, pilih yang terbesar dari Tier 1
+  if (tier1Candidates.length > 0) {
+    return Math.max(...tier1Candidates);
+  }
+
+  // Tier 2: Fallback bare numbers (kurang terpercaya, rentan no. rekening / no. hp / serial)
+  // Batasi panjang angka bare untuk menghindari digit sangat panjang
+  const tier2Patterns = [
+    // Angka bare dengan separator ribuan (contoh: 50.000 atau 1,250,000)
+    /\b([\d]{1,3}(?:[.,][\d]{3})+)\b/g,
+    // Angka bare tanpa separator, dibatasi 4-7 digit saja (1000 s/d 9999999)
+    /\b([\d]{4,7})\b/g
+  ];
+
+  const tier2Candidates = [];
+  for (const pattern of tier2Patterns) {
+    let match;
+    const regex = new RegExp(pattern.source, pattern.flags);
+    while ((match = regex.exec(text)) !== null) {
+      const captured = match[1] || match[0];
+      const amount = parseRupiahString(captured);
+      if (amount >= MIN_AMOUNT && amount <= MAX_AMOUNT) {
+        tier2Candidates.push(amount);
+      }
+    }
+  }
+
+  if (tier2Candidates.length > 0) {
+    return Math.max(...tier2Candidates);
+  }
+
+  return 0;
 }
 
 /**
