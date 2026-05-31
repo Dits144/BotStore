@@ -838,6 +838,145 @@ app.post('/api/rentals/report', authenticate, async (req, res) => {
   }
 });
 
+// ─── TRANSACTION DASHBOARD ENDPOINTS ────────────────────────────────────────
+
+// 23. Riwayat transaksi per grup
+app.get('/api/transactions/:groupToken', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const { status, limit = 50, offset = 0 } = req.query;
+  const db = await connectDatabase();
+
+  const isOwner = req.user.role === 'owner';
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && !isOwner) return res.status(403).json({ error: 'Akses ditolak' });
+
+  try {
+    const transactionRepository = require('../repositories/transactionRepository');
+    let rows;
+    if (status && status !== 'all') {
+      const dbConn = await require('../database/connection').connectDatabase();
+      const whereGroup = groupToken !== 'all' ? 'group_id = ? AND status = ?' : 'status = ?';
+      const params = groupToken !== 'all' ? [groupToken, status, parseInt(limit), parseInt(offset)] : [status, parseInt(limit), parseInt(offset)];
+      rows = await dbConn.all(
+        `SELECT * FROM transactions WHERE ${whereGroup} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+        params
+      );
+    } else {
+      rows = await transactionRepository.getByGroup(groupToken, parseInt(limit), parseInt(offset));
+    }
+    res.json(rows);
+  } catch (err) {
+    logger.error({ err, groupToken }, '[api] gagal ambil transaksi');
+    res.status(500).json({ error: 'Gagal mengambil riwayat transaksi' });
+  }
+});
+
+// 24. Statistik transaksi per grup (hari ini + bulan ini)
+app.get('/api/transactions/:groupToken/stats', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const db = await connectDatabase();
+
+  const isOwner = req.user.role === 'owner';
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && !isOwner) return res.status(403).json({ error: 'Akses ditolak' });
+
+  try {
+    const transactionRepository = require('../repositories/transactionRepository');
+    const gid = (isOwner && groupToken === 'all') ? null : groupToken;
+    const today = await transactionRepository.statsToday(gid);
+    const month = await transactionRepository.statsMonth(gid);
+    const allTime = await (async () => {
+      const conn = await require('../database/connection').connectDatabase();
+      const whereGroup = gid ? 'WHERE group_id = ?' : '';
+      const params = gid ? [gid] : [];
+      return conn.get(
+        `SELECT COUNT(*) AS total_count,
+           COALESCE(SUM(CASE WHEN status = 'done' THEN amount ELSE 0 END), 0) AS revenue_done
+         FROM transactions ${whereGroup}`,
+        params
+      );
+    })();
+    res.json({ today, month, allTime });
+  } catch (err) {
+    logger.error({ err, groupToken }, '[api] gagal ambil statistik transaksi');
+    res.status(500).json({ error: 'Gagal mengambil statistik transaksi' });
+  }
+});
+
+// 25. Data chart 12 bulan
+app.get('/api/transactions/:groupToken/chart', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const { year } = req.query;
+  const db = await connectDatabase();
+
+  const isOwner = req.user.role === 'owner';
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && !isOwner) return res.status(403).json({ error: 'Akses ditolak' });
+
+  try {
+    const transactionRepository = require('../repositories/transactionRepository');
+    const gid = (isOwner && groupToken === 'all') ? null : groupToken;
+    const chart = await transactionRepository.statsMonthlyChart(gid, year ? parseInt(year) : undefined);
+    res.json(chart);
+  } catch (err) {
+    logger.error({ err, groupToken }, '[api] gagal ambil chart transaksi');
+    res.status(500).json({ error: 'Gagal mengambil data chart' });
+  }
+});
+
+// 26. Produk terlaris
+app.get('/api/transactions/:groupToken/products', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const { limit = 10 } = req.query;
+  const db = await connectDatabase();
+
+  const isOwner = req.user.role === 'owner';
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && !isOwner) return res.status(403).json({ error: 'Akses ditolak' });
+
+  try {
+    const transactionRepository = require('../repositories/transactionRepository');
+    const gid = (isOwner && groupToken === 'all') ? null : groupToken;
+    const products = await transactionRepository.topProducts(gid, parseInt(limit));
+    res.json(products);
+  } catch (err) {
+    logger.error({ err, groupToken }, '[api] gagal ambil produk terlaris');
+    res.status(500).json({ error: 'Gagal mengambil produk terlaris' });
+  }
+});
+
+// 27. Ringkasan semua grup (owner only)
+app.get('/api/dashboard/summary', authenticate, async (req, res) => {
+  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+  try {
+    const transactionRepository = require('../repositories/transactionRepository');
+    const summary = await transactionRepository.summaryByGroup();
+    res.json(summary);
+  } catch (err) {
+    logger.error({ err }, '[api] gagal ambil ringkasan dashboard');
+    res.status(500).json({ error: 'Gagal mengambil ringkasan dashboard' });
+  }
+});
+
+// 28. Update status transaksi dari dashboard
+app.patch('/api/transactions/:trxId/status', authenticate, async (req, res) => {
+  const { trxId } = req.params;
+  const { status } = req.body;
+  if (!['pending', 'done', 'refund', 'batal'].includes(status)) {
+    return res.status(400).json({ error: 'Status tidak valid. Gunakan: pending, done, refund, batal' });
+  }
+  try {
+    const transactionRepository = require('../repositories/transactionRepository');
+    await transactionRepository.updateStatus(trxId, status);
+    res.json({ success: true, trxId, status });
+  } catch (err) {
+    logger.error({ err, trxId }, '[api] gagal update status transaksi');
+    res.status(500).json({ error: 'Gagal memperbarui status transaksi' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function startServer(port = 3000) {
   app.listen(port, () => {
     logger.info(`Web API Server running on port ${port}`);

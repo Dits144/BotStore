@@ -89,6 +89,28 @@ async function migrate() {
     );
   `);
 
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS transactions (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      trx_id       TEXT    NOT NULL UNIQUE,
+      group_id     TEXT    NOT NULL,
+      group_name   TEXT    NOT NULL DEFAULT '',
+      customer_jid TEXT    NOT NULL,
+      admin_jid    TEXT    NOT NULL DEFAULT '',
+      product      TEXT    NOT NULL DEFAULT '',
+      amount       INTEGER NOT NULL DEFAULT 0,
+      status       TEXT    NOT NULL DEFAULT 'pending',
+      image_path   TEXT    NOT NULL DEFAULT '',
+      ocr_raw      TEXT    NOT NULL DEFAULT '',
+      created_at   TEXT    NOT NULL,
+      updated_at   TEXT    NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_trx_group   ON transactions(group_id);
+    CREATE INDEX IF NOT EXISTS idx_trx_created ON transactions(created_at);
+    CREATE INDEX IF NOT EXISTS idx_trx_status  ON transactions(status);
+  `);
+
   await ensureColumn(db, 'catalogues', 'media_path', 'media_path TEXT NOT NULL DEFAULT ""');
   await ensureColumn(db, 'catalogues', 'media_type', 'media_type TEXT NOT NULL DEFAULT ""');
   await ensureColumn(db, 'catalogues', 'in_stock', 'in_stock INTEGER NOT NULL DEFAULT 1');

@@ -18,6 +18,7 @@ const {
 } = require('../../utils/chatUx');
 const { styled, sans } = require('../../utils/styledText');
 const { recordSuccess } = require('../customer');
+const { processTransaction } = require('../../services/transactionService');
 
 // ─── Pending clone sessions (in-memory) ───────────────────────────────────────
 // Key: `${groupId}:${senderJid}` → { sourceGroupId, ts }
@@ -321,10 +322,6 @@ async function broadcast(ctx, parsed) {
 // ─────────────────────────────────────────────────────────────────────────────
 async function transactionNote(ctx, statusCode) {
   // Ambil contextInfo dari semua tipe pesan yang mungkin membawa reply
-  // Ketika admin ketik 'p' (1 huruf), WhatsApp bisa kirim sebagai:
-  //   - conversation (tanpa extendedTextMessage) → contextInfo TIDAK ada di sini
-  //   - extendedTextMessage → contextInfo ada di dalamnya
-  // Kita cek semua kemungkinan path agar reply selalu terdeteksi.
   const msgContent = ctx.msg.message || {};
   const contextInfo =
     msgContent.extendedTextMessage?.contextInfo ||
@@ -349,7 +346,7 @@ async function transactionNote(ctx, statusCode) {
     return;
   }
 
-  // Normalize JID: strip device suffix, pastikan format benar
+  // Normalize JID
   let userJid = '';
   const rawStr = String(rawParticipant).trim();
   if (rawStr.includes(':') && rawStr.includes('@')) {
@@ -366,79 +363,105 @@ async function transactionNote(ctx, statusCode) {
   }
 
   const userNumber = userJid.split('@')[0];
-  const statusMap = { p: 'Pending', d: 'Done', r: 'Refund', b: 'Batal' };
-  const status = statusMap[statusCode] || 'Pending';
-  const note = extractQuotedText(quoted) || '-';
+  const statusMap = { p: 'pending', d: 'done', r: 'refund', b: 'batal' };
+  const statusDb   = statusMap[statusCode] || 'pending';
+  const statusLabel = { p: 'Pending', d: 'Done', r: 'Refund', b: 'Batal' }[statusCode] || 'Pending';
+
+  // Ekstrak teks caption dari pesan yang di-reply (nama produk / catatan customer)
+  const noteText = extractQuotedText(quoted) || '';
+  // Ambil baris pertama sebagai nama produk (misalnya "capcut", "ml", dll)
+  const productGuess = noteText.split(/\n/)[0].trim().slice(0, 80);
+
   const now = nowJakarta();
-  const trxId = `TRX-${now.format('YYYYMMDD')}-${crypto.randomInt(1000, 9999)}`;
 
   // Ambil data level customer
   const { tier } = await customerRepository.getCustomerLevel(ctx.from, userJid);
 
-  // Ambil nama grup sebagai header
+  // Ambil nama grup
   let groupName = 'DITSSTORE';
   try {
     const meta = await ctx.sock.groupMetadata(ctx.from);
     groupName = meta.subject || groupName;
-  } catch (_) { /* pakai default jika gagal */ }
+  } catch (_) {}
 
-  // Mention text
+  // ── OCR: coba baca nominal dari gambar quoted ──────────────────────────────
+  let trxId = '';
+  let ocrAmount = 0;
+  try {
+    // Download gambar dari pesan yang di-reply (jika ada)
+    let imageBuffer = null;
+    try { imageBuffer = await getImageBuffer(ctx); } catch (_) {}
+
+    const result = await processTransaction({
+      imageBuffer,          // Buffer gambar — dipakai OCR, TIDAK disimpan ke DB
+      captionText: noteText, // Fallback regex dari teks
+      groupId: ctx.from,
+      groupName,
+      customerJid: userJid,
+      adminJid: ctx.sender,
+      product: productGuess,
+      status: statusDb,
+    });
+    trxId     = result.trxId;
+    ocrAmount = result.amount;
+    logger.info({ trxId, ocrAmount, groupId: ctx.from }, '[transactionNote] transaksi tersimpan');
+  } catch (err) {
+    logger.error({ err, groupId: ctx.from }, '[transactionNote] gagal proses OCR/simpan transaksi');
+    // Generate fallback trxId agar struk tetap terkirim
+    trxId = `TRX-${now.format('YYYYMMDD')}-${crypto.randomInt(1000, 9999)}`;
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+
   const mentionLine = `@${userNumber}`;
   const mentionJids = [userJid];
-
-  // Separator pendek (12 karakter)
   const SEP = '────────────';
-
-  // Centering nama grup: padding kiri agar terlihat tengah
   const pad = ' '.repeat(Math.max(0, Math.floor((12 - groupName.length) / 2) + 2));
 
-  // Receipt body dalam triple backtick → font monospace (tampilan struk)
-  // Mention HARUS di luar code block agar bisa di-tap sebagai @Nama
+  // Baris nominal (hanya tampilkan jika OCR berhasil)
+  const nominalLine = ocrAmount > 0
+    ? `💰 Nominal : Rp${ocrAmount.toLocaleString('id-ID')}\n`
+    : '';
+
   const receiptBody =
-    `\`\`\`\n` +
+    '```\n' +
     `${pad}${groupName}\n` +
     `${SEP}\n` +
     `No   : ${trxId}\n` +
     `Date : ${formatDate(now)}\n` +
     `Time : ${formatTime(now)} WIB\n` +
     `Level : ${tier.name} ${tier.emoji}\n\n` +
-    `📝 Catatan : ${note}\n` +
+    `📝 Produk : ${productGuess || '-'}\n` +
+    nominalLine +
     `${SEP}\n` +
     `  Pesanan diproses\n` +
     `${SEP}\n`;
 
-  // Footer + mention berbeda per status
-  // - Body ditutup ``` sebelum mention keluar dari code block
   let receiptFooter;
   if (statusCode === 'd') {
-    // Done: tutup code block → THANK YOU @mention → barcode
     receiptFooter =
-      `\`\`\`\n\n` +
+      '```\n\n' +
       `THANK YOU ${mentionLine}\n` +
-      `❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❘❚❙❘❘❚❙❘❘❚❙❘`;
+      '❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❘❚❙❘❘❚❙❘❘❚❙❘';
   } else if (statusCode === 'r') {
-    // Refund: status di dalam code block → tutup → @mention
     receiptFooter =
       `🔄 Refund sedang diproses\n` +
-      `\`\`\`\n\n` +
-      `${mentionLine}`;
+      '```\n\n' +
+      mentionLine;
   } else if (statusCode === 'b') {
-    // Batal: status di dalam code block → tutup → @mention
     receiptFooter =
       `❌ Transaksi Batal\n` +
-      `\`\`\`\n\n` +
-      `${mentionLine}`;
+      '```\n\n' +
+      mentionLine;
   } else {
-    // Pending: LOADING di dalam code block → tutup → @mention
     receiptFooter =
       `LOADING... ⏳ Mohon tunggu\n` +
-      `\`\`\`\n\n` +
-      `${mentionLine}`;
+      '```\n\n' +
+      mentionLine;
   }
 
   logger.info(
-    { command: statusCode, rawParticipant, userJid, mentionJids, groupName },
-    '[transactionNote] mention debug'
+    { command: statusCode, rawParticipant, userJid, mentionJids, groupName, trxId, ocrAmount },
+    '[transactionNote] kirim struk'
   );
 
   await reactLoading(ctx.sock, ctx.msg);
@@ -458,7 +481,6 @@ async function transactionNote(ctx, statusCode) {
       const { total, tier: levelTier } = levelResult;
       let levelMsg = `🎖️ ${mentionLine} ${sans('sekarang di level')} ${levelTier.emoji} ${styled(levelTier.name)} (${total}x ${sans('transaksi')})`;
 
-      // Cek apakah baru saja naik level (total == tier.min → baru sampai level ini)
       const justLeveledUp = customerRepository.LEVEL_TIERS.some((t) => t.min === total);
       if (justLeveledUp && levelTier.name !== 'Baru') {
         levelMsg =
