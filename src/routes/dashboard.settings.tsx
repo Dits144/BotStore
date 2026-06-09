@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "../lib/auth-context";
 import { Button } from "../components/ui/button";
@@ -27,6 +28,7 @@ import {
   sendRentalReport,
   fetchWelcomeSettings,
   updateWelcomeSettings,
+  clearAllTransactions,
 } from "../lib/api";
 
 export const Route = createFileRoute("/dashboard/settings")({
@@ -36,7 +38,31 @@ export const Route = createFileRoute("/dashboard/settings")({
 function SettingsPage() {
   const { session, activeGroup, switchGroup, addGroup, logout } = useAuth();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [newToken, setNewToken] = useState("");
+  const [clearingTrx, setClearingTrx] = useState(false);
+
+  const handleClearAllTransactions = async () => {
+    if (!activeGroup) {
+      toast.error("Pilih grup aktif terlebih dahulu!");
+      return;
+    }
+    const confirm = window.confirm("PERINGATAN: Apakah Anda yakin ingin menghapus semua data transaksi dan riwayat penjualan di grup ini untuk memulai dari awal? Tindakan ini tidak dapat dibatalkan.");
+    if (!confirm) return;
+
+    setClearingTrx(true);
+    try {
+      await clearAllTransactions(activeGroup.token);
+      toast.success("Semua data transaksi di grup ini berhasil dihapus!");
+      qc.invalidateQueries({ queryKey: ["trx-stats", activeGroup.token] });
+      qc.invalidateQueries({ queryKey: ["trx-list", activeGroup.token] });
+      qc.invalidateQueries({ queryKey: ["trx-chart", activeGroup.token] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menghapus data transaksi");
+    } finally {
+      setClearingTrx(false);
+    }
+  };
 
   // Welcome settings state
   const [welcomeEnabled, setWelcomeEnabled] = useState(false);
@@ -542,23 +568,49 @@ function SettingsPage() {
         </section>
       )}
 
-      <section className="glass rounded-2xl border border-destructive/20 p-6 animate-fade-in-up">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-destructive/80">
-          Zona Bahaya
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Menghapus sesi hanya memutuskan tautan perangkat ini. Data bot Anda tetap aman.
-        </p>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            logout();
-            navigate({ to: "/login" });
-          }}
-          className="mt-4 text-destructive hover:bg-destructive/10 hover:text-destructive"
-        >
-          <Trash2 className="h-4 w-4" /> Reset sesi lokal
-        </Button>
+      <section className="glass rounded-2xl border border-destructive/20 p-6 animate-fade-in-up space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-destructive/80">
+            Zona Bahaya
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Tindakan yang tidak dapat dibatalkan. Harap berhati-hati.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-4 pt-2">
+          {activeGroup && (
+            <Button
+              variant="outline"
+              disabled={clearingTrx}
+              onClick={handleClearAllTransactions}
+              className="border-destructive/30 hover:bg-destructive/10 hover:text-destructive text-destructive font-medium text-xs h-9 px-4"
+            >
+              {clearingTrx ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Menghapus Transaksi...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Hapus Semua Transaksi Grup
+                </>
+              )}
+            </Button>
+          )}
+
+          <Button
+            variant="ghost"
+            onClick={() => {
+              logout();
+              navigate({ to: "/login" });
+            }}
+            className="text-muted-foreground hover:bg-white/5 hover:text-foreground text-xs h-9 px-4"
+          >
+            <Trash2 className="h-4 w-4 mr-2" /> Reset Sesi Lokal
+          </Button>
+        </div>
       </section>
     </div>
   );
