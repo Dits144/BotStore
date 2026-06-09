@@ -512,7 +512,7 @@ async function clearAllGroupData(ctx) {
     await transactionRepository.clearAll(ctx.from);
     await deleteMessageForEveryone(ctx.sock, ctx.msg);
     await reactSuccess(ctx.sock, ctx.msg);
-    await ctx.reply(`✅ *${styled('Reset Data Berhasil')}*\n\nSemua riwayat transaksi dan level customer di grup ini telah dihapus bersih.`);
+    await ctx.reply(`✅ *${styled('Reset Data Berhasil')}*\n\nSemua riwayat transaksi dan rekap grafik penjualan di grup ini telah dihapus bersih.`);
   } catch (err) {
     logger.error({ err, groupId: ctx.from }, '[clearAllGroupData] gagal reset data');
     await reactError(ctx.sock, ctx.msg);

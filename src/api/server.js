@@ -990,7 +990,7 @@ app.patch('/api/transactions/:trxId/status', authenticate, async (req, res) => {
   }
 });
 
-// 29. Hapus semua data transaksi & level untuk grup tertentu (Admin/Owner)
+// 29. Hapus hanya data riwayat transaksi & rekap grafik untuk grup tertentu (Admin/Owner)
 app.post('/api/transactions/:groupToken/clear-all', authenticate, async (req, res) => {
   const { groupToken } = req.params;
   const db = await connectDatabase();

@@ -186,11 +186,10 @@ module.exports = {
   },
 
   /**
-   * Hapus semua data transaksi dan level customer untuk grup tertentu
+   * Hapus hanya data riwayat transaksi dan rekap grafik penjualan (dari tabel transactions) untuk grup tertentu
    */
   async clearAll(groupId) {
     const db = await connectDatabase();
     await db.run('DELETE FROM transactions WHERE group_id = ?', [groupId]);
-    await db.run('DELETE FROM customer_transactions WHERE group_id = ?', [groupId]);
   }
 };
