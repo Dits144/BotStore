@@ -990,6 +990,26 @@ app.patch('/api/transactions/:trxId/status', authenticate, async (req, res) => {
   }
 });
 
+// 29. Hapus semua data transaksi & level untuk grup tertentu (Admin/Owner)
+app.post('/api/transactions/:groupToken/clear-all', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const db = await connectDatabase();
+
+  const isOwner = req.user.role === 'owner';
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && !isOwner) return res.status(403).json({ error: 'Akses ditolak' });
+
+  try {
+    const transactionRepository = require('../repositories/transactionRepository');
+    await transactionRepository.clearAll(groupToken);
+    logger.info({ groupToken, user: req.user.email }, '[api] all transactions cleared for group');
+    res.json({ success: true, message: 'Semua data transaksi di grup ini berhasil dihapus' });
+  } catch (err) {
+    logger.error({ err, groupToken }, '[api] gagal menghapus data transaksi');
+    res.status(500).json({ error: 'Gagal menghapus data transaksi' });
+  }
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 function startServer(port = 3000) {

@@ -42,6 +42,7 @@ async function handle(ctx, parsed) {
   if (['h', 'hall', 'wptagall', 'everyone'].includes(parsed.command)) return broadcast(ctx, parsed);
   if (['p', 'd', 'r', 'b'].includes(parsed.command)) return transactionNote(ctx, parsed.command);
   if (parsed.command === 'clone') return cloneList(ctx, parsed);
+  if (parsed.command === 'clearall') return clearAllGroupData(ctx);
 
 
 }
@@ -501,6 +502,21 @@ async function transactionNote(ctx, statusCode) {
         });
       }
     }
+  }
+}
+
+async function clearAllGroupData(ctx) {
+  await reactLoading(ctx.sock, ctx.msg);
+  try {
+    const transactionRepository = require('../../repositories/transactionRepository');
+    await transactionRepository.clearAll(ctx.from);
+    await deleteMessageForEveryone(ctx.sock, ctx.msg);
+    await reactSuccess(ctx.sock, ctx.msg);
+    await ctx.reply(`✅ *${styled('Reset Data Berhasil')}*\n\nSemua riwayat transaksi dan level customer di grup ini telah dihapus bersih.`);
+  } catch (err) {
+    logger.error({ err, groupId: ctx.from }, '[clearAllGroupData] gagal reset data');
+    await reactError(ctx.sock, ctx.msg);
+    await sendMinimalError(ctx.sock, ctx.from, `❌ Gagal mereset data: ${err.message}`);
   }
 }
 

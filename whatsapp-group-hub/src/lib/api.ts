@@ -574,3 +574,17 @@ export async function updateTransactionStatus(
   }
 }
 
+export async function clearAllTransactions(groupToken: string): Promise<void> {
+  const res = await fetch(
+    `${API_BASE}/transactions/${encodeURIComponent(groupToken)}/clear-all`,
+    {
+      method: "POST",
+      headers: getAuthHeader(),
+    }
+  );
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal menghapus data transaksi");
+  }
+}
+
