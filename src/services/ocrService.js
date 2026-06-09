@@ -49,7 +49,11 @@ function extractAmountFromText(text) {
     const regex = new RegExp(pattern.source, pattern.flags);
     while ((match = regex.exec(text)) !== null) {
       const captured = match[1] || match[0];
-      const amount = parseRupiahString(captured);
+      let amount = parseRupiahString(captured);
+      // Auto-scale if amount is in millions/tens of millions (due to OCR reading decimal .00 / ,00 as zeros)
+      if (amount >= 1000000) {
+        amount = Math.floor(amount / 100);
+      }
       if (amount >= MIN_AMOUNT && amount <= MAX_AMOUNT) {
         tier1Candidates.push(amount);
       }
@@ -76,7 +80,11 @@ function extractAmountFromText(text) {
     const regex = new RegExp(pattern.source, pattern.flags);
     while ((match = regex.exec(text)) !== null) {
       const captured = match[1] || match[0];
-      const amount = parseRupiahString(captured);
+      let amount = parseRupiahString(captured);
+      // Auto-scale if amount is in millions/tens of millions (due to OCR reading decimal .00 / ,00 as zeros)
+      if (amount >= 1000000) {
+        amount = Math.floor(amount / 100);
+      }
       if (amount >= MIN_AMOUNT && amount <= MAX_AMOUNT) {
         tier2Candidates.push(amount);
       }

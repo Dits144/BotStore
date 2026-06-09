@@ -169,7 +169,7 @@ async function productTrigger(ctx, rawText) {
 
   const item = await catalogueRepository.getItem(ctx.from, name);
   if (item) {
-    const paymentNote = '\n\n💳 *Ketik "payment" untuk melanjutkan pembayaran!*';
+    const paymentNote = '\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*';
     const detailText = `${item.description}${paymentNote}${footer}`;
     if (item.media_path && fs.existsSync(item.media_path)) {
       await ctx.sock.sendMessage(
@@ -195,7 +195,7 @@ async function productTrigger(ctx, rawText) {
   const bestMatchItem = rows.find((r) => r.item_name === bestMatchName);
 
   if (bestMatchItem) {
-    const paymentNote = '\n\n💳 *Ketik "payment" untuk melanjutkan pembayaran!*';
+    const paymentNote = '\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*';
     const captionText = `❓ Maksud Anda ${bestMatchName}?\n\n${bestMatchItem.description}${paymentNote}${footer}`;
     if (bestMatchItem.media_path && fs.existsSync(bestMatchItem.media_path)) {
       await ctx.sock.sendMessage(

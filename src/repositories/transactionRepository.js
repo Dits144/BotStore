@@ -81,12 +81,13 @@ module.exports = {
       `SELECT
          COUNT(*) AS total_count,
          COALESCE(SUM(CASE WHEN status = 'done' THEN amount ELSE 0 END), 0) AS revenue_done,
+         COALESCE(SUM(CASE WHEN status = 'refund' THEN amount ELSE 0 END), 0) AS revenue_refund,
          COALESCE(SUM(amount), 0) AS revenue_all
        FROM transactions
        WHERE date(created_at) = ? ${whereGroup}`,
       params
     );
-    return row || { total_count: 0, revenue_done: 0, revenue_all: 0 };
+    return row || { total_count: 0, revenue_done: 0, revenue_refund: 0, revenue_all: 0 };
   },
 
   /**
@@ -103,12 +104,13 @@ module.exports = {
       `SELECT
          COUNT(*) AS total_count,
          COALESCE(SUM(CASE WHEN status = 'done' THEN amount ELSE 0 END), 0) AS revenue_done,
+         COALESCE(SUM(CASE WHEN status = 'refund' THEN amount ELSE 0 END), 0) AS revenue_refund,
          COALESCE(SUM(amount), 0) AS revenue_all
        FROM transactions
        WHERE strftime('%Y-%m', created_at) = ? ${whereGroup}`,
       params
     );
-    return row || { total_count: 0, revenue_done: 0, revenue_all: 0 };
+    return row || { total_count: 0, revenue_done: 0, revenue_refund: 0, revenue_all: 0 };
   },
 
   /**
@@ -123,7 +125,8 @@ module.exports = {
       `SELECT
          strftime('%m', created_at) AS month,
          COUNT(*) AS total_count,
-         COALESCE(SUM(CASE WHEN status = 'done' THEN amount ELSE 0 END), 0) AS revenue_done
+         COALESCE(SUM(CASE WHEN status = 'done' THEN amount ELSE 0 END), 0) AS revenue_done,
+         COALESCE(SUM(CASE WHEN status = 'refund' THEN amount ELSE 0 END), 0) AS revenue_refund
        FROM transactions
        WHERE strftime('%Y', created_at) = ? ${whereGroup}
        GROUP BY month
@@ -135,10 +138,14 @@ module.exports = {
     rows.forEach(r => { map[r.month] = r; });
     return Array.from({ length: 12 }, (_, i) => {
       const m = String(i + 1).padStart(2, '0');
+      const revDone = map[m]?.revenue_done || 0;
+      const revRefund = map[m]?.revenue_refund || 0;
       return {
         month: m,
         total_count: map[m]?.total_count || 0,
-        revenue_done: map[m]?.revenue_done || 0,
+        revenue_done: revDone,
+        revenue_refund: revRefund,
+        profit: revDone - revRefund,
       };
     });
   },

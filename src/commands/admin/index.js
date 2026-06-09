@@ -422,6 +422,15 @@ async function transactionNote(ctx, statusCode) {
     ? `💰 Nominal : Rp${ocrAmount.toLocaleString('id-ID')}\n`
     : '';
 
+  let statusText = '  Pesanan diproses';
+  if (statusCode === 'd') {
+    statusText = '  ✅ Pesanan Selesai';
+  } else if (statusCode === 'r') {
+    statusText = '  Pesanan Refund';
+  } else if (statusCode === 'b') {
+    statusText = '  Pesanan Batal';
+  }
+
   const receiptBody =
     '```\n' +
     `${pad}${groupName}\n` +
@@ -433,7 +442,7 @@ async function transactionNote(ctx, statusCode) {
     `📝 Produk : ${productGuess || '-'}\n` +
     nominalLine +
     `${SEP}\n` +
-    `  Pesanan diproses\n` +
+    `${statusText}\n` +
     `${SEP}\n`;
 
   let receiptFooter;
@@ -444,14 +453,14 @@ async function transactionNote(ctx, statusCode) {
       '❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❚❙❘❘❘❚❙❘❘❚❙❘❘❚❙❘';
   } else if (statusCode === 'r') {
     receiptFooter =
-      `🔄 Refund sedang diproses\n` +
       '```\n\n' +
-      mentionLine;
+      `🔄 Refund Berhasil\n\n` +
+      `Maaf 🥺 ${mentionLine}`;
   } else if (statusCode === 'b') {
     receiptFooter =
-      `❌ Transaksi Batal\n` +
       '```\n\n' +
-      mentionLine;
+      `❌ Transaksi Batal\n\n` +
+      `Maaf 🥺 ${mentionLine}`;
   } else {
     receiptFooter =
       `LOADING... ⏳ Mohon tunggu\n` +
@@ -479,20 +488,18 @@ async function transactionNote(ctx, statusCode) {
     const levelResult = await recordSuccess(ctx.from, userJid);
     if (levelResult) {
       const { total, tier: levelTier } = levelResult;
-      let levelMsg = `🎖️ ${mentionLine} ${sans('sekarang di level')} ${levelTier.emoji} ${styled(levelTier.name)} (${total}x ${sans('transaksi')})`;
-
       const justLeveledUp = customerRepository.LEVEL_TIERS.some((t) => t.min === total);
       if (justLeveledUp && levelTier.name !== 'Baru') {
-        levelMsg =
+        const levelMsg =
           `🎉 ${sans('Selamat')} ${mentionLine}!\n` +
           `${sans('Kamu baru naik ke level')} ${levelTier.emoji} ${styled(levelTier.name)}!\n` +
           `🛒 ${sans('Total transaksi')}: ${total}x`;
-      }
 
-      await ctx.sock.sendMessage(ctx.from, {
-        text: levelMsg,
-        mentions: mentionJids
-      });
+        await ctx.sock.sendMessage(ctx.from, {
+          text: levelMsg,
+          mentions: mentionJids
+        });
+      }
     }
   }
 }

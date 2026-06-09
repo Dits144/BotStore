@@ -883,19 +883,34 @@ app.get('/api/transactions/:groupToken/stats', authenticate, async (req, res) =>
   try {
     const transactionRepository = require('../repositories/transactionRepository');
     const gid = (isOwner && groupToken === 'all') ? null : groupToken;
+    
     const today = await transactionRepository.statsToday(gid);
+    today.profit = today.revenue_done - today.revenue_refund;
+
     const month = await transactionRepository.statsMonth(gid);
+    month.profit = month.revenue_done - month.revenue_refund;
+
     const allTime = await (async () => {
       const conn = await require('../database/connection').connectDatabase();
       const whereGroup = gid ? 'WHERE group_id = ?' : '';
       const params = gid ? [gid] : [];
-      return conn.get(
+      const row = await conn.get(
         `SELECT COUNT(*) AS total_count,
-           COALESCE(SUM(CASE WHEN status = 'done' THEN amount ELSE 0 END), 0) AS revenue_done
+           COALESCE(SUM(CASE WHEN status = 'done' THEN amount ELSE 0 END), 0) AS revenue_done,
+           COALESCE(SUM(CASE WHEN status = 'refund' THEN amount ELSE 0 END), 0) AS revenue_refund
          FROM transactions ${whereGroup}`,
         params
       );
+      const revDone = row?.revenue_done || 0;
+      const revRefund = row?.revenue_refund || 0;
+      return {
+        total_count: row?.total_count || 0,
+        revenue_done: revDone,
+        revenue_refund: revRefund,
+        profit: revDone - revRefund
+      };
     })();
+
     res.json({ today, month, allTime });
   } catch (err) {
     logger.error({ err, groupToken }, '[api] gagal ambil statistik transaksi');

@@ -480,15 +480,17 @@ export interface Transaction {
 }
 
 export interface TransactionStats {
-  today: { total_count: number; revenue_done: number; revenue_all: number };
-  month: { total_count: number; revenue_done: number; revenue_all: number };
-  allTime: { total_count: number; revenue_done: number };
+  today: { total_count: number; revenue_done: number; revenue_refund: number; profit: number; revenue_all: number };
+  month: { total_count: number; revenue_done: number; revenue_refund: number; profit: number; revenue_all: number };
+  allTime: { total_count: number; revenue_done: number; revenue_refund: number; profit: number };
 }
 
 export interface ChartData {
   month: string;
   total_count: number;
   revenue_done: number;
+  revenue_refund: number;
+  profit: number;
 }
 
 export interface TopProduct {
