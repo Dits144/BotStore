@@ -63,33 +63,52 @@ function timeAgo(iso: string) {
 }
 
 // ── SVG Bar Chart ─────────────────────────────────────────────────────────────
-function RevenueChart({ data }: { data: { month: string; revenue_done: number }[] }) {
-  const max = Math.max(...data.map((d) => d.revenue_done), 1);
-  const W = 600, H = 160, BAR_W = 32, GAP = (W - data.length * BAR_W) / (data.length + 1);
+function RevenueChart({ data }: { data: { month: string; revenue_done: number; revenue_refund: number; profit: number }[] }) {
+  const max = Math.max(...data.map((d) => Math.max(d.revenue_done, d.profit, 1)), 1);
+  const W = 600, H = 160;
+  const BAR_W = 14;
+  const GROUP_W = BAR_W * 2 + 4;
+  const GAP = (W - data.length * GROUP_W) / (data.length + 1);
 
   return (
     <svg viewBox={`0 0 ${W} ${H + 28}`} className="w-full" aria-label="Grafik pendapatan per bulan">
       {data.map((d, i) => {
-        const x = GAP + i * (BAR_W + GAP);
-        const barH = max > 0 ? Math.round((d.revenue_done / max) * H) : 0;
-        const y = H - barH;
-        const isCurrent = parseInt(d.month) - 1 === new Date().getMonth();
+        const groupX = GAP + i * (GROUP_W + GAP);
+        const x1 = groupX;
+        const x2 = groupX + BAR_W + 2;
+
+        const h1 = max > 0 ? Math.round((d.revenue_done / max) * H) : 0;
+        const y1 = H - h1;
+
+        const profitVal = Math.max(0, d.profit);
+        const h2 = max > 0 ? Math.round((profitVal / max) * H) : 0;
+        const y2 = H - h2;
+
         return (
           <g key={d.month}>
-            {/* Bar */}
+            {/* Bar 1: Pemasukan (Done) */}
             <rect
-              x={x} y={y} width={BAR_W} height={barH}
-              rx={4}
-              className={isCurrent ? "fill-primary" : "fill-white/10"}
-              style={{ transition: "height 0.4s, y 0.4s" }}
+              x={x1} y={y1} width={BAR_W} height={h1}
+              rx={2}
+              className="fill-emerald-500/80 hover:fill-emerald-500 transition-colors"
             />
-            {/* Value on hover via title */}
-            {barH > 0 && (
-              <title>{MONTH_LABELS[parseInt(d.month) - 1]}: {formatRupiah(d.revenue_done)}</title>
+            {h1 > 0 && (
+              <title>Pemasukan (Done): {formatRupiah(d.revenue_done)}</title>
             )}
+
+            {/* Bar 2: Profit Bersih */}
+            <rect
+              x={x2} y={y2} width={BAR_W} height={h2}
+              rx={2}
+              className="fill-primary/80 hover:fill-primary transition-colors"
+            />
+            {h2 > 0 && (
+              <title>Profit Bersih: {formatRupiah(d.profit)} (Refund: {formatRupiah(d.revenue_refund)})</title>
+            )}
+
             {/* Month label */}
             <text
-              x={x + BAR_W / 2} y={H + 18}
+              x={groupX + GROUP_W / 2} y={H + 18}
               textAnchor="middle" fontSize={10}
               className="fill-muted-foreground"
             >
@@ -165,32 +184,32 @@ function TransactionsPage() {
 
   const statCards = [
     {
-      label: "Pendapatan Hari Ini",
+      label: "Pemasukan Hari Ini",
       value: formatRupiah(stats?.today.revenue_done ?? 0),
-      sub: `${stats?.today.total_count ?? 0} transaksi`,
+      sub: `Profit: ${formatRupiah(stats?.today.profit ?? 0)} · Refund: ${formatRupiah(stats?.today.revenue_refund ?? 0)}`,
       icon: WalletCards,
       color: "text-emerald-400",
     },
     {
-      label: "Pendapatan Bulan Ini",
+      label: "Pemasukan Bulan Ini",
       value: formatRupiah(stats?.month.revenue_done ?? 0),
-      sub: `${stats?.month.total_count ?? 0} transaksi`,
+      sub: `Profit: ${formatRupiah(stats?.month.profit ?? 0)} · Refund: ${formatRupiah(stats?.month.revenue_refund ?? 0)}`,
       icon: TrendingUp,
       color: "text-primary",
     },
     {
-      label: "Total Semua Waktu",
+      label: "Total Pemasukan",
       value: formatRupiah(stats?.allTime.revenue_done ?? 0),
-      sub: `${stats?.allTime.total_count ?? 0} total transaksi`,
+      sub: `Profit: ${formatRupiah(stats?.allTime.profit ?? 0)} · Refund: ${formatRupiah(stats?.allTime.revenue_refund ?? 0)}`,
       icon: BarChart3,
       color: "text-blue-400",
     },
     {
-      label: "Rata-rata per Transaksi",
+      label: "Rata-rata Profit / TRX",
       value: stats?.allTime.total_count
-        ? formatRupiah(Math.round((stats.allTime.revenue_done) / stats.allTime.total_count))
+        ? formatRupiah(Math.round((stats.allTime.profit ?? 0) / stats.allTime.total_count))
         : "Rp0",
-      sub: "Dari transaksi selesai",
+      sub: "Dari semua transaksi",
       icon: ArrowUpRight,
       color: "text-violet-400",
     },
@@ -231,9 +250,18 @@ function TransactionsPage() {
         <div className="glass rounded-2xl p-6 lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Pendapatan Bulanan {new Date().getFullYear()}
+              Kinerja Keuangan {new Date().getFullYear()}
             </h2>
-            <span className="text-[10px] text-muted-foreground">Transaksi selesai (done)</span>
+            <div className="flex items-center gap-3 text-[10px]">
+              <div className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-sm bg-emerald-500" />
+                <span className="text-muted-foreground">Pemasukan</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-sm bg-primary" />
+                <span className="text-muted-foreground">Profit Bersih</span>
+              </div>
+            </div>
           </div>
           {chart.length > 0 ? (
             <RevenueChart data={chart} />
