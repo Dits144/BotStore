@@ -25,6 +25,11 @@ async function handle(ctx, parsed) {
     return;
   }
 
+  if (parsed.command === 'payment') {
+    await payment(ctx);
+    return;
+  }
+
 
   const canManage = await canManageCatalogue(ctx.sock, ctx.from, ctx.sender);
   if (!canManage) {
@@ -169,7 +174,10 @@ async function productTrigger(ctx, rawText) {
 
   const item = await catalogueRepository.getItem(ctx.from, name);
   if (item) {
-    const paymentNote = '\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*';
+    const isCapcut = name.includes('capcut');
+    const paymentNote = isCapcut
+      ? '\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*'
+      : '\n\n💳 *Ketik "payment" untuk melanjutkan pembayaran!*';
     const detailText = `${item.description}${paymentNote}${footer}`;
     if (item.media_path && fs.existsSync(item.media_path)) {
       await ctx.sock.sendMessage(
@@ -195,7 +203,10 @@ async function productTrigger(ctx, rawText) {
   const bestMatchItem = rows.find((r) => r.item_name === bestMatchName);
 
   if (bestMatchItem) {
-    const paymentNote = '\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*';
+    const isCapcut = normalizeText(bestMatchName).includes('capcut');
+    const paymentNote = isCapcut
+      ? '\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*'
+      : '\n\n💳 *Ketik "payment" untuk melanjutkan pembayaran!*';
     const captionText = `❓ Maksud Anda ${bestMatchName}?\n\n${bestMatchItem.description}${paymentNote}${footer}`;
     if (bestMatchItem.media_path && fs.existsSync(bestMatchItem.media_path)) {
       await ctx.sock.sendMessage(
@@ -249,4 +260,23 @@ async function resolveGroupName(ctx) {
   }
 }
 
-module.exports = { handle, productTrigger };
+async function payment(ctx) {
+  const qrisPath = path.join(__dirname, '../../../data/qris.png');
+  const groupName = await resolveGroupName(ctx);
+  const footer = `\n\nPembayaran untuk *${groupName}*`;
+  
+  if (fs.existsSync(qrisPath)) {
+    await ctx.sock.sendMessage(
+      ctx.from,
+      {
+        image: fs.readFileSync(qrisPath),
+        caption: `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.${footer}`
+      },
+      { quoted: ctx.msg }
+    );
+  } else {
+    await ctx.send(`💳 *Informasi Pembayaran*\n\nQRIS belum diunggah oleh Owner. Silakan hubungi Admin Grup untuk melakukan pembayaran.${footer}`);
+  }
+}
+
+module.exports = { handle, productTrigger, payment };
