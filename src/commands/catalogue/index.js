@@ -174,10 +174,7 @@ async function productTrigger(ctx, rawText) {
 
   const item = await catalogueRepository.getItem(ctx.from, name);
   if (item) {
-    const isCapcut = name.includes('capcut');
-    const paymentNote = isCapcut
-      ? '\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*'
-      : '\n\n💳 *Ketik "payment" untuk melanjutkan pembayaran!*';
+    const paymentNote = '\n\n💳 *Ketik "payment" untuk melanjutkan pembayaran!*';
     const detailText = `${item.description}${paymentNote}${footer}`;
     if (item.media_path && fs.existsSync(item.media_path)) {
       await ctx.sock.sendMessage(
@@ -203,10 +200,7 @@ async function productTrigger(ctx, rawText) {
   const bestMatchItem = rows.find((r) => r.item_name === bestMatchName);
 
   if (bestMatchItem) {
-    const isCapcut = normalizeText(bestMatchName).includes('capcut');
-    const paymentNote = isCapcut
-      ? '\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*'
-      : '\n\n💳 *Ketik "payment" untuk melanjutkan pembayaran!*';
+    const paymentNote = '\n\n💳 *Ketik "payment" untuk melanjutkan pembayaran!*';
     const captionText = `❓ Maksud Anda ${bestMatchName}?\n\n${bestMatchItem.description}${paymentNote}${footer}`;
     if (bestMatchItem.media_path && fs.existsSync(bestMatchItem.media_path)) {
       await ctx.sock.sendMessage(
@@ -270,12 +264,12 @@ async function payment(ctx) {
       ctx.from,
       {
         image: fs.readFileSync(qrisPath),
-        caption: `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.${footer}`
+        caption: `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*${footer}`
       },
       { quoted: ctx.msg }
     );
   } else {
-    await ctx.send(`💳 *Informasi Pembayaran*\n\nQRIS belum diunggah oleh Owner. Silakan hubungi Admin Grup untuk melakukan pembayaran.${footer}`);
+    await ctx.send(`💳 *Informasi Pembayaran*\n\nQRIS belum diunggah oleh Owner. Silakan hubungi Admin Grup untuk melakukan pembayaran.\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*${footer}`);
   }
 }
 
