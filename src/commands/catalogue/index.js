@@ -255,30 +255,33 @@ async function resolveGroupName(ctx) {
   }
 }
 
-const DEFAULT_PAYMENT_CAPTION = `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*`;
+const DEFAULT_PAYMENT_CAPTION = `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.`;
 
 async function payment(ctx) {
   const groupName = await resolveGroupName(ctx);
-  const footer = `\n\nPembayaran untuk *${groupName}*`;
   
   const groupSettingsRepository = require('../../repositories/groupSettingsRepository');
   const groupCaption = await groupSettingsRepository.getPaymentCaption(ctx.from, null);
   
   let captionText = groupCaption;
   if (!captionText) {
-    captionText = await settingsRepository.get('payment_caption', DEFAULT_PAYMENT_CAPTION);
+    captionText = await settingsRepository.get('payment_caption', null);
   }
-  const caption = `${captionText}${footer}`;
+  if (!captionText) {
+    captionText = DEFAULT_PAYMENT_CAPTION;
+  }
+  
+  // Auto-appended instruction and footer
+  const ocrNote = '\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*';
+  const footer = `\n\nPembayaran untuk *${groupName}*`;
+  const caption = `${captionText}${ocrNote}${footer}`;
   
   const safeId = ctx.from.replace(/[^a-zA-Z0-9_-]/g, '_');
   const groupQrisPath = path.join(__dirname, `../../../data/qris_${safeId}.png`);
-  const globalQrisPath = path.join(__dirname, '../../../data/qris.png');
   
   let selectedQrisPath = null;
   if (fs.existsSync(groupQrisPath)) {
     selectedQrisPath = groupQrisPath;
-  } else if (fs.existsSync(globalQrisPath)) {
-    selectedQrisPath = globalQrisPath;
   }
 
   if (selectedQrisPath) {

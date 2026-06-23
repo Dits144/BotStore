@@ -853,13 +853,7 @@ app.get('/api/groups/:groupToken/qris', async (req, res) => {
   if (fs.existsSync(qrisPath)) {
     res.sendFile(qrisPath);
   } else {
-    // Fallback to global QRIS if exists, or send 404
-    const globalQrisPath = path.join(__dirname, '../../data/qris.png');
-    if (fs.existsSync(globalQrisPath)) {
-      res.sendFile(globalQrisPath);
-    } else {
-      res.status(404).json({ error: 'QRIS belum diunggah.' });
-    }
+    res.status(404).json({ error: 'QRIS belum diunggah.' });
   }
 });
 

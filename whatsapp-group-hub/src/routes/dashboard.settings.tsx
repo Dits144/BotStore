@@ -129,7 +129,7 @@ function SettingsPage() {
 
   // Load payment caption for owner
   useEffect(() => {
-    if (session.role !== "owner") return;
+    if (session?.role !== "owner") return;
 
     const loadCaption = async () => {
       setLoadingCaption(true);
@@ -144,7 +144,7 @@ function SettingsPage() {
     };
 
     loadCaption();
-  }, [session.role]);
+  }, [session?.role]);
 
   const handleSaveCaption = async () => {
     setSavingCaption(true);

@@ -14,10 +14,12 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as DashboardTransactionsRouteImport } from './routes/dashboard.transactions'
 import { Route as DashboardStockRouteImport } from './routes/dashboard.stock'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardRentalsRouteImport } from './routes/dashboard.rentals'
 import { Route as DashboardPriceListRouteImport } from './routes/dashboard.price-list'
+import { Route as DashboardPaymentRouteImport } from './routes/dashboard.payment'
 import { Route as DashboardGroupToolsRouteImport } from './routes/dashboard.group-tools'
 
 const RegisterRoute = RegisterRouteImport.update({
@@ -45,6 +47,11 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardTransactionsRoute = DashboardTransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardStockRoute = DashboardStockRouteImport.update({
   id: '/stock',
   path: '/stock',
@@ -65,6 +72,11 @@ const DashboardPriceListRoute = DashboardPriceListRouteImport.update({
   path: '/price-list',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardPaymentRoute = DashboardPaymentRouteImport.update({
+  id: '/payment',
+  path: '/payment',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardGroupToolsRoute = DashboardGroupToolsRouteImport.update({
   id: '/group-tools',
   path: '/group-tools',
@@ -77,10 +89,12 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/dashboard/group-tools': typeof DashboardGroupToolsRoute
+  '/dashboard/payment': typeof DashboardPaymentRoute
   '/dashboard/price-list': typeof DashboardPriceListRoute
   '/dashboard/rentals': typeof DashboardRentalsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/stock': typeof DashboardStockRoute
+  '/dashboard/transactions': typeof DashboardTransactionsRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRoutesByTo {
@@ -88,10 +102,12 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/dashboard/group-tools': typeof DashboardGroupToolsRoute
+  '/dashboard/payment': typeof DashboardPaymentRoute
   '/dashboard/price-list': typeof DashboardPriceListRoute
   '/dashboard/rentals': typeof DashboardRentalsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/stock': typeof DashboardStockRoute
+  '/dashboard/transactions': typeof DashboardTransactionsRoute
   '/dashboard': typeof DashboardIndexRoute
 }
 export interface FileRoutesById {
@@ -101,10 +117,12 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/dashboard/group-tools': typeof DashboardGroupToolsRoute
+  '/dashboard/payment': typeof DashboardPaymentRoute
   '/dashboard/price-list': typeof DashboardPriceListRoute
   '/dashboard/rentals': typeof DashboardRentalsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/stock': typeof DashboardStockRoute
+  '/dashboard/transactions': typeof DashboardTransactionsRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRouteTypes {
@@ -115,10 +133,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/dashboard/group-tools'
+    | '/dashboard/payment'
     | '/dashboard/price-list'
     | '/dashboard/rentals'
     | '/dashboard/settings'
     | '/dashboard/stock'
+    | '/dashboard/transactions'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -126,10 +146,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/dashboard/group-tools'
+    | '/dashboard/payment'
     | '/dashboard/price-list'
     | '/dashboard/rentals'
     | '/dashboard/settings'
     | '/dashboard/stock'
+    | '/dashboard/transactions'
     | '/dashboard'
   id:
     | '__root__'
@@ -138,10 +160,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/dashboard/group-tools'
+    | '/dashboard/payment'
     | '/dashboard/price-list'
     | '/dashboard/rentals'
     | '/dashboard/settings'
     | '/dashboard/stock'
+    | '/dashboard/transactions'
     | '/dashboard/'
   fileRoutesById: FileRoutesById
 }
@@ -189,6 +213,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/transactions': {
+      id: '/dashboard/transactions'
+      path: '/transactions'
+      fullPath: '/dashboard/transactions'
+      preLoaderRoute: typeof DashboardTransactionsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/stock': {
       id: '/dashboard/stock'
       path: '/stock'
@@ -217,6 +248,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardPriceListRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/payment': {
+      id: '/dashboard/payment'
+      path: '/payment'
+      fullPath: '/dashboard/payment'
+      preLoaderRoute: typeof DashboardPaymentRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/group-tools': {
       id: '/dashboard/group-tools'
       path: '/group-tools'
@@ -229,19 +267,23 @@ declare module '@tanstack/react-router' {
 
 interface DashboardRouteChildren {
   DashboardGroupToolsRoute: typeof DashboardGroupToolsRoute
+  DashboardPaymentRoute: typeof DashboardPaymentRoute
   DashboardPriceListRoute: typeof DashboardPriceListRoute
   DashboardRentalsRoute: typeof DashboardRentalsRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardStockRoute: typeof DashboardStockRoute
+  DashboardTransactionsRoute: typeof DashboardTransactionsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardGroupToolsRoute: DashboardGroupToolsRoute,
+  DashboardPaymentRoute: DashboardPaymentRoute,
   DashboardPriceListRoute: DashboardPriceListRoute,
   DashboardRentalsRoute: DashboardRentalsRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardStockRoute: DashboardStockRoute,
+  DashboardTransactionsRoute: DashboardTransactionsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }
 
