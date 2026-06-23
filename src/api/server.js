@@ -807,6 +807,106 @@ app.post('/api/payment-caption', authenticate, async (req, res) => {
   }
 });
 
+// 21d. Get Group-specific Payment Settings (Authenticate)
+app.get('/api/groups/:groupToken/payment', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const db = await connectDatabase();
+
+  const isOwner = req.user.role === 'owner';
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && !isOwner) return res.status(403).json({ error: 'Akses ditolak' });
+
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const groupSettingsRepository = require('../repositories/groupSettingsRepository');
+    
+    // Check if group-specific QRIS exists
+    const safeId = groupToken.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const qrisPath = path.join(__dirname, `../../data/qris_${safeId}.png`);
+    const hasQris = fs.existsSync(qrisPath);
+
+    // Get caption
+    const defaultCaption = `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ \"CAPCUT PRO 1 BULAN\"*`;
+    const caption = await groupSettingsRepository.getPaymentCaption(groupToken, defaultCaption);
+
+    res.json({
+      hasQris,
+      qrisUrl: `/api/groups/${groupToken}/qris`,
+      caption
+    });
+  } catch (err) {
+    logger.error({ err, groupToken }, '[api] gagal mendapatkan setting pembayaran grup');
+    res.status(500).json({ error: 'Gagal mendapatkan pengaturan pembayaran' });
+  }
+});
+
+// 21e. Serve Group-specific QRIS Image (Public)
+app.get('/api/groups/:groupToken/qris', async (req, res) => {
+  const { groupToken } = req.params;
+  const fs = require('fs');
+  const path = require('path');
+  
+  const safeId = groupToken.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const qrisPath = path.join(__dirname, `../../data/qris_${safeId}.png`);
+  
+  if (fs.existsSync(qrisPath)) {
+    res.sendFile(qrisPath);
+  } else {
+    // Fallback to global QRIS if exists, or send 404
+    const globalQrisPath = path.join(__dirname, '../../data/qris.png');
+    if (fs.existsSync(globalQrisPath)) {
+      res.sendFile(globalQrisPath);
+    } else {
+      res.status(404).json({ error: 'QRIS belum diunggah.' });
+    }
+  }
+});
+
+// 21f. Update Group-specific Payment Settings (Authenticate)
+app.post('/api/groups/:groupToken/payment', authenticate, async (req, res) => {
+  const { groupToken } = req.params;
+  const { image, caption } = req.body;
+  const db = await connectDatabase();
+
+  const isOwner = req.user.role === 'owner';
+  const hasAccess = await db.get('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', [req.user.id, groupToken]);
+  if (!hasAccess && !isOwner) return res.status(403).json({ error: 'Akses ditolak' });
+
+  try {
+    const groupSettingsRepository = require('../repositories/groupSettingsRepository');
+
+    // 1. Update caption if provided
+    if (caption !== undefined && caption !== null) {
+      await groupSettingsRepository.setPaymentCaption(groupToken, caption);
+    }
+
+    // 2. Update QRIS image if provided
+    if (image) {
+      const fs = require('fs');
+      const path = require('path');
+      
+      const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+      const buffer = Buffer.from(base64Data, 'base64');
+      
+      const dir = path.join(__dirname, '../../data');
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      
+      const safeId = groupToken.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const qrisPath = path.join(dir, `qris_${safeId}.png`);
+      fs.writeFileSync(qrisPath, buffer);
+      logger.info({ qrisPath, groupToken }, '[api] group QRIS updated successfully');
+    }
+
+    res.json({ success: true, message: 'Pengaturan pembayaran grup berhasil diperbarui!' });
+  } catch (err) {
+    logger.error({ err, groupToken }, '[api] gagal memperbarui pembayaran grup');
+    res.status(500).json({ error: 'Gagal memperbarui pengaturan pembayaran' });
+  }
+});
+
 // 22. Send Rental Payment Report (Authenticate)
 app.post('/api/rentals/report', authenticate, async (req, res) => {
   const { groupToken, packageName, proofImage } = req.body;

@@ -258,18 +258,34 @@ async function resolveGroupName(ctx) {
 const DEFAULT_PAYMENT_CAPTION = `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*`;
 
 async function payment(ctx) {
-  const qrisPath = path.join(__dirname, '../../../data/qris.png');
   const groupName = await resolveGroupName(ctx);
   const footer = `\n\nPembayaran untuk *${groupName}*`;
   
-  const dbCaption = await settingsRepository.get('payment_caption', DEFAULT_PAYMENT_CAPTION);
-  const caption = `${dbCaption}${footer}`;
+  const groupSettingsRepository = require('../../repositories/groupSettingsRepository');
+  const groupCaption = await groupSettingsRepository.getPaymentCaption(ctx.from, null);
   
-  if (fs.existsSync(qrisPath)) {
+  let captionText = groupCaption;
+  if (!captionText) {
+    captionText = await settingsRepository.get('payment_caption', DEFAULT_PAYMENT_CAPTION);
+  }
+  const caption = `${captionText}${footer}`;
+  
+  const safeId = ctx.from.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const groupQrisPath = path.join(__dirname, `../../../data/qris_${safeId}.png`);
+  const globalQrisPath = path.join(__dirname, '../../../data/qris.png');
+  
+  let selectedQrisPath = null;
+  if (fs.existsSync(groupQrisPath)) {
+    selectedQrisPath = groupQrisPath;
+  } else if (fs.existsSync(globalQrisPath)) {
+    selectedQrisPath = globalQrisPath;
+  }
+
+  if (selectedQrisPath) {
     await ctx.sock.sendMessage(
       ctx.from,
       {
-        image: fs.readFileSync(qrisPath),
+        image: fs.readFileSync(selectedQrisPath),
         caption
       },
       { quoted: ctx.msg }

@@ -117,6 +117,7 @@ async function migrate() {
   await ensureColumn(db, 'catalogues', 'fast_delivery', 'fast_delivery INTEGER NOT NULL DEFAULT 0');
   await ensureColumn(db, 'catalogues', 'is_rare', 'is_rare INTEGER NOT NULL DEFAULT 0');
   await ensureColumn(db, 'rentals', 'group_password', 'group_password TEXT');
+  await ensureColumn(db, 'group_settings', 'payment_caption', 'payment_caption TEXT');
 
   const now = new Date().toISOString();
   await db.run('INSERT OR IGNORE INTO owners (jid, is_main, created_at) VALUES (?, 1, ?)', [normalizeJid(config.mainOwnerJid), now]);

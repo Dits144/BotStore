@@ -29,5 +29,19 @@ module.exports = {
     const db = await connectDatabase();
     const now = new Date().toISOString();
     return db.run('UPDATE group_settings SET welcome_message = ?, updated_at = ? WHERE group_id = ?', [message, now, groupId]);
+  },
+
+  async getPaymentCaption(groupId, defaultCaption = '') {
+    await ensureGroup(groupId);
+    const db = await connectDatabase();
+    const row = await db.get('SELECT payment_caption FROM group_settings WHERE group_id = ? LIMIT 1', [groupId]);
+    return (row && row.payment_caption) ? row.payment_caption : defaultCaption;
+  },
+
+  async setPaymentCaption(groupId, caption) {
+    await ensureGroup(groupId);
+    const db = await connectDatabase();
+    const now = new Date().toISOString();
+    return db.run('UPDATE group_settings SET payment_caption = ?, updated_at = ? WHERE group_id = ?', [caption, now, groupId]);
   }
 };
