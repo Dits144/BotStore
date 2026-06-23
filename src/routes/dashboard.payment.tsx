@@ -152,12 +152,12 @@ function PaymentSettingsPage() {
                       alt="QRIS Pembayaran Grup"
                       className="max-h-full max-w-full object-contain"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = "https://placehold.co/200x200/1e293b/ffffff?text=Menggunakan+QRIS+Owner";
+                        (e.target as HTMLImageElement).src = "https://placehold.co/200x200/1e293b/ffffff?text=Belum+Ada+QRIS";
                       }}
                     />
                   </div>
                   {!hasQris && !previewUrl && (
-                    <span className="text-[9px] text-warning text-center">Menggunakan QRIS Default Owner</span>
+                    <span className="text-[9px] text-warning text-center">Belum ada QRIS khusus grup</span>
                   )}
                 </div>
               </div>
