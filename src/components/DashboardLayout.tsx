@@ -12,6 +12,7 @@ import {
   Receipt,
   Shield,
   X,
+  CreditCard,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -48,6 +49,7 @@ const nav: Array<{
   { to: "/dashboard/price-list", label: "Daftar Harga", icon: ListOrdered },
   { to: "/dashboard/stock", label: "Kelola Stok", icon: Package },
   { to: "/dashboard/transactions", label: "Transaksi", icon: Receipt },
+  { to: "/dashboard/payment", label: "Pembayaran", icon: CreditCard },
   { to: "/dashboard/group-tools", label: "Alat Grup", icon: Shield },
   { to: "/dashboard/rentals", label: "Sewa & Pemilik", icon: LayoutDashboard, role: "owner" },
   { to: "/dashboard/settings", label: "Pengaturan", icon: Cog },

@@ -395,6 +395,39 @@ export async function updatePaymentCaption(caption: string): Promise<void> {
   }
 }
 
+export interface GroupPaymentSettings {
+  hasQris: boolean;
+  qrisUrl: string;
+  caption: string;
+}
+
+export async function getGroupPaymentSettings(groupToken: string): Promise<GroupPaymentSettings> {
+  const res = await fetch(`${API_BASE}/groups/${groupToken}/payment`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal mengambil pengaturan pembayaran grup");
+  }
+  return res.json();
+}
+
+export async function updateGroupPaymentSettings(
+  groupToken: string,
+  caption?: string,
+  base64Image?: string
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/groups/${groupToken}/payment`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    body: JSON.stringify({ caption, image: base64Image }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal memperbarui pengaturan pembayaran grup");
+  }
+}
+
 export async function sendRentalReport(
   groupToken: string,
   packageName: string,
