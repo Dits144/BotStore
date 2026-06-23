@@ -371,6 +371,30 @@ export async function uploadQris(base64Image: string): Promise<void> {
   }
 }
 
+export async function getPaymentCaption(): Promise<string> {
+  const res = await fetch(`${API_BASE}/payment-caption`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal mengambil caption pembayaran");
+  }
+  const data = await res.json();
+  return data.caption;
+}
+
+export async function updatePaymentCaption(caption: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/payment-caption`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    body: JSON.stringify({ caption }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal memperbarui caption pembayaran");
+  }
+}
+
 export async function sendRentalReport(
   groupToken: string,
   packageName: string,
