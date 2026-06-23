@@ -29,6 +29,8 @@ import {
   fetchWelcomeSettings,
   updateWelcomeSettings,
   clearAllTransactions,
+  getPaymentCaption,
+  updatePaymentCaption,
 } from "../lib/api";
 
 export const Route = createFileRoute("/dashboard/settings")({
@@ -74,6 +76,11 @@ function SettingsPage() {
   const [qrisUrl, setQrisUrl] = useState(fetchQrisUrl());
   const [uploadingQris, setUploadingQris] = useState(false);
 
+  // Payment caption state
+  const [paymentCaption, setPaymentCaption] = useState("");
+  const [loadingCaption, setLoadingCaption] = useState(false);
+  const [savingCaption, setSavingCaption] = useState(false);
+
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [proofBase64, setProofBase64] = useState<string | null>(null);
   const [submittingReport, setSubmittingReport] = useState(false);
@@ -117,6 +124,37 @@ function SettingsPage() {
       toast.error(err instanceof Error ? err.message : "Gagal menyimpan setting welcome");
     } finally {
       setSavingWelcome(false);
+    }
+  };
+
+  // Load payment caption for owner
+  useEffect(() => {
+    if (session.role !== "owner") return;
+
+    const loadCaption = async () => {
+      setLoadingCaption(true);
+      try {
+        const caption = await getPaymentCaption();
+        setPaymentCaption(caption);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Gagal memuat caption pembayaran");
+      } finally {
+        setLoadingCaption(false);
+      }
+    };
+
+    loadCaption();
+  }, [session.role]);
+
+  const handleSaveCaption = async () => {
+    setSavingCaption(true);
+    try {
+      await updatePaymentCaption(paymentCaption);
+      toast.success("Caption pembayaran berhasil disimpan!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menyimpan caption pembayaran");
+    } finally {
+      setSavingCaption(false);
     }
   };
 
@@ -396,10 +434,10 @@ function SettingsPage() {
         <section className="glass rounded-2xl p-6 animate-fade-in-up space-y-4">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <ImageIcon className="h-5 w-5 text-primary" /> Konfigurasi QRIS Owner
+              <ImageIcon className="h-5 w-5 text-primary" /> Konfigurasi QRIS & Pembayaran Owner
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Unggah kode pembayaran QRIS Anda. Gambar QRIS ini akan ditampilkan secara real-time kepada semua Admin Grup saat mereka ingin memperpanjang/menyewa bot.
+              Unggah kode pembayaran QRIS dan atur caption instruksi pembayaran untuk seluruh admin grup.
             </p>
           </div>
 
@@ -431,6 +469,35 @@ function SettingsPage() {
                   }}
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="border-t border-white/5 pt-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="payment-caption" className="text-xs font-semibold text-foreground/80">
+                Caption Instruksi Pembayaran (Perintah /payment)
+              </Label>
+              <Textarea
+                id="payment-caption"
+                placeholder="Masukkan instruksi transfer / scan QRIS..."
+                value={paymentCaption}
+                onChange={(e) => setPaymentCaption(e.target.value)}
+                disabled={loadingCaption}
+                className="min-h-[120px] bg-white/5 font-mono text-sm leading-relaxed"
+              />
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                Catatan: Nama grup penerima pembayaran akan otomatis ditambahkan di baris paling bawah.
+              </p>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                onClick={handleSaveCaption}
+                disabled={savingCaption || loadingCaption}
+                className="px-6"
+              >
+                {savingCaption && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Simpan Caption
+              </Button>
             </div>
           </div>
         </section>

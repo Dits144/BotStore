@@ -775,6 +775,38 @@ app.post('/api/qris', authenticate, async (req, res) => {
   }
 });
 
+// 21b. Get Payment Caption (Authenticate)
+app.get('/api/payment-caption', authenticate, async (req, res) => {
+  try {
+    const settingsRepository = require('../repositories/settingsRepository');
+    const defaultCaption = `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*`;
+    const caption = await settingsRepository.get('payment_caption', defaultCaption);
+    res.json({ caption });
+  } catch (err) {
+    logger.error({ err }, '[api] gagal mendapatkan payment caption');
+    res.status(500).json({ error: 'Gagal mendapatkan caption pembayaran' });
+  }
+});
+
+// 21c. Update Payment Caption (Owner Only)
+app.post('/api/payment-caption', authenticate, async (req, res) => {
+  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Akses ditolak' });
+  const { caption } = req.body;
+  if (caption === undefined || caption === null) {
+    return res.status(400).json({ error: 'Data caption wajib disertakan' });
+  }
+
+  try {
+    const settingsRepository = require('../repositories/settingsRepository');
+    await settingsRepository.set('payment_caption', caption);
+    logger.info({ user: req.user.email }, '[api] payment caption updated successfully');
+    res.json({ success: true, message: 'Caption pembayaran berhasil diperbarui!' });
+  } catch (err) {
+    logger.error({ err }, '[api] gagal memperbarui payment caption');
+    res.status(500).json({ error: 'Gagal memperbarui caption pembayaran' });
+  }
+});
+
 // 22. Send Rental Payment Report (Authenticate)
 app.post('/api/rentals/report', authenticate, async (req, res) => {
   const { groupToken, packageName, proofImage } = req.body;

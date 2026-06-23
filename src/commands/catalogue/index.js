@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const baileys = require('@whiskeysockets/baileys');
 const catalogueRepository = require('../../repositories/catalogueRepository');
+const settingsRepository = require('../../repositories/settingsRepository');
 const { canManageCatalogue } = require('../../middlewares/roleGuard');
 const { formatWrongExample, renderMentionText } = require('../../utils/messageFormatter');
 const { normalizeText } = require('../../utils/parser');
@@ -254,22 +255,27 @@ async function resolveGroupName(ctx) {
   }
 }
 
+const DEFAULT_PAYMENT_CAPTION = `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*`;
+
 async function payment(ctx) {
   const qrisPath = path.join(__dirname, '../../../data/qris.png');
   const groupName = await resolveGroupName(ctx);
   const footer = `\n\nPembayaran untuk *${groupName}*`;
+  
+  const dbCaption = await settingsRepository.get('payment_caption', DEFAULT_PAYMENT_CAPTION);
+  const caption = `${dbCaption}${footer}`;
   
   if (fs.existsSync(qrisPath)) {
     await ctx.sock.sendMessage(
       ctx.from,
       {
         image: fs.readFileSync(qrisPath),
-        caption: `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*${footer}`
+        caption
       },
       { quoted: ctx.msg }
     );
   } else {
-    await ctx.send(`💳 *Informasi Pembayaran*\n\nQRIS belum diunggah oleh Owner. Silakan hubungi Admin Grup untuk melakukan pembayaran.\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*${footer}`);
+    await ctx.send(caption);
   }
 }
 
