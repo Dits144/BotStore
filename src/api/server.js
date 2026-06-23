@@ -779,7 +779,7 @@ app.post('/api/qris', authenticate, async (req, res) => {
 app.get('/api/payment-caption', authenticate, async (req, res) => {
   try {
     const settingsRepository = require('../repositories/settingsRepository');
-    const defaultCaption = `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ "CAPCUT PRO 1 BULAN"*`;
+    const defaultCaption = `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.`;
     const caption = await settingsRepository.get('payment_caption', defaultCaption);
     res.json({ caption });
   } catch (err) {
@@ -827,7 +827,7 @@ app.get('/api/groups/:groupToken/payment', authenticate, async (req, res) => {
     const hasQris = fs.existsSync(qrisPath);
 
     // Get caption
-    const defaultCaption = `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.\n\n📸 *Kirim ss Bukti Tf dengan Caption Contoh ✎ \"CAPCUT PRO 1 BULAN\"*`;
+    const defaultCaption = `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.`;
     const caption = await groupSettingsRepository.getPaymentCaption(groupToken, defaultCaption);
 
     res.json({
