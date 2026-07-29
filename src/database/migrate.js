@@ -130,7 +130,48 @@ async function migrate() {
     }
   }
 
+  // Clean up existing payment captions to strip out OCR note and footer from input
+  try {
+    const rows = await db.all('SELECT group_id, payment_caption FROM group_settings WHERE payment_caption IS NOT NULL');
+    for (const row of rows) {
+      if (row.payment_caption) {
+        const cleaned = cleanCaption(row.payment_caption);
+        if (cleaned !== row.payment_caption) {
+          await db.run('UPDATE group_settings SET payment_caption = ? WHERE group_id = ?', [cleaned, row.group_id]);
+          logger.info({ groupId: row.group_id }, 'Cleaned group payment_caption in database');
+        }
+      }
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Failed to clean group_settings payment_caption');
+  }
+
+  try {
+    const row = await db.get('SELECT value FROM settings WHERE key = "payment_caption"');
+    if (row && row.value) {
+      const cleaned = cleanCaption(row.value);
+      if (cleaned !== row.value) {
+        await db.run('UPDATE settings SET value = ? WHERE key = "payment_caption"', [cleaned]);
+        logger.info('Cleaned global payment_caption in database');
+      }
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Failed to clean global payment_caption');
+  }
+
   logger.info('database initialized');
+}
+
+function cleanCaption(caption) {
+  if (!caption) return caption;
+  let cleaned = caption;
+  // Remove OCR note line and any leading/trailing newlines/whitespace
+  cleaned = cleaned.replace(/\r?\n\s*📸\s*\*?Kirim ss Bukti Tf.*?(?:\r?\n|$)/gi, '\n');
+  cleaned = cleaned.replace(/📸\s*\*?Kirim ss Bukti Tf.*/gi, '');
+  // Remove footer line: "Pembayaran untuk ..."
+  cleaned = cleaned.replace(/\r?\n\s*Pembayaran untuk.*?(?:\r?\n|$)/gi, '\n');
+  cleaned = cleaned.replace(/Pembayaran untuk.*/gi, '');
+  return cleaned.trim();
 }
 
 module.exports = migrate;

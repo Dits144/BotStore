@@ -486,7 +486,7 @@ function SettingsPage() {
                 className="min-h-[120px] bg-white/5 font-mono text-sm leading-relaxed"
               />
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Catatan: Nama grup penerima pembayaran akan otomatis ditambahkan di baris paling bawah.
+                💡 <span className="font-semibold text-foreground/80">Tips:</span> Instruksi transfer bukti Tf dan footer nama grup akan otomatis ditambahkan secara otomatis pada baris paling bawah.
               </p>
             </div>
             <div className="flex justify-end">

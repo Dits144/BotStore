@@ -775,12 +775,25 @@ app.post('/api/qris', authenticate, async (req, res) => {
   }
 });
 
+function cleanCaption(caption) {
+  if (!caption) return '';
+  let cleaned = caption;
+  // Remove OCR note line and any leading/trailing newlines/whitespace
+  cleaned = cleaned.replace(/\r?\n\s*📸\s*\*?Kirim ss Bukti Tf.*?(?:\r?\n|$)/gi, '\n');
+  cleaned = cleaned.replace(/📸\s*\*?Kirim ss Bukti Tf.*/gi, '');
+  // Remove footer line: "Pembayaran untuk ..."
+  cleaned = cleaned.replace(/\r?\n\s*Pembayaran untuk.*?(?:\r?\n|$)/gi, '\n');
+  cleaned = cleaned.replace(/Pembayaran untuk.*/gi, '');
+  return cleaned.trim();
+}
+
 // 21b. Get Payment Caption (Authenticate)
 app.get('/api/payment-caption', authenticate, async (req, res) => {
   try {
     const settingsRepository = require('../repositories/settingsRepository');
     const defaultCaption = `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.`;
-    const caption = await settingsRepository.get('payment_caption', defaultCaption);
+    let caption = await settingsRepository.get('payment_caption', defaultCaption);
+    caption = cleanCaption(caption);
     res.json({ caption });
   } catch (err) {
     logger.error({ err }, '[api] gagal mendapatkan payment caption');
@@ -798,7 +811,8 @@ app.post('/api/payment-caption', authenticate, async (req, res) => {
 
   try {
     const settingsRepository = require('../repositories/settingsRepository');
-    await settingsRepository.set('payment_caption', caption);
+    const cleaned = cleanCaption(caption);
+    await settingsRepository.set('payment_caption', cleaned);
     logger.info({ user: req.user.email }, '[api] payment caption updated successfully');
     res.json({ success: true, message: 'Caption pembayaran berhasil diperbarui!' });
   } catch (err) {
@@ -828,7 +842,8 @@ app.get('/api/groups/:groupToken/payment', authenticate, async (req, res) => {
 
     // Get caption
     const defaultCaption = `💳 *Informasi Pembayaran*\n\nSilakan scan QRIS di atas untuk menyelesaikan pembayaran Anda.`;
-    const caption = await groupSettingsRepository.getPaymentCaption(groupToken, defaultCaption);
+    let caption = await groupSettingsRepository.getPaymentCaption(groupToken, defaultCaption);
+    caption = cleanCaption(caption);
 
     res.json({
       hasQris,
@@ -872,7 +887,8 @@ app.post('/api/groups/:groupToken/payment', authenticate, async (req, res) => {
 
     // 1. Update caption if provided
     if (caption !== undefined && caption !== null) {
-      await groupSettingsRepository.setPaymentCaption(groupToken, caption);
+      const cleaned = cleanCaption(caption);
+      await groupSettingsRepository.setPaymentCaption(groupToken, cleaned);
     }
 
     // 2. Update QRIS image if provided
@@ -981,10 +997,15 @@ app.get('/api/transactions/:groupToken', authenticate, async (req, res) => {
     let rows;
     if (status && status !== 'all') {
       const dbConn = await require('../database/connection').connectDatabase();
-      const whereGroup = groupToken !== 'all' ? 'group_id = ? AND status = ?' : 'status = ?';
+      const whereGroup = groupToken !== 'all' ? 't.group_id = ? AND t.status = ?' : 't.status = ?';
       const params = groupToken !== 'all' ? [groupToken, status, parseInt(limit), parseInt(offset)] : [status, parseInt(limit), parseInt(offset)];
       rows = await dbConn.all(
-        `SELECT * FROM transactions WHERE ${whereGroup} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+        `SELECT t.*, c.name AS customer_name
+         FROM transactions t
+         LEFT JOIN contacts c ON t.customer_jid = c.jid
+         WHERE ${whereGroup}
+         ORDER BY t.created_at DESC
+         LIMIT ? OFFSET ?`,
         params
       );
     } else {

@@ -52,7 +52,12 @@ module.exports = {
   async getByGroup(groupId, limit = 50, offset = 0) {
     const db = await connectDatabase();
     return db.all(
-      `SELECT * FROM transactions WHERE group_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      `SELECT t.*, c.name AS customer_name
+       FROM transactions t
+       LEFT JOIN contacts c ON t.customer_jid = c.jid
+       WHERE t.group_id = ?
+       ORDER BY t.created_at DESC
+       LIMIT ? OFFSET ?`,
       [groupId, limit, offset]
     );
   },
@@ -63,7 +68,11 @@ module.exports = {
   async getAll(limit = 100, offset = 0) {
     const db = await connectDatabase();
     return db.all(
-      `SELECT * FROM transactions ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      `SELECT t.*, c.name AS customer_name
+       FROM transactions t
+       LEFT JOIN contacts c ON t.customer_jid = c.jid
+       ORDER BY t.created_at DESC
+       LIMIT ? OFFSET ?`,
       [limit, offset]
     );
   },

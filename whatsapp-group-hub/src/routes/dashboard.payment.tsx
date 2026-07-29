@@ -126,7 +126,7 @@ function PaymentSettingsPage() {
                 <div>
                   <h3 className="text-xs uppercase font-semibold tracking-wider text-muted-foreground">QRIS Pembayaran Grup</h3>
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    Unggah kode QRIS khusus grup ini. Jika belum diunggah, bot akan otomatis menggunakan QRIS default milik Owner.
+                    Unggah kode QRIS khusus grup ini. Jika belum diunggah, bot hanya akan mengirimkan pesan caption tanpa gambar QRIS.
                   </p>
                 </div>
 
@@ -182,7 +182,7 @@ function PaymentSettingsPage() {
                       className="min-h-[220px] bg-white/5 font-mono text-xs leading-relaxed"
                     />
                     <div className="rounded-lg bg-white/5 border border-white/10 p-3 text-[10px] text-muted-foreground leading-relaxed">
-                      💡 <span className="font-semibold text-foreground/80">Tips:</span> Nama grup dan teks <code className="bg-white/10 px-1 py-0.5 rounded text-primary">Pembayaran untuk [Nama Grup]</code> akan otomatis ditambahkan secara otomatis pada baris paling bawah.
+                      💡 <span className="font-semibold text-foreground/80">Tips:</span> Instruksi transfer bukti Tf dan footer nama grup akan otomatis ditambahkan secara otomatis pada baris paling bawah.
                     </div>
                   </div>
                 </div>
