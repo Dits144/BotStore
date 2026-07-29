@@ -527,6 +527,7 @@ export interface Transaction {
   group_id: string;
   group_name: string;
   customer_jid: string;
+  customer_name?: string;
   admin_jid: string;
   product: string;
   amount: number;

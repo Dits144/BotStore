@@ -357,7 +357,9 @@ function TransactionsPage() {
                       {trx.trx_id}
                     </td>
                     <td className="py-3 font-mono text-xs">
-                      +{phoneFromJid(trx.customer_jid)}
+                      {trx.customer_name && trx.customer_name.trim()
+                        ? (trx.customer_name.trim().startsWith("@") ? trx.customer_name.trim() : `@${trx.customer_name.trim()}`)
+                        : `@${phoneFromJid(trx.customer_jid)}`}
                     </td>
                     <td className="py-3 max-w-[120px]">
                       <span className="truncate block text-xs capitalize">{trx.product || "—"}</span>
