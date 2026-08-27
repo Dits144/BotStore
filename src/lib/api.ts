@@ -646,3 +646,48 @@ export async function clearAllTransactions(groupToken: string): Promise<void> {
   }
 }
 
+export interface AdminAiStatus {
+  connected: boolean;
+  phoneNumber?: string | null;
+  qrCodeUrl?: string | null;
+  connectionState: "DISCONNECTED" | "CONNECTING" | "CONNECTED" | "QR_READY";
+  aiEnabled: boolean;
+}
+
+export async function fetchAdminAiStatus(): Promise<AdminAiStatus> {
+  const res = await fetch(`${API_BASE}/admin-ai/status`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) throw new Error("Gagal mengambil status WA Admin CS");
+  return res.json();
+}
+
+export async function connectAdminAi(): Promise<AdminAiStatus> {
+  const res = await fetch(`${API_BASE}/admin-ai/connect`, {
+    method: "POST",
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) throw new Error("Gagal menghubungkan WA Admin CS");
+  const data = await res.json();
+  return data.status;
+}
+
+export async function disconnectAdminAi(): Promise<AdminAiStatus> {
+  const res = await fetch(`${API_BASE}/admin-ai/disconnect`, {
+    method: "POST",
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) throw new Error("Gagal memutuskan WA Admin CS");
+  const data = await res.json();
+  return data.status;
+}
+
+export async function saveAdminAiSettings(enabled: boolean, geminiApiKey?: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/admin-ai/settings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    body: JSON.stringify({ enabled, geminiApiKey }),
+  });
+  if (!res.ok) throw new Error("Gagal menyimpan pengaturan Admin AI");
+}
+

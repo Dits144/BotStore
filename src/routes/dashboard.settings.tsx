@@ -31,6 +31,11 @@ import {
   clearAllTransactions,
   getPaymentCaption,
   updatePaymentCaption,
+  fetchAdminAiStatus,
+  connectAdminAi,
+  disconnectAdminAi,
+  saveAdminAiSettings,
+  AdminAiStatus,
 } from "../lib/api";
 
 export const Route = createFileRoute("/dashboard/settings")({
@@ -155,6 +160,65 @@ function SettingsPage() {
       toast.error(err instanceof Error ? err.message : "Gagal menyimpan caption pembayaran");
     } finally {
       setSavingCaption(false);
+    }
+  };
+
+  // Admin AI CS state
+  const [adminAiStatus, setAdminAiStatus] = useState<AdminAiStatus | null>(null);
+  const [loadingAdminAi, setLoadingAdminAi] = useState(false);
+  const [connectingAdminAi, setConnectingAdminAi] = useState(false);
+  const [geminiApiKeyInput, setGeminiApiKeyInput] = useState("");
+
+  const loadAdminAi = async () => {
+    setLoadingAdminAi(true);
+    try {
+      const st = await fetchAdminAiStatus();
+      setAdminAiStatus(st);
+    } catch (_) {
+    } finally {
+      setLoadingAdminAi(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAdminAi();
+    const interval = setInterval(loadAdminAi, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleConnectAdminAi = async () => {
+    setConnectingAdminAi(true);
+    try {
+      const st = await connectAdminAi();
+      setAdminAiStatus(st);
+      toast.success("Memulai koneksi WA Admin CS...");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menghubungkan WA Admin CS");
+    } finally {
+      setConnectingAdminAi(false);
+    }
+  };
+
+  const handleDisconnectAdminAi = async () => {
+    setConnectingAdminAi(true);
+    try {
+      const st = await disconnectAdminAi();
+      setAdminAiStatus(st);
+      toast.success("Koneksi WA Admin CS diputuskan");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal memutuskan WA Admin CS");
+    } finally {
+      setConnectingAdminAi(false);
+    }
+  };
+
+  const handleSaveAdminAiSettings = async () => {
+    try {
+      const enabled = adminAiStatus?.aiEnabled ?? true;
+      await saveAdminAiSettings(enabled, geminiApiKeyInput);
+      toast.success("Pengaturan Admin AI CS berhasil disimpan!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menyimpan pengaturan Admin AI CS");
     }
   };
 
@@ -426,6 +490,115 @@ function SettingsPage() {
               </div>
             </div>
           )}
+        </section>
+      )}
+
+      {/* WA ADMIN CS AI CONNECTION PANEL */}
+      {session.role === "owner" && (
+        <section className="glass rounded-2xl p-6 animate-fade-in-up space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-white/5 pb-4">
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Radio className="h-5 w-5 text-emerald-400 animate-pulse" /> Koneksi WhatsApp Admin CS (AI Customer Service)
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Pindai Kode QR berikut untuk menghubungkan nomor WhatsApp Admin sebagai AI Customer Service otomatis yang membalas Personal Chat pelanggan.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                adminAiStatus?.connected
+                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                  : adminAiStatus?.connectionState === "QR_READY"
+                  ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                  : "bg-red-500/20 text-red-400 border border-red-500/30"
+              }`}>
+                {adminAiStatus?.connected
+                  ? `🟢 Terhubung (+${adminAiStatus.phoneNumber || "Admin"})`
+                  : adminAiStatus?.connectionState === "QR_READY"
+                  ? "🟡 Scan QR Code"
+                  : "🔴 Belum Terhubung"}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Left: QR Code Viewer */}
+            <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5 flex flex-col items-center justify-center space-y-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                QR Code Pasangan WA Admin CS
+              </span>
+
+              {adminAiStatus?.connected ? (
+                <div className="flex flex-col items-center py-6 text-center space-y-2">
+                  <CheckCircle2 className="h-14 w-14 text-emerald-400" />
+                  <span className="text-sm font-semibold text-foreground">Nomor WA Admin CS Aktif!</span>
+                  <span className="text-xs text-muted-foreground">Pesan pribadi dari customer akan dijawab otomatis oleh Gemini AI CS.</span>
+                </div>
+              ) : adminAiStatus?.qrCodeUrl ? (
+                <div className="flex flex-col items-center space-y-3">
+                  <div className="p-3 bg-white rounded-xl shadow-lg border border-white/20">
+                    <img src={adminAiStatus.qrCodeUrl} alt="WA Admin QR Code" className="h-48 w-48 object-contain" />
+                  </div>
+                  <span className="text-xs text-amber-400 font-medium">Buka WhatsApp &gt; Perangkat Tertaut &gt; Tautkan Perangkat</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center py-8 text-center space-y-3 text-muted-foreground">
+                  <Radio className="h-10 w-10 opacity-40" />
+                  <span className="text-xs">Klik tombol "Muat QR Code" untuk menampilkan kode QR pemasangan WhatsApp Admin.</span>
+                </div>
+              )}
+
+              <div className="flex gap-2 w-full pt-2">
+                {!adminAiStatus?.connected ? (
+                  <Button
+                    onClick={handleConnectAdminAi}
+                    disabled={connectingAdminAi}
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white"
+                  >
+                    {connectingAdminAi && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    Muat QR Code WA Admin
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleDisconnectAdminAi}
+                    disabled={connectingAdminAi}
+                    variant="destructive"
+                    className="w-full"
+                  >
+                    {connectingAdminAi && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    Putuskan WA Admin CS
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Right: Gemini AI Settings */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="gemini-key" className="text-xs font-semibold text-foreground/80">
+                  Gemini API Key (Opsional untuk AI Cerdas)
+                </Label>
+                <Input
+                  id="gemini-key"
+                  type="password"
+                  placeholder="AIzaSy..."
+                  value={geminiApiKeyInput}
+                  onChange={(e) => setGeminiApiKeyInput(e.target.value)}
+                  className="bg-white/5 text-xs font-mono"
+                />
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  Dapatkan API Key gratis di <a href="https://aistudio.google.com/" target="_blank" rel="noreferrer" className="text-primary underline">Google AI Studio</a>. Jika kosong, sistem menggunakan fallback CS otomatis bawaan.
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <Button onClick={handleSaveAdminAiSettings} className="w-full">
+                  Simpan Pengaturan Admin AI
+                </Button>
+              </div>
+            </div>
+          </div>
         </section>
       )}
 
