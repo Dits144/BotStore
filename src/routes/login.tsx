@@ -39,7 +39,7 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) navigate({ to: "/dashboard", search: search.token ? { linkToken: search.token } : undefined });
+    if (isAuthenticated) navigate({ to: "/dashboard", search: { linkToken: search.token } });
   }, [isAuthenticated, navigate, search.token]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -52,7 +52,7 @@ function LoginPage() {
     try {
       await login(email.trim(), password);
       toast.success("Selamat datang kembali.");
-      navigate({ to: "/dashboard", search: search.token ? { linkToken: search.token } : undefined });
+      navigate({ to: "/dashboard", search: { linkToken: search.token } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal masuk");
     } finally {
