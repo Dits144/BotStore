@@ -22,7 +22,7 @@ import {
 } from "../components/ui/tooltip";
 
 export const Route = createFileRoute("/register")({
-  validateSearch: (search: Record<string, unknown>) => {
+  validateSearch: (search: Record<string, unknown>): { token?: string } => {
     return {
       token: (search.token as string) || undefined,
     };
