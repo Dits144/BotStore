@@ -47,7 +47,7 @@ function RegisterPage() {
     try {
       await registerRequest(email.trim(), password);
       toast.success("Akun berhasil dibuat. Silakan masuk.");
-      navigate({ to: "/login", search: search.token ? { token: search.token } : undefined });
+      navigate({ to: "/login", search: { token: search.token } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Pendaftaran gagal");
     } finally {
@@ -144,7 +144,7 @@ function RegisterPage() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Sudah punya akun?{" "}
-            <Link to="/login" search={search} className="text-primary hover:underline">
+            <Link to="/login" search={{ token: search.token }} className="text-primary hover:underline">
               Masuk
             </Link>
           </p>
