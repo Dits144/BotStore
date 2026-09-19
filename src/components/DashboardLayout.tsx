@@ -94,7 +94,7 @@ export function DashboardLayout() {
 
   useEffect(() => setHydrated(true), []);
   useEffect(() => {
-    if (hydrated && !isAuthenticated) navigate({ to: "/login", search: search.linkToken ? { token: search.linkToken } : undefined });
+    if (hydrated && !isAuthenticated) navigate({ to: "/login", search: { token: search.linkToken } });
   }, [hydrated, isAuthenticated, navigate, search]);
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
