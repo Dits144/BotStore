@@ -340,7 +340,7 @@ export function DashboardLayout() {
                     onClick={() => {
                       logout();
                       toast.success("Keluar berhasil");
-                      navigate({ to: "/login" });
+                      navigate({ to: "/login", search: { token: undefined } });
                     }}
                     className="gap-2 text-destructive focus:text-destructive"
                   >
