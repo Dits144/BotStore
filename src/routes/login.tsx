@@ -149,7 +149,7 @@ function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Belum punya akun?{" "}
-            <Link to="/register" search={search} className="text-primary hover:underline">
+            <Link to="/register" search={{ token: search.token }} className="text-primary hover:underline">
               Daftar di sini
             </Link>
           </p>
