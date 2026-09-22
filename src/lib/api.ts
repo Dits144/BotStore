@@ -3,7 +3,7 @@
  * Connects to the Express backend running on the Bot VM.
  */
 
-export const API_BASE = import.meta.env.VITE_API_URL || "https://shot-protocols-course-flood.trycloudflare.com/api";
+export const API_BASE = import.meta.env.VITE_API_URL || "https://retired-smell-blast-simultaneously.trycloudflare.com/api";
 
 export interface Product {
   id: string;
@@ -652,6 +652,7 @@ export interface AdminAiStatus {
   qrCodeUrl?: string | null;
   connectionState: "DISCONNECTED" | "CONNECTING" | "CONNECTED" | "QR_READY";
   aiEnabled: boolean;
+  geminiApiKey?: string;
 }
 
 export async function fetchAdminAiStatus(): Promise<AdminAiStatus> {
