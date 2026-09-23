@@ -3,7 +3,7 @@
  * Connects to the Express backend running on the Bot VM.
  */
 
-export const API_BASE = import.meta.env.VITE_API_URL || "https://retired-smell-blast-simultaneously.trycloudflare.com/api";
+export const API_BASE = import.meta.env.VITE_API_URL || "https://blocked-operator-salary-promotion.trycloudflare.com/api";
 
 export interface Product {
   id: string;
