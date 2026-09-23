@@ -1,0 +1,305 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum ConversationMode {
+  AUTO
+  ASSIST
+  MANUAL
+}
+
+enum ConversationStatus {
+  ACTIVE
+  RESOLVED
+  ARCHIVED
+}
+
+enum MessageSender {
+  CUSTOMER
+  AI
+  ADMIN
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum ProductStatus {
+  AVAILABLE
+  OUT_OF_STOCK
+  HIDDEN
+}
+
+enum OrderStatus {
+  PENDING
+  WAITING_PAYMENT
+  PAID
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum KnowledgeStatus {
+  ACTIVE
+  DRAFT
+}
+
+model Admin {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String
+  name         String
+  role         String     @default("admin")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  auditLogs    AuditLog[]
+
+  @@map("admins")
+}
+
+model Customer {
+  id                 String           @id @default(uuid())
+  whatsappNumber     String           @unique
+  name               String
+  firstContact       DateTime         @default(now())
+  lastContact        DateTime         @default(now())
+  totalConversations Int              @default(0)
+  totalOrders        Int              @default(0)
+  totalSpending      Float            @default(0)
+  tags               String[]         @default([])
+  notes              String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  conversations      Conversation[]
+  orders             Order[]
+  customerMemory     CustomerMemory?
+  handoverLogs       HandoverLog[]
+
+  @@map("customers")
+}
+
+model Conversation {
+  id                String             @id @default(uuid())
+  customerId        String
+  customer          Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  mode              ConversationMode   @default(AUTO)
+  status            ConversationStatus @default(ACTIVE)
+  requiresAttention Boolean            @default(false)
+  handoverReason    String?
+  handoverTimestamp DateTime?
+  lastMessageAt     DateTime           @default(now())
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  messages          Message[]
+  aiLogs            AiLog[]
+  handoverLogs      HandoverLog[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id             String        @id @default(uuid())
+  conversationId String
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         MessageSender
+  whatsappMsgId  String?       @unique
+  content        String
+  mediaUrl       String?
+  mediaType      String?
+  status         MessageStatus @default(SENT)
+  suggestedReply String?
+  toolCalls      Json?
+  intent         String?
+  sentiment      String?
+  confidence     Float?
+  metadata       Json?
+  createdAt      DateTime      @default(now())
+
+  aiLogs AiLog[]
+
+  @@map("messages")
+}
+
+model ProductCategory {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  description String?
+  products    Product[]
+
+  @@map("product_categories")
+}
+
+model Product {
+  id                  String          @id @default(uuid())
+  name                String
+  categoryId          String?
+  category            ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  description         String
+  price               Float
+  stock               Int             @default(0)
+  status              ProductStatus   @default(AVAILABLE)
+  sku                 String          @unique
+  productInstructions String?
+  warrantyInfo        String?
+  notesForAi          String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  orderItems          OrderItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id            String        @id @default(uuid())
+  customerId    String
+  customer      Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  totalAmount   Float
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  items         OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity  Int
+  price     Float
+
+  @@map("order_items")
+}
+
+model KnowledgeBase {
+  id        String          @id @default(uuid())
+  title     String
+  category  String
+  content   String
+  keywords  String[]        @default([])
+  status    KnowledgeStatus @default(ACTIVE)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@map("knowledge_base")
+}
+
+model CustomerMemory {
+  id             String   @id @default(uuid())
+  customerId     String   @unique
+  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  summary        String?
+  keyPreferences Json?
+  lastProduct    String?
+  notes          String?
+  updatedAt      DateTime @updatedAt
+
+  @@map("customer_memories")
+}
+
+model AiLog {
+  id             String        @id @default(uuid())
+  conversationId String?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  messageId      String?
+  message        Message?      @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  prompt         String
+  response       String?
+  model          String
+  durationMs     Int?
+  tokensUsed     Int?
+  status         String
+  error          String?
+  createdAt      DateTime      @default(now())
+  toolLogs       ToolLog[]
+
+  @@map("ai_logs")
+}
+
+model ToolLog {
+  id              String   @id @default(uuid())
+  aiLogId         String
+  aiLog           AiLog    @relation(fields: [aiLogId], references: [id], onDelete: Cascade)
+  toolName        String
+  inputParams     Json
+  outputResult    Json
+  executionTimeMs Int
+  status          String
+  error           String?
+  createdAt       DateTime @default(now())
+
+  @@map("tool_logs")
+}
+
+model HandoverLog {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  customerId     String
+  customer       Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  reason         String
+  previousMode   String
+  triggeredBy    String
+  resolvedAt     DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@map("handover_logs")
+}
+
+model WhatsAppSession {
+  id          String    @id @default("default")
+  sessionData String?
+  status      String    @default("DISCONNECTED")
+  qrCode      String?
+  phoneNumber String?
+  connectedAt DateTime?
+  lastSeenAt  DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@map("whatsapp_sessions")
+}
+
+model Setting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actor      Admin?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String?
+  details    Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@map("audit_logs")
+}
