@@ -11,6 +11,7 @@ import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "../lib/auth-context";
+import { ThemeProvider, useTheme } from "../lib/theme-context";
 
 function NotFoundComponent() {
   return (
@@ -45,7 +46,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           Halaman gagal dimuat
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Terjadi kesalahan pada sistem kami. Anda dapat mencoba memuat ulang halaman atau kembali ke beranda.
+          Terjadi kesalahan pada sistem kami. Anda dapat mencoba memuat ulang halaman atau kembali
+          ke beranda.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -77,8 +79,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "BotStore" },
       {
         name: "description",
-        content:
-          "Kelola Bot Toko WhatsApp Anda: daftar harga, stok, dan grup dari dasbor premium.",
+        content: "Kelola Bot Toko WhatsApp Anda: daftar harga, stok, dan grup dari dasbor premium.",
       },
       { name: "author", content: "Bot Store" },
       { property: "og:title", content: "BotStore" },
@@ -90,8 +91,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "BotStore" },
       { name: "twitter:description", content: "WhatsApp Store Dashboard" },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/f74bd71d-6da1-45c6-a2c7-d17538e75ce2" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/f74bd71d-6da1-45c6-a2c7-d17538e75ce2" },
+      {
+        property: "og:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/f74bd71d-6da1-45c6-a2c7-d17538e75ce2",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/f74bd71d-6da1-45c6-a2c7-d17538e75ce2",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -118,9 +127,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="id" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('ditsstore:theme:v1')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.dataset.theme=d?'dark':'light';document.documentElement.style.colorScheme=d?'dark':'light'}catch(e){}})()`,
+          }}
+        />
       </head>
       <body>
         {children}
@@ -135,21 +149,19 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Outlet />
-        <Toaster
-          theme="dark"
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: "oklch(0.22 0.025 260 / 0.85)",
-              border: "1px solid oklch(1 0 0 / 0.1)",
-              backdropFilter: "blur(20px)",
-              color: "oklch(0.98 0.005 240)",
-            },
-          }}
-        />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Outlet />
+          <ThemedToaster />
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
+  );
+}
+
+function ThemedToaster() {
+  const { resolvedTheme } = useTheme();
+  return (
+    <Toaster theme={resolvedTheme} position="top-right" toastOptions={{ className: "app-toast" }} />
   );
 }
