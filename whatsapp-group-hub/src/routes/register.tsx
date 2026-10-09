@@ -1,25 +1,13 @@
 import { createFileRoute, useNavigate, Link, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  AtSign,
-  KeyRound,
-  Hash,
-  HelpCircle,
-  Loader2,
-  Sparkles,
-} from "lucide-react";
+import { AtSign, Box, KeyRound, HelpCircle, Loader2 } from "lucide-react";
 
 import { registerRequest } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/ui/tooltip";
 
 export const Route = createFileRoute("/register")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -47,7 +35,7 @@ function RegisterPage() {
     try {
       await registerRequest(email.trim(), password);
       toast.success("Akun berhasil dibuat. Silakan masuk.");
-      navigate({ to: "/login", search: search.token ? { token: search.token } : undefined });
+      navigate({ to: "/login/", search: { token: search.token } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Pendaftaran gagal");
     } finally {
@@ -56,52 +44,37 @@ function RegisterPage() {
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-      {/* ambient orbs */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-accent/20 blur-3xl" />
-      </div>
-
-      <div className="relative grid w-full max-w-5xl gap-10 lg:grid-cols-2 lg:items-center">
-        {/* Brand side */}
-        <div className="hidden flex-col gap-6 lg:flex animate-fade-in-up">
-          <div className="inline-flex w-fit items-center gap-2 rounded-full glass px-3 py-1 text-xs font-medium text-muted-foreground">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            WhatsApp Store Bot
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
+      <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-float)] lg:min-h-[620px] lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="hidden flex-col justify-between bg-secondary/65 p-12 lg:flex animate-fade-in-up">
+          <div className="inline-flex w-fit items-center gap-2 text-sm font-bold">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <Box className="h-4 w-4" />
+            </span>
+            DitsStore
           </div>
-          <h1 className="text-5xl font-bold leading-tight tracking-tight">
-            <span className="text-gradient">Bot Store</span>
-            <br />
-            <span className="text-foreground/90">Pusat Kendali</span>
-          </h1>
-          <p className="max-w-md text-muted-foreground">
-            Hubungkan grup WhatsApp, kelola katalog produk, dan perbarui stok secara
-            instan dalam real-time — semuanya dari dasbor premium.
-          </p>
-
-          <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
-            {[
-              "Kelola stok & pengiriman cepat secara real-time",
-              "Multi-grup dengan peralihan satu klik",
-              "Didesain responsif untuk semua perangkat",
-            ].map((line) => (
-              <li key={line} className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px] shadow-primary" />
-                {line}
-              </li>
-            ))}
-          </ul>
+          <div>
+            <h1 className="max-w-md text-[42px] font-bold leading-[1.08] tracking-[-0.04em]">
+              Mulai kelola toko dari satu tempat.
+            </h1>
+            <p className="mt-5 max-w-md text-sm leading-6 text-muted-foreground">
+              Hubungkan grup WhatsApp, atur katalog, dan pantau operasional tanpa berpindah alat.
+            </p>
+          </div>
+          <p className="text-xs text-muted-foreground">DitsStore Bot Store Admin</p>
         </div>
 
-        {/* Form card */}
-        <div className="glass-strong rounded-3xl p-8 shadow-2xl animate-fade-in-up sm:p-10">
+        <div className="flex flex-col justify-center p-7 animate-fade-in-up sm:p-12">
+          <div className="mb-8 flex items-center gap-2 lg:hidden">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <Box className="h-4 w-4" />
+            </span>
+            <span className="font-bold">DitsStore</span>
+          </div>
           <div className="mb-8">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              Daftar Akun Baru
-            </h2>
+            <h2 className="text-2xl font-semibold tracking-tight">Buat akun admin</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Daftar sebagai admin untuk mengelola katalog grup Anda.
+              Siapkan akses untuk mengelola grup Anda.
             </p>
           </div>
 
@@ -126,11 +99,7 @@ function RegisterPage() {
               onChange={setPassword}
               autoComplete="current-password"
             />
-            <Button
-              type="submit"
-              disabled={loading}
-              className="group relative h-12 w-full overflow-hidden rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-all hover:scale-[1.01] hover:shadow-[0_10px_40px_-10px_oklch(0.78_0.18_155_/_0.6)] active:scale-[0.99]"
-            >
+            <Button type="submit" disabled={loading} className="h-11 w-full text-sm">
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -144,7 +113,11 @@ function RegisterPage() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Sudah punya akun?{" "}
-            <Link to="/login" search={search} className="text-primary hover:underline">
+            <Link
+              to="/login/"
+              search={{ token: search.token }}
+              className="text-primary hover:underline"
+            >
               Masuk
             </Link>
           </p>
@@ -178,7 +151,10 @@ function Field({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5">
-        <Label htmlFor={id} className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <Label
+          htmlFor={id}
+          className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+        >
           {label}
         </Label>
         {tooltip && (
@@ -209,7 +185,7 @@ function Field({
           autoComplete={autoComplete}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-12 rounded-xl border-white/10 bg-white/5 pl-10 text-sm transition-all focus-visible:ring-2 focus-visible:ring-primary/60"
+          className="h-11 pl-10 text-sm"
         />
       </div>
     </div>
