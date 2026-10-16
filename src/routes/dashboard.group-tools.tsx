@@ -18,6 +18,9 @@ import {
   FileText,
   Image,
   X,
+  Star,
+  MessageSquare,
+  AtSign,
 } from "lucide-react";
 
 import { useAuth } from "../lib/auth-context";
@@ -36,6 +39,7 @@ import {
   addGroupMember,
   fetchWelcomeSettings,
   updateWelcomeSettings,
+  fetchRatings,
 } from "../lib/api";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 
@@ -144,6 +148,11 @@ function GroupToolsPage() {
     retry: false,
   });
 
+  const { data: ratingsData, isLoading: loadingRatings } = useQuery({
+    queryKey: ["ratings"],
+    queryFn: () => fetchRatings(50, 0),
+  });
+
   const settingMutation = useMutation({
     mutationFn: (action: "open" | "close") => toggleGroupSetting(token, action),
     onSuccess: (_, action) => {
@@ -238,18 +247,21 @@ function GroupToolsPage() {
       </header>
 
       <Tabs defaultValue="group-controls" className="w-full space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-white/5 border border-white/10 p-1 h-auto rounded-xl">
-          <TabsTrigger value="group-controls" className="py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition-all data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:font-semibold">
-            <Lock className="h-4 w-4" /> Group Controls
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 bg-white/5 border border-white/10 p-1.5 h-auto rounded-xl gap-1">
+          <TabsTrigger value="group-controls" className="py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition-all data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:font-semibold text-xs sm:text-sm">
+            <Lock className="h-4 w-4" /> Controls
           </TabsTrigger>
-          <TabsTrigger value="welcome-message" className="py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition-all data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:font-semibold">
-            <FileText className="h-4 w-4" /> Welcome Settings
+          <TabsTrigger value="welcome-message" className="py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition-all data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:font-semibold text-xs sm:text-sm">
+            <FileText className="h-4 w-4" /> Welcome
           </TabsTrigger>
-          <TabsTrigger value="group-members" className="py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition-all data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:font-semibold">
-            <Users className="h-4 w-4" /> Members List
+          <TabsTrigger value="group-members" className="py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition-all data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:font-semibold text-xs sm:text-sm">
+            <Users className="h-4 w-4" /> Members
           </TabsTrigger>
-          <TabsTrigger value="customer-leaderboard" className="py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition-all data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:font-semibold">
-            <Trophy className="h-4 w-4" /> Leaderboard
+          <TabsTrigger value="customer-leaderboard" className="py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition-all data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:font-semibold text-xs sm:text-sm">
+            <Trophy className="h-4 w-4" /> Standings
+          </TabsTrigger>
+          <TabsTrigger value="customer-reviews" className="py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition-all data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:font-semibold text-xs sm:text-sm">
+            <Star className="h-4 w-4 text-warning fill-warning/20" /> Penilaian
           </TabsTrigger>
         </TabsList>
 
@@ -587,7 +599,7 @@ function GroupToolsPage() {
           </section>
         </TabsContent>
 
-        {/* Tab 4: Leaderboard */}
+        {/* Tab 4: Leaderboard / Customer Levels & Standings */}
         <TabsContent value="customer-leaderboard" className="focus-visible:ring-0 focus-visible:ring-offset-0">
           <section className="glass rounded-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
@@ -626,28 +638,166 @@ function GroupToolsPage() {
                   <thead>
                     <tr className="border-b border-white/5 bg-white/[0.02] text-xs font-medium uppercase tracking-wider text-muted-foreground">
                       <th className="px-4 py-3 text-center w-16">Rank</th>
-                      <th className="px-4 py-3">Phone Number</th>
+                      <th className="px-4 py-3">User</th>
                       <th className="px-4 py-3 text-center">Transactions</th>
                       <th className="px-4 py-3">Level Tier</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {customers.map((c) => (
-                      <tr key={c.customerJid} className="hover:bg-white/[0.02] transition-colors">
-                        <td className="px-4 py-3.5 text-center font-semibold tabular-nums">
-                          {c.rank === 1 ? "🥇" : c.rank === 2 ? "🥈" : c.rank === 3 ? "🥉" : `${c.rank}.`}
-                        </td>
-                        <td className="px-4 py-3.5 font-mono">+{c.phone}</td>
-                        <td className="px-4 py-3.5 text-center font-medium tabular-nums">{c.totalTransactions}</td>
-                        <td className="px-4 py-3.5">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 text-xs font-medium border border-white/5">
-                            <span>{c.emoji}</span> <span>{c.tier}</span>
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {customers.map((c) => {
+                      const cleanPhone = c.phone.replace(/^[@+]/, "");
+                      return (
+                        <tr key={c.customerJid} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-4 py-3.5 text-center font-semibold tabular-nums">
+                            {c.rank === 1 ? "🥇" : c.rank === 2 ? "🥈" : c.rank === 3 ? "🥉" : `${c.rank}.`}
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <span className="inline-flex items-center gap-1.5 font-mono text-xs sm:text-sm font-medium text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-lg">
+                              <AtSign className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+                              <span>{cleanPhone}</span>
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5 text-center font-medium tabular-nums">{c.totalTransactions}</td>
+                          <td className="px-4 py-3.5">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 text-xs font-medium border border-white/5">
+                              <span>{c.emoji}</span> <span>{c.tier}</span>
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </section>
+        </TabsContent>
+
+        {/* Tab 5: Customer Reviews & Ratings (Penilaian) */}
+        <TabsContent value="customer-reviews" className="focus-visible:ring-0 focus-visible:ring-offset-0 space-y-6">
+          <section className="glass rounded-2xl p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <h2 className="text-base font-semibold flex items-center gap-2">
+                  <Star className="h-5 w-5 text-warning fill-warning" /> Customer Ratings & Standings
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Kumpulan penilaian & ulasan kepuasan dari pelanggan WhatsApp Store.
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-warning/10 border border-warning/20 px-3 py-1 text-xs font-semibold text-warning">
+                <Star className="h-3.5 w-3.5 fill-warning" />
+                {ratingsData?.summary?.average_rating ? `${ratingsData.summary.average_rating.toFixed(1)} / 5.0` : "Belum ada ulasan"}
+              </span>
+            </div>
+
+            {loadingRatings ? (
+              <div className="flex h-48 items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : !ratingsData || ratingsData.reviews.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-white/10 p-12 text-center text-sm text-muted-foreground">
+                <Star className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="font-medium text-foreground/80">Belum Ada Penilaian Pelanggan</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                  Pelanggan akan diminta memberi rating 1-5 bintang setelah bukti transfer diverifikasi atau setelah transaksi selesai.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Rating Summary Header Cards */}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {/* Score Card */}
+                  <div className="glass rounded-xl p-5 border border-white/5 flex flex-col justify-center items-center text-center">
+                    <div className="text-4xl font-extrabold text-foreground tracking-tight flex items-baseline gap-1">
+                      <span>{(ratingsData.summary.average_rating || 5.0).toFixed(1)}</span>
+                      <span className="text-lg text-muted-foreground font-normal">/ 5.0</span>
+                    </div>
+                    <div className="flex items-center gap-1 mt-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-4 w-4 ${
+                            star <= Math.round(ratingsData.summary.average_rating || 5)
+                              ? "text-warning fill-warning"
+                              : "text-muted-foreground/20 fill-transparent"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Berdasarkan <strong className="text-foreground">{ratingsData.summary.total_reviews}</strong> ulasan pelanggan
+                    </p>
+                  </div>
+
+                  {/* Rating Breakdown Bar */}
+                  <div className="glass rounded-xl p-5 border border-white/5 space-y-2 lg:col-span-2">
+                    <p className="text-xs font-semibold text-foreground/80 mb-3">Distribusi Bintang</p>
+                    {[5, 4, 3, 2, 1].map((star) => {
+                      const count = (ratingsData.summary as any)[`star_${star}`] || 0;
+                      const total = ratingsData.summary.total_reviews || 1;
+                      const percent = Math.round((count / total) * 100);
+                      return (
+                        <div key={star} className="flex items-center gap-2 text-xs">
+                          <span className="w-12 flex items-center gap-1 text-muted-foreground">
+                            <span>{star}</span> <Star className="h-3 w-3 text-warning fill-warning shrink-0" />
+                          </span>
+                          <div className="h-2 flex-1 rounded-full bg-white/5 overflow-hidden">
+                            <div
+                              className="h-full bg-warning transition-all rounded-full"
+                              style={{ width: `${percent}%` }}
+                            />
+                          </div>
+                          <span className="w-10 text-right text-muted-foreground font-mono">{count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Reviews List */}
+                <div className="space-y-3">
+                  <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                    Riwayat Ulasan Terbaru
+                  </h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {ratingsData.reviews.map((r) => {
+                      const userPhone = (r.customer_jid || "").split("@")[0] || r.customer_name || "Pelanggan";
+                      return (
+                        <div key={r.id} className="rounded-xl border border-white/5 bg-white/[0.02] p-4 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1.5 font-mono text-xs font-medium text-primary">
+                              <AtSign className="h-3 w-3 text-primary/70 shrink-0" />
+                              <span>{userPhone}</span>
+                            </span>
+                            <div className="flex items-center gap-0.5">
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <Star
+                                  key={s}
+                                  className={`h-3 w-3 ${
+                                    s <= r.rating ? "text-warning fill-warning" : "text-muted-foreground/20"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          {r.comment ? (
+                            <p className="text-xs text-foreground/90 bg-white/[0.03] p-2.5 rounded-lg border border-white/5 italic">
+                              "{r.comment}"
+                            </p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground italic">
+                              (Tidak ada komentar tertulis)
+                            </p>
+                          )}
+                          <div className="text-[10px] text-muted-foreground/60 pt-1 text-right">
+                            {r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : "Baru saja"}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             )}
           </section>

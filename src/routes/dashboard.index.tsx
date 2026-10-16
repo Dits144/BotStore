@@ -6,10 +6,11 @@ import {
   Package,
   TrendingUp,
   Zap,
+  Star,
 } from "lucide-react";
 
 import { useAuth } from "../lib/auth-context";
-import { fetchProducts } from "../lib/api";
+import { fetchProducts, fetchRatings } from "../lib/api";
 
 export const Route = createFileRoute("/dashboard/")({
   component: DashboardHome,
@@ -25,6 +26,11 @@ function DashboardHome() {
     enabled: !!token,
   });
 
+  const { data: ratingsData } = useQuery({
+    queryKey: ["ratings"],
+    queryFn: () => fetchRatings(50, 0),
+  });
+
   const inStock = products.filter((p) => p.inStock).length;
   const fast = products.filter((p) => p.fastDelivery).length;
   const oos = products.length - inStock;
@@ -32,6 +38,9 @@ function DashboardHome() {
     products.length === 0
       ? 0
       : products.reduce((s, p) => s + p.price, 0) / products.length;
+
+  const avgRating = ratingsData?.summary?.average_rating || 5.0;
+  const totalReviews = ratingsData?.summary?.total_reviews || 0;
 
   const stats = [
     {
@@ -54,6 +63,13 @@ function DashboardHome() {
       icon: Zap,
       hint: "kilat aktif",
       tint: "from-warning/30 to-warning/0",
+    },
+    {
+      label: "Rating Toko",
+      value: totalReviews > 0 ? `${avgRating.toFixed(1)} ⭐` : "5.0 ⭐",
+      icon: Star,
+      hint: totalReviews > 0 ? `${totalReviews} ulasan pelanggan` : "Belum ada ulasan",
+      tint: "from-warning/40 to-warning/0",
     },
     {
       label: "Rata-rata Harga",
@@ -83,7 +99,7 @@ function DashboardHome() {
         </p>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {stats.map((s, i) => (
           <div
             key={s.label}
