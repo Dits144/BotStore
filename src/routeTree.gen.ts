@@ -9,27 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as RegisterRouteImport } from './routes/register'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
-import { Route as DashboardTransactionsRouteImport } from './routes/dashboard.transactions'
-import { Route as DashboardStockRouteImport } from './routes/dashboard.stock'
-import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
-import { Route as DashboardRentalsRouteImport } from './routes/dashboard.rentals'
-import { Route as DashboardPriceListRouteImport } from './routes/dashboard.price-list'
-import { Route as DashboardPaymentRouteImport } from './routes/dashboard.payment'
 import { Route as DashboardGroupToolsRouteImport } from './routes/dashboard.group-tools'
+import { Route as DashboardPaymentRouteImport } from './routes/dashboard.payment'
+import { Route as DashboardPriceListRouteImport } from './routes/dashboard.price-list'
+import { Route as DashboardRentalsRouteImport } from './routes/dashboard.rentals'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardStockRouteImport } from './routes/dashboard.stock'
+import { Route as DashboardTransactionsRouteImport } from './routes/dashboard.transactions'
 
-const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -37,9 +32,14 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
@@ -47,29 +47,9 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardTransactionsRoute = DashboardTransactionsRouteImport.update({
-  id: '/transactions',
-  path: '/transactions',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardStockRoute = DashboardStockRouteImport.update({
-  id: '/stock',
-  path: '/stock',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardRentalsRoute = DashboardRentalsRouteImport.update({
-  id: '/rentals',
-  path: '/rentals',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardPriceListRoute = DashboardPriceListRouteImport.update({
-  id: '/price-list',
-  path: '/price-list',
+const DashboardGroupToolsRoute = DashboardGroupToolsRouteImport.update({
+  id: '/group-tools',
+  path: '/group-tools',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardPaymentRoute = DashboardPaymentRouteImport.update({
@@ -77,9 +57,29 @@ const DashboardPaymentRoute = DashboardPaymentRouteImport.update({
   path: '/payment',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardGroupToolsRoute = DashboardGroupToolsRouteImport.update({
-  id: '/group-tools',
-  path: '/group-tools',
+const DashboardPriceListRoute = DashboardPriceListRouteImport.update({
+  id: '/price-list',
+  path: '/price-list',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardRentalsRoute = DashboardRentalsRouteImport.update({
+  id: '/rentals',
+  path: '/rentals',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardStockRoute = DashboardStockRouteImport.update({
+  id: '/stock',
+  path: '/stock',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardTransactionsRoute = DashboardTransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
   getParentRoute: () => DashboardRoute,
 } as any)
 
@@ -178,18 +178,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -199,11 +192,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/': {
@@ -213,39 +213,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/dashboard/transactions': {
-      id: '/dashboard/transactions'
-      path: '/transactions'
-      fullPath: '/dashboard/transactions'
-      preLoaderRoute: typeof DashboardTransactionsRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/stock': {
-      id: '/dashboard/stock'
-      path: '/stock'
-      fullPath: '/dashboard/stock'
-      preLoaderRoute: typeof DashboardStockRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/settings': {
-      id: '/dashboard/settings'
-      path: '/settings'
-      fullPath: '/dashboard/settings'
-      preLoaderRoute: typeof DashboardSettingsRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/rentals': {
-      id: '/dashboard/rentals'
-      path: '/rentals'
-      fullPath: '/dashboard/rentals'
-      preLoaderRoute: typeof DashboardRentalsRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/price-list': {
-      id: '/dashboard/price-list'
-      path: '/price-list'
-      fullPath: '/dashboard/price-list'
-      preLoaderRoute: typeof DashboardPriceListRouteImport
+    '/dashboard/group-tools': {
+      id: '/dashboard/group-tools'
+      path: '/group-tools'
+      fullPath: '/dashboard/group-tools'
+      preLoaderRoute: typeof DashboardGroupToolsRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/payment': {
@@ -255,11 +227,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardPaymentRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/dashboard/group-tools': {
-      id: '/dashboard/group-tools'
-      path: '/group-tools'
-      fullPath: '/dashboard/group-tools'
-      preLoaderRoute: typeof DashboardGroupToolsRouteImport
+    '/dashboard/price-list': {
+      id: '/dashboard/price-list'
+      path: '/price-list'
+      fullPath: '/dashboard/price-list'
+      preLoaderRoute: typeof DashboardPriceListRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/rentals': {
+      id: '/dashboard/rentals'
+      path: '/rentals'
+      fullPath: '/dashboard/rentals'
+      preLoaderRoute: typeof DashboardRentalsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/stock': {
+      id: '/dashboard/stock'
+      path: '/stock'
+      fullPath: '/dashboard/stock'
+      preLoaderRoute: typeof DashboardStockRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/transactions': {
+      id: '/dashboard/transactions'
+      path: '/transactions'
+      fullPath: '/dashboard/transactions'
+      preLoaderRoute: typeof DashboardTransactionsRouteImport
       parentRoute: typeof DashboardRoute
     }
   }
