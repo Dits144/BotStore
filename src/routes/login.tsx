@@ -22,7 +22,7 @@ import {
 } from "../components/ui/tooltip";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, unknown>) => {
+  validateSearch: (search: Record<string, unknown>): { token?: string } => {
     return {
       token: (search.token as string) || undefined,
     };
@@ -39,7 +39,7 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) navigate({ to: "/dashboard", search: search.token ? { linkToken: search.token } : undefined });
+    if (isAuthenticated) navigate({ to: "/dashboard", search: { linkToken: search.token } });
   }, [isAuthenticated, navigate, search.token]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -52,7 +52,7 @@ function LoginPage() {
     try {
       await login(email.trim(), password);
       toast.success("Selamat datang kembali.");
-      navigate({ to: "/dashboard", search: search.token ? { linkToken: search.token } : undefined });
+      navigate({ to: "/dashboard", search: { linkToken: search.token } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal masuk");
     } finally {
@@ -149,7 +149,7 @@ function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Belum punya akun?{" "}
-            <Link to="/register" search={search} className="text-primary hover:underline">
+            <Link to="/register" search={{ token: search.token }} className="text-primary hover:underline">
               Daftar di sini
             </Link>
           </p>

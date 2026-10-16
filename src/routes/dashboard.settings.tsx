@@ -335,7 +335,7 @@ function SettingsPage() {
             variant="ghost"
             onClick={() => {
               logout();
-              navigate({ to: "/login" });
+              navigate({ to: "/login", search: { token: undefined } });
             }}
             className="text-destructive hover:bg-destructive/10 hover:text-destructive"
           >
@@ -850,7 +850,7 @@ function SettingsPage() {
             variant="ghost"
             onClick={() => {
               logout();
-              navigate({ to: "/login" });
+              navigate({ to: "/login", search: { token: undefined } });
             }}
             className="text-muted-foreground hover:bg-white/5 hover:text-foreground text-xs h-9 px-4"
           >

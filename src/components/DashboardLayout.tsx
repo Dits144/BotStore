@@ -93,7 +93,7 @@ export function DashboardLayout() {
 
   useEffect(() => setHydrated(true), []);
   useEffect(() => {
-    if (hydrated && !isAuthenticated) navigate({ to: "/login", search: search.linkToken ? { token: search.linkToken } : undefined });
+    if (hydrated && !isAuthenticated) navigate({ to: "/login", search: { token: search.linkToken } });
   }, [hydrated, isAuthenticated, navigate, search]);
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
@@ -383,7 +383,7 @@ export function DashboardLayout() {
                     onClick={() => {
                       logout();
                       toast.success("Keluar berhasil");
-                      navigate({ to: "/login" });
+                      navigate({ to: "/login", search: { token: undefined } });
                     }}
                     className="gap-2 text-destructive focus:text-destructive"
                   >
