@@ -9,6 +9,7 @@ import {
   Clock,
   Package,
   RotateCcw,
+  Star,
   TrendingUp,
   WalletCards,
   XCircle,
@@ -20,6 +21,7 @@ import {
   fetchTransactionStats,
   fetchTransactionChart,
   fetchTopProducts,
+  fetchRatings,
   updateTransactionStatus,
   type Transaction,
 } from "../lib/api";
@@ -161,6 +163,11 @@ function TransactionsPage() {
     queryKey: ["trx-list", token, statusFilter],
     queryFn: () => fetchTransactions(token, { status: statusFilter === "all" ? undefined : statusFilter, limit: 100 }),
     enabled: !!token,
+  });
+
+  const { data: ratingsData, isLoading: isLoadingRatings } = useQuery({
+    queryKey: ["ratings-list"],
+    queryFn: () => fetchRatings(20, 0),
   });
 
   const updateStatus = useMutation({
@@ -402,6 +409,102 @@ function TransactionsPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+      </div>
+
+      {/* Riwayat & Statistik Penilaian Pelanggan (Testimoni) */}
+      <div className="glass rounded-2xl p-6 animate-fade-in-up space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
+              Riwayat Penilaian & Ulasan Pelanggan
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Rating kepuasan layanan yang dikirimkan pelanggan melalui WhatsApp
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-baseline gap-1.5 bg-amber-400/10 border border-amber-400/20 px-3 py-1.5 rounded-xl">
+              <span className="text-xl font-bold text-amber-400">
+                {ratingsData?.summary.average_rating ? ratingsData.summary.average_rating.toFixed(1) : "5.0"}
+              </span>
+              <span className="text-xs text-muted-foreground">/ 5.0</span>
+              <span className="text-[11px] text-muted-foreground ml-1.5">
+                ({ratingsData?.summary.total_reviews ?? 0} ulasan)
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Rating Bars Breakdown */}
+        {ratingsData?.summary && ratingsData.summary.total_reviews > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
+            {[5, 4, 3, 2, 1].map((star) => {
+              const count = (ratingsData.summary as unknown as Record<string, number>)[`star_${star}`] || 0;
+              const pct = ratingsData.summary.total_reviews > 0
+                ? Math.round((count / ratingsData.summary.total_reviews) * 100)
+                : 0;
+              return (
+                <div key={star} className="rounded-xl bg-white/[0.02] border border-white/5 p-3 space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-amber-400 flex items-center gap-1">
+                      {star} <Star className="h-3 w-3 fill-amber-400" />
+                    </span>
+                    <span className="text-muted-foreground text-[11px]">{count} ulasan</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-400 rounded-full" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Reviews List */}
+        {isLoadingRatings ? (
+          <div className="flex items-center justify-center py-10 text-muted-foreground text-xs gap-2">
+            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            Memuat penilaian...
+          </div>
+        ) : !ratingsData?.reviews || ratingsData.reviews.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+            <Star className="h-8 w-8 text-muted-foreground/30 mb-2" />
+            <p className="text-xs">Belum ada penilaian pelanggan yang tersimpan</p>
+            <p className="text-[11px] text-muted-foreground/70 mt-0.5">Penilaian otomatis masuk saat customer menjawab survei 1-5 di WhatsApp</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {ratingsData.reviews.map((rev) => (
+              <div key={rev.id} className="py-3.5 flex items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-foreground">
+                      {rev.customer_name || `@${phoneFromJid(rev.customer_jid)}`}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground font-mono">
+                      @{phoneFromJid(rev.customer_jid)}
+                    </span>
+                  </div>
+                  {rev.comment && <p className="text-xs text-muted-foreground">{rev.comment}</p>}
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <div className="flex items-center gap-0.5 text-amber-400">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-3.5 w-3.5 ${
+                          i < rev.rating ? "fill-amber-400 text-amber-400" : "text-white/10"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">{timeAgo(rev.created_at)}</span>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

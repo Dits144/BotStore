@@ -39,20 +39,19 @@ import {
 } from "./ui/dialog";
 
 const nav: Array<{
-  to: string;
+  hash: string;
   label: string;
   icon: typeof LayoutDashboard;
-  end?: boolean;
   role?: string;
 }> = [
-  { to: "/dashboard", label: "Beranda Dasbor", icon: LayoutDashboard, end: true },
-  { to: "/dashboard/price-list", label: "Daftar Harga", icon: ListOrdered },
-  { to: "/dashboard/stock", label: "Kelola Stok", icon: Package },
-  { to: "/dashboard/transactions", label: "Transaksi", icon: Receipt },
-  { to: "/dashboard/payment", label: "Pembayaran", icon: CreditCard },
-  { to: "/dashboard/group-tools", label: "Alat Grup", icon: Shield },
-  { to: "/dashboard/rentals", label: "Sewa & Pemilik", icon: LayoutDashboard, role: "owner" },
-  { to: "/dashboard/settings", label: "Pengaturan", icon: Cog },
+  { hash: "", label: "Beranda Dasbor", icon: LayoutDashboard },
+  { hash: "price-list", label: "Daftar Harga", icon: ListOrdered },
+  { hash: "stock", label: "Kelola Stok", icon: Package },
+  { hash: "transactions", label: "Transaksi", icon: Receipt },
+  { hash: "payment", label: "Pembayaran", icon: CreditCard },
+  { hash: "group-tools", label: "Alat Grup", icon: Shield },
+  { hash: "rentals", label: "Sewa & Pemilik", icon: LayoutDashboard, role: "owner" },
+  { hash: "settings", label: "Pengaturan", icon: Cog },
 ];
 
 export function DashboardLayout() {
@@ -97,6 +96,47 @@ export function DashboardLayout() {
     if (hydrated && !isAuthenticated) navigate({ to: "/login", search: search.linkToken ? { token: search.linkToken } : undefined });
   }, [hydrated, isAuthenticated, navigate, search]);
   useEffect(() => setMobileOpen(false), [location.pathname]);
+
+  // ── HASH ↔ ROUTE SYNC ────────────────────────────────────────────────────
+  const hashToPath: Record<string, string> = {
+    "": "/dashboard/",
+    "price-list": "/dashboard/price-list",
+    "stock": "/dashboard/stock",
+    "transactions": "/dashboard/transactions",
+    "payment": "/dashboard/payment",
+    "group-tools": "/dashboard/group-tools",
+    "rentals": "/dashboard/rentals",
+    "settings": "/dashboard/settings",
+  };
+  const pathToHash: Record<string, string> = Object.fromEntries(
+    Object.entries(hashToPath).map(([h, p]) => [p, h])
+  );
+
+  // Hash change → navigate to matching TanStack route
+  useEffect(() => {
+    const onHashChange = () => {
+      const hash = window.location.hash.replace(/^#/, "");
+      const targetPath = hashToPath[hash] ?? "/dashboard/";
+      if (location.pathname !== targetPath) {
+        navigate({ to: targetPath as never });
+      }
+    };
+    window.addEventListener("hashchange", onHashChange);
+    onHashChange(); // handle initial hash on mount
+    return () => window.removeEventListener("hashchange", onHashChange);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Route change → update URL hash (without reload)
+  useEffect(() => {
+    const expectedHash = pathToHash[location.pathname] ?? "";
+    const currentHash = window.location.hash.replace(/^#/, "");
+    if (currentHash !== expectedHash) {
+      const newHash = expectedHash ? `#${expectedHash}` : "#";
+      window.history.replaceState(null, "", `${window.location.pathname}${newHash}`);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   if (!hydrated || !isAuthenticated || !session) return null;
 
@@ -146,16 +186,19 @@ export function DashboardLayout() {
           </div>
 
           <nav className="mt-8 flex-1 space-y-1">
-            {nav.map(({ to, label, icon: Icon, end, role }) => {
+            {nav.map(({ hash, label, icon: Icon, role }) => {
               if (role && role !== session?.role) return null;
-              const active = end
-                ? location.pathname === to
-                : location.pathname === to ||
-                  location.pathname.startsWith(`${to}/`);
+              // Active detection: compare hash against current TanStack pathname
+              // (after hash↔route sync, pathname reflects the active section)
+              const pathForHash = hash === "" ? "/dashboard/" : `/dashboard/${hash}`;
+              const active = location.pathname === pathForHash ||
+                (hash === "" && location.pathname === "/dashboard");
+              const href = hash ? `#${hash}` : "#";
               return (
-                <Link
-                  key={to}
-                  to={to}
+                <a
+                  key={hash || "home"}
+                  href={href}
+                  onClick={() => setMobileOpen(false)}
                   className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
                     active
                       ? "bg-primary/15 text-foreground shadow-[inset_0_0_0_1px_oklch(0.78_0.18_155_/_0.3)]"
@@ -171,7 +214,7 @@ export function DashboardLayout() {
                   {active && (
                     <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px] shadow-primary" />
                   )}
-                </Link>
+                </a>
               );
             })}
           </nav>

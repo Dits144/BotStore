@@ -186,6 +186,12 @@ function SettingsPage() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (adminAiStatus?.geminiApiKey && !geminiApiKeyInput) {
+      setGeminiApiKeyInput(adminAiStatus.geminiApiKey);
+    }
+  }, [adminAiStatus?.geminiApiKey]);
+
   const handleConnectAdminAi = async () => {
     setConnectingAdminAi(true);
     try {

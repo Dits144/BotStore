@@ -692,3 +692,30 @@ export async function saveAdminAiSettings(enabled: boolean, geminiApiKey?: strin
   if (!res.ok) throw new Error("Gagal menyimpan pengaturan Admin AI");
 }
 
+export interface RatingItem {
+  id: number;
+  customer_jid: string;
+  customer_name: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
+
+export interface RatingSummary {
+  total_reviews: number;
+  average_rating: number;
+  star_5: number;
+  star_4: number;
+  star_3: number;
+  star_2: number;
+  star_1: number;
+}
+
+export async function fetchRatings(limit = 50, offset = 0): Promise<{ reviews: RatingItem[]; summary: RatingSummary }> {
+  const res = await fetch(`${API_BASE}/ratings?limit=${limit}&offset=${offset}`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) throw new Error("Gagal mengambil data rating pelanggan");
+  return res.json();
+}
+

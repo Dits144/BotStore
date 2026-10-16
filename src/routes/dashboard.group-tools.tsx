@@ -544,7 +544,9 @@ function GroupToolsPage() {
                       <tr key={m.jid} className="hover:bg-white/[0.02] transition-colors">
                         <td className="px-4 py-3.5 text-center font-semibold text-muted-foreground">{idx + 1}</td>
                         <td className="px-4 py-3.5 font-mono">+{m.phone}</td>
-                        <td className="px-4 py-3.5 font-medium text-primary/95">{m.name || "—"}</td>
+                        <td className="px-4 py-3.5 font-medium text-primary/95">
+                          {m.name ? (m.name.startsWith('@') ? m.name : `@${m.name}`) : `@${m.phone}`}
+                        </td>
                         <td className="px-4 py-3.5">
                           {m.isAdmin ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary border border-primary/20">
