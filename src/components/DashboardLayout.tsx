@@ -165,7 +165,15 @@ export function DashboardLayout() {
       >
         <div className="glass-strong m-3 flex h-[calc(100vh-1.5rem)] flex-col rounded-2xl p-5">
           <div className="flex items-center justify-between">
-            <Link to="/dashboard" className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setMobileOpen(false);
+                window.history.pushState(null, "", "/dashboard/");
+                navigate({ to: "/dashboard/" as never });
+              }}
+              className="flex items-center gap-2 cursor-pointer text-left border-0 bg-transparent p-0"
+            >
               <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-primary/20 ring-1 ring-primary/40">
                 <Radio className="h-4 w-4 text-primary" />
                 <span className="absolute inset-0 rounded-xl animate-pulse-glow" />
@@ -176,7 +184,7 @@ export function DashboardLayout() {
                   Komando Toko
                 </div>
               </div>
-            </Link>
+            </button>
             <button
               className="lg:hidden text-muted-foreground hover:text-foreground"
               onClick={() => setMobileOpen(false)}
@@ -189,21 +197,24 @@ export function DashboardLayout() {
           <nav className="mt-8 flex-1 space-y-1">
             {nav.map(({ hash, label, icon: Icon, role }) => {
               if (role && role !== session?.role) return null;
-              // Active detection: compare hash against current TanStack pathname
-              // (after hash↔route sync, pathname reflects the active section)
               const pathForHash = hash === "" ? "/dashboard/" : `/dashboard/${hash}`;
               const active = location.pathname === pathForHash ||
                 (hash === "" && location.pathname === "/dashboard");
-              const href = hash ? `/dashboard/#${hash}` : "/dashboard/";
               return (
-                <a
+                <button
                   key={hash || "home"}
-                  href={href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
+                  type="button"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    const targetPath = hashToPath[hash] ?? "/dashboard/";
+                    const targetUrl = `/dashboard/${hash ? `#${hash}` : ""}`;
+                    window.history.pushState(null, "", targetUrl);
+                    navigate({ to: targetPath as never });
+                  }}
+                  className={`w-full group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all cursor-pointer text-left border-0 ${
                     active
-                      ? "bg-primary/15 text-foreground shadow-[inset_0_0_0_1px_oklch(0.78_0.18_155_/_0.3)]"
-                      : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                      ? "bg-primary/15 text-foreground shadow-[inset_0_0_0_1px_oklch(0.78_0.18_155_/_0.3)] font-medium"
+                      : "text-muted-foreground hover:bg-white/5 hover:text-foreground bg-transparent"
                   }`}
                 >
                   <Icon
@@ -211,11 +222,11 @@ export function DashboardLayout() {
                       active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                     }`}
                   />
-                  {label}
+                  <span>{label}</span>
                   {active && (
                     <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px] shadow-primary" />
                   )}
-                </a>
+                </button>
               );
             })}
           </nav>
@@ -375,10 +386,14 @@ export function DashboardLayout() {
                     {session.email}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/dashboard/settings" className="flex items-center gap-2">
-                      <Cog className="h-4 w-4" /> Pengaturan
-                    </Link>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      window.history.replaceState(null, "", "/dashboard/#settings");
+                      navigate({ to: "/dashboard/settings" as never });
+                    }}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <Cog className="h-4 w-4" /> Pengaturan
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => {

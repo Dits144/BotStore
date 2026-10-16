@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowUpRight,
@@ -17,6 +17,7 @@ export const Route = createFileRoute("/dashboard/")({
 });
 
 function DashboardHome() {
+  const navigate = useNavigate();
   const { activeGroup, session } = useAuth();
   const token = activeGroup?.token ?? "";
 
@@ -149,12 +150,16 @@ function DashboardHome() {
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Produk terbaru
           </h2>
-          <Link
-            to="/dashboard/price-list"
-            className="text-xs text-primary hover:underline"
+          <button
+            type="button"
+            onClick={() => {
+              window.history.pushState(null, "", "/dashboard/#price-list");
+              navigate({ to: "/dashboard/price-list" as never });
+            }}
+            className="text-xs text-primary hover:underline cursor-pointer bg-transparent border-0 p-0"
           >
             Lihat semua
-          </Link>
+          </button>
         </div>
         <div className="grid gap-2">
           {products.slice(0, 5).map((p) => (
@@ -208,12 +213,16 @@ function QuickAction({
   title: string;
   body: string;
 }) {
+  const navigate = useNavigate();
   const hash = to.replace(/^\/dashboard\/?/, "");
-  const href = hash ? `/dashboard/#${hash}` : "/dashboard/";
   return (
-    <a
-      href={href}
-      className="group glass relative overflow-hidden rounded-2xl p-5 transition-all hover:-translate-y-0.5 hover:bg-white/[0.06]"
+    <button
+      type="button"
+      onClick={() => {
+        window.history.pushState(null, "", `/dashboard/${hash ? `#${hash}` : ""}`);
+        navigate({ to: to as never });
+      }}
+      className="group glass relative overflow-hidden rounded-2xl p-5 transition-all hover:-translate-y-0.5 hover:bg-white/[0.06] text-left border-0 cursor-pointer w-full"
     >
       <div className="flex items-center justify-between">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
@@ -223,6 +232,6 @@ function QuickAction({
       </div>
       <div className="mt-4 text-base font-semibold">{title}</div>
       <p className="mt-1 text-sm text-muted-foreground">{body}</p>
-    </a>
+    </button>
   );
 }
