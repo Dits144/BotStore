@@ -208,9 +208,11 @@ function QuickAction({
   title: string;
   body: string;
 }) {
+  const hash = to.replace(/^\/dashboard\/?/, "");
+  const href = hash ? `/dashboard/#${hash}` : "/dashboard/";
   return (
-    <Link
-      to={to}
+    <a
+      href={href}
       className="group glass relative overflow-hidden rounded-2xl p-5 transition-all hover:-translate-y-0.5 hover:bg-white/[0.06]"
     >
       <div className="flex items-center justify-between">
@@ -221,6 +223,6 @@ function QuickAction({
       </div>
       <div className="mt-4 text-base font-semibold">{title}</div>
       <p className="mt-1 text-sm text-muted-foreground">{body}</p>
-    </Link>
+    </a>
   );
 }

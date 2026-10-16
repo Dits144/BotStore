@@ -127,13 +127,14 @@ export function DashboardLayout() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Route change → update URL hash (without reload)
+  // Route change → update URL hash with base /dashboard/ (without reload)
   useEffect(() => {
     const expectedHash = pathToHash[location.pathname] ?? "";
-    const currentHash = window.location.hash.replace(/^#/, "");
-    if (currentHash !== expectedHash) {
-      const newHash = expectedHash ? `#${expectedHash}` : "#";
-      window.history.replaceState(null, "", `${window.location.pathname}${newHash}`);
+    const newHash = expectedHash ? `#${expectedHash}` : "";
+    const targetUrl = `/dashboard/${newHash}`;
+    const currentFull = `${window.location.pathname}${window.location.hash}`;
+    if (currentFull !== targetUrl) {
+      window.history.replaceState(null, "", targetUrl);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
@@ -193,7 +194,7 @@ export function DashboardLayout() {
               const pathForHash = hash === "" ? "/dashboard/" : `/dashboard/${hash}`;
               const active = location.pathname === pathForHash ||
                 (hash === "" && location.pathname === "/dashboard");
-              const href = hash ? `#${hash}` : "#";
+              const href = hash ? `/dashboard/#${hash}` : "/dashboard/";
               return (
                 <a
                   key={hash || "home"}
