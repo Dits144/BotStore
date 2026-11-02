@@ -519,6 +519,34 @@ export async function addGroupMember(groupToken: string, phone: string): Promise
   }
 }
 
+// ─── Warranty API ─────────────────────────────────────────────────────────────
+
+export interface WarrantyRecord {
+  trx_id: string;
+  group_name: string | null;
+  customer_name: string | null;
+  product: string | null;
+  duration_label: string | null;
+  started_at: string | null;
+  expires_at: string | null;
+  status: string;
+  warranty_status: string | null;
+}
+
+export async function fetchWarranties(groupToken: string): Promise<WarrantyRecord[]> {
+  const params = new URLSearchParams({ groupToken });
+  const res = await fetch(`${API_BASE}/warranties?${params}`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal mengambil masa aktif dan garansi");
+  }
+  const data: { items: WarrantyRecord[] } = await res.json();
+  if (!Array.isArray(data.items)) throw new Error("Format data garansi tidak valid");
+  return data.items;
+}
+
 // ─── Transaction API ──────────────────────────────────────────────────────────
 
 export interface Transaction {

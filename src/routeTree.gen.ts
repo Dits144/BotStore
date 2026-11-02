@@ -21,6 +21,7 @@ import { Route as DashboardRentalsRouteImport } from './routes/dashboard.rentals
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardStockRouteImport } from './routes/dashboard.stock'
 import { Route as DashboardTransactionsRouteImport } from './routes/dashboard.transactions'
+import { Route as DashboardWarrantiesRouteImport } from './routes/dashboard.warranties'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -82,6 +83,11 @@ const DashboardTransactionsRoute = DashboardTransactionsRouteImport.update({
   path: '/transactions',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardWarrantiesRoute = DashboardWarrantiesRouteImport.update({
+  id: '/warranties',
+  path: '/warranties',
+  getParentRoute: () => DashboardRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/stock': typeof DashboardStockRoute
   '/dashboard/transactions': typeof DashboardTransactionsRoute
+  '/dashboard/warranties': typeof DashboardWarrantiesRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRoutesByTo {
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/stock': typeof DashboardStockRoute
   '/dashboard/transactions': typeof DashboardTransactionsRoute
+  '/dashboard/warranties': typeof DashboardWarrantiesRoute
   '/dashboard': typeof DashboardIndexRoute
 }
 export interface FileRoutesById {
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/stock': typeof DashboardStockRoute
   '/dashboard/transactions': typeof DashboardTransactionsRoute
+  '/dashboard/warranties': typeof DashboardWarrantiesRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRouteTypes {
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/stock'
     | '/dashboard/transactions'
+    | '/dashboard/warranties'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -152,6 +162,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/stock'
     | '/dashboard/transactions'
+    | '/dashboard/warranties'
     | '/dashboard'
   id:
     | '__root__'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/stock'
     | '/dashboard/transactions'
+    | '/dashboard/warranties'
     | '/dashboard/'
   fileRoutesById: FileRoutesById
 }
@@ -262,6 +274,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardTransactionsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/warranties': {
+      id: '/dashboard/warranties'
+      path: '/warranties'
+      fullPath: '/dashboard/warranties'
+      preLoaderRoute: typeof DashboardWarrantiesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
@@ -273,6 +292,7 @@ interface DashboardRouteChildren {
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardStockRoute: typeof DashboardStockRoute
   DashboardTransactionsRoute: typeof DashboardTransactionsRoute
+  DashboardWarrantiesRoute: typeof DashboardWarrantiesRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
@@ -284,6 +304,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardStockRoute: DashboardStockRoute,
   DashboardTransactionsRoute: DashboardTransactionsRoute,
+  DashboardWarrantiesRoute: DashboardWarrantiesRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }
 
