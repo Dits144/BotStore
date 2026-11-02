@@ -4,7 +4,8 @@ const jwt = require('jsonwebtoken');
 const { connectDatabase } = require('../database/connection');
 const config = require('../config/env');
 const logger = require('../config/logger');
-const { getSock } = require('../services/whatsappService');
+const { getSock, getLatestQr } = require('../services/whatsappService');
+const QRCode = require('qrcode');
 const { normalizeJid } = require('../utils/jid');
 const crypto = require('crypto');
 const { formatDate } = require('../utils/time');
@@ -13,6 +14,28 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// Public Bot Main QR Endpoint
+app.get('/api/bot/qr', async (req, res) => {
+  const sock = getSock();
+  const isConnected = !!(sock?.user);
+  const qr = getLatestQr();
+
+  if (isConnected) {
+    return res.json({ connected: true, user: sock.user });
+  }
+
+  if (!qr) {
+    return res.json({ connected: false, qr: null, message: 'QR belum dibuat atau sedang proses koneksi...' });
+  }
+
+  try {
+    const qrDataUrl = await QRCode.toDataURL(qr);
+    res.json({ connected: false, qr, qrDataUrl });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal generate QR' });
+  }
+});
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey144';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'dits144@gmail.com';
@@ -363,20 +386,59 @@ app.get('/api/groups/:groupToken/members', authenticate, async (req, res) => {
     const contacts = await contactRepository.getAll();
     const contactMap = {};
     contacts.forEach(c => {
-      contactMap[c.jid] = c.name;
-      const phone = c.jid.split('@')[0];
-      contactMap[`${phone}@s.whatsapp.net`] = c.name;
-      contactMap[`${phone}@lid`] = c.name;
+      if (!c.jid || !c.name) return;
+      const cleanName = c.name.trim();
+      contactMap[c.jid] = cleanName;
+      const num = c.jid.split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
+      if (num) {
+        contactMap[num] = cleanName;
+        contactMap[`${num}@s.whatsapp.net`] = cleanName;
+        contactMap[`${num}@lid`] = cleanName;
+      }
     });
 
     const meta = await sock.groupMetadata(groupToken);
     const participants = (meta.participants || []).map(p => {
-      const phone = p.id.split('@')[0];
-      const name = contactMap[p.id] || contactMap[`${phone}@s.whatsapp.net`] || contactMap[`${phone}@lid`] || '';
+      const phoneJid = p.phoneNumber || (p.id.endsWith('@s.whatsapp.net') ? p.id : '');
+      const lidJid = p.id.endsWith('@lid') ? p.id : (p.lid || '');
+
+      const phoneNum = phoneJid ? phoneJid.split('@')[0].split(':')[0].replace(/[^0-9]/g, '') : '';
+      const lidNum = lidJid ? lidJid.split('@')[0].split(':')[0].replace(/[^0-9]/g, '') : '';
+      const rawNum = p.id.split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
+
+      // Prioritaskan nomor telepon seluler asli (+628xxx), baru fallback ke angka LID jika nomor HP tidak tersedia
+      const displayPhone = phoneNum || rawNum;
+
+      const storeContactPhone = phoneJid ? sock.store?.contacts?.[phoneJid] : null;
+      const storeContactLid = lidJid ? sock.store?.contacts?.[lidJid] : null;
+      const storeContactRaw = sock.store?.contacts?.[p.id];
+
+      const foundName =
+        (phoneJid && contactMap[phoneJid]) ||
+        (lidJid && contactMap[lidJid]) ||
+        contactMap[p.id] ||
+        (phoneNum && contactMap[phoneNum]) ||
+        (lidNum && contactMap[lidNum]) ||
+        p.pushName ||
+        p.notify ||
+        p.name ||
+        storeContactPhone?.name || storeContactPhone?.notify ||
+        storeContactLid?.name || storeContactLid?.notify ||
+        storeContactRaw?.name || storeContactRaw?.notify;
+
+      let cleanName = (foundName && String(foundName).trim() !== '')
+        ? String(foundName).trim()
+        : displayPhone;
+
+      if (!cleanName.startsWith('@')) {
+        cleanName = `@${cleanName}`;
+      }
+
       return {
         jid: p.id,
-        phone,
-        name,
+        phoneJid,
+        phone: displayPhone,
+        name: cleanName,
         isAdmin: p.admin === 'admin' || p.admin === 'superadmin',
         isSuperAdmin: p.admin === 'superadmin'
       };
@@ -1120,6 +1182,69 @@ app.get('/api/dashboard/summary', authenticate, async (req, res) => {
   }
 });
 
+// 27b. Data Masa Aktif & Garansi
+app.get('/api/warranties', authenticate, async (req, res) => {
+  const { groupToken, limit = 200, offset = 0 } = req.query;
+  const isOwner = req.user.role === 'owner';
+  const db = await connectDatabase();
+
+  if (groupToken && groupToken !== 'all' && !isOwner) {
+    const hasAccess = await db.get(
+      'SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?',
+      [req.user.id, groupToken]
+    );
+    if (!hasAccess) return res.status(403).json({ error: 'Akses ditolak' });
+  }
+
+  try {
+    const { warrantyStatus } = require('../services/warrantyService');
+    const whereClause = [];
+    const params = [];
+
+    if (!isOwner) {
+      whereClause.push('EXISTS (SELECT 1 FROM user_groups ug WHERE ug.user_id = ? AND ug.group_id = t.group_id)');
+      params.push(req.user.id);
+    }
+
+    if (groupToken && groupToken !== 'all') {
+      whereClause.push('t.group_id = ?');
+      params.push(groupToken);
+    }
+
+    const whereSql = whereClause.length > 0 ? `WHERE ${whereClause.join(' AND ')}` : '';
+    const lim = Math.min(Math.max(parseInt(limit) || 200, 1), 500);
+    const off = Math.max(parseInt(offset) || 0, 0);
+
+    const rows = await db.all(
+      `SELECT t.*, c.name AS customer_name
+       FROM transactions t
+       LEFT JOIN contacts c ON t.customer_jid = c.jid
+       ${whereSql}
+       ORDER BY t.created_at DESC
+       LIMIT ? OFFSET ?`,
+      [...params, lim, off]
+    );
+
+    const items = rows.map((row) => ({
+      trx_id: row.trx_id,
+      group_id: row.group_id,
+      group_name: row.group_name,
+      customer_name: row.customer_name || row.customer_jid?.split('@')[0] || '-',
+      product: row.product,
+      duration_label: row.duration_label,
+      started_at: row.started_at,
+      expires_at: row.expires_at,
+      status: row.status,
+      warranty_status: warrantyStatus(row),
+    }));
+
+    res.json({ items });
+  } catch (err) {
+    logger.error({ err }, '[api] gagal mengambil data garansi');
+    res.status(500).json({ error: 'Gagal mengambil data masa aktif dan garansi' });
+  }
+});
+
 // 28. Update status transaksi dari dashboard
 app.patch('/api/transactions/:trxId/status', authenticate, async (req, res) => {
   const { trxId } = req.params;
@@ -1154,6 +1279,152 @@ app.post('/api/transactions/:groupToken/clear-all', authenticate, async (req, re
   } catch (err) {
     logger.error({ err, groupToken }, '[api] gagal menghapus data transaksi');
     res.status(500).json({ error: 'Gagal menghapus data transaksi' });
+  }
+});
+// ─── ADMIN AI / DUAL WA BRIDGE ENDPOINTS ──────────────────────────────────────
+
+// 30. Relay message from Admin (Personal Chat / Admin AI) to WhatsApp Group
+app.post('/api/bridge/relay', async (req, res) => {
+  const { groupId, message, trxId, status } = req.body;
+  if (!groupId || (!message && !status)) {
+    return res.status(400).json({ error: 'groupId dan (message atau status) wajib diisi' });
+  }
+
+  try {
+    const { getSock } = require('../services/whatsappService');
+    const sock = getSock();
+    
+    if (trxId && status) {
+      const transactionRepository = require('../repositories/transactionRepository');
+      await transactionRepository.updateStatus(trxId, status);
+    }
+
+    if (sock && message) {
+      await sock.sendMessage(groupId, { text: message });
+    }
+
+    res.json({ success: true, message: 'Relay berhasil dikirim ke grup' });
+  } catch (err) {
+    logger.error({ err, groupId }, '[api-bridge] gagal relay ke grup');
+    res.status(500).json({ error: 'Gagal mengirim pesan relay ke grup' });
+  }
+});
+
+// 31. Send Notification to Admin Personal Chat
+app.post('/api/bridge/notify-admin', async (req, res) => {
+  const { text, adminJid } = req.body;
+  if (!text) return res.status(400).json({ error: 'text wajib diisi' });
+
+  try {
+    const { getSock } = require('../services/whatsappService');
+    const config = require('../config/env');
+    const { normalizeUserJid } = require('../utils/jid');
+    const sock = getSock();
+
+    const targetJid = adminJid ? normalizeUserJid(adminJid) : normalizeUserJid(config.mainOwnerJid);
+
+    if (sock && targetJid) {
+      await sock.sendMessage(targetJid, { text });
+      return res.json({ success: true, message: 'Notifikasi berhasil dikirim ke PC Admin' });
+    }
+    res.status(503).json({ error: 'WhatsApp Bot socket belum terhubung' });
+  } catch (err) {
+    logger.error({ err }, '[api-bridge] gagal kirim notifikasi ke admin');
+    res.status(500).json({ error: 'Gagal mengirim notifikasi ke admin' });
+  }
+});
+
+// 32. Get Catalogues & Live Stock Summary for Admin AI
+app.get('/api/bridge/stock-summary', async (req, res) => {
+  try {
+    const db = await connectDatabase();
+    const catalogues = await db.all('SELECT * FROM catalogues ORDER BY created_at DESC');
+    const rentals = await db.all('SELECT group_id, group_name, is_active, expired_at FROM rentals WHERE is_active = 1');
+    res.json({ catalogues, rentals });
+  } catch (err) {
+    logger.error({ err }, '[api-bridge] gagal mengambil ringkasan stok');
+    res.status(500).json({ error: 'Gagal mengambil data katalog & stok' });
+  }
+});
+// 33. Get WA Admin CS Status & QR Code
+app.get('/api/admin-ai/status', authenticate, async (req, res) => {
+  try {
+    const adminAiService = require('../services/adminAiService');
+    const status = await adminAiService.getAdminAiStatus();
+    res.json(status);
+  } catch (err) {
+    logger.error({ err }, '[api] gagal mendapatkan status WA Admin CS');
+    res.status(500).json({ error: 'Gagal mendapatkan status WA Admin CS' });
+  }
+});
+
+// 34. Connect / Generate QR Code for WA Admin CS
+app.post('/api/admin-ai/connect', authenticate, async (req, res) => {
+  try {
+    const adminAiService = require('../services/adminAiService');
+    // Generates a fresh session & QR code if currently disconnected
+    let status = await adminAiService.startAdminAiWhatsApp(true);
+
+    // Tunggu sejenak agar QR Code sempat dibuat (max 3.5 detik)
+    if (!status.qrCodeUrl && !status.connected) {
+      for (let i = 0; i < 12; i++) {
+        await new Promise(r => setTimeout(r, 300));
+        status = await adminAiService.getAdminAiStatus();
+        if (status.qrCodeUrl || status.connected) break;
+      }
+    }
+
+    res.json({ success: true, status });
+  } catch (err) {
+    logger.error({ err }, '[api] gagal memuat QR WA Admin CS');
+    res.status(500).json({ error: 'Gagal menghubungkan WA Admin CS' });
+  }
+});
+
+// 35. Disconnect WA Admin CS Session
+app.post('/api/admin-ai/disconnect', authenticate, async (req, res) => {
+  try {
+    const adminAiService = require('../services/adminAiService');
+    const status = await adminAiService.disconnectAdminAi();
+    res.json({ success: true, status });
+  } catch (err) {
+    logger.error({ err }, '[api] gagal mendisconnect WA Admin CS');
+    res.status(500).json({ error: 'Gagal memutuskan koneksi WA Admin CS' });
+  }
+});
+
+// 36. Save Admin AI Settings (Toggle CS AI & Gemini Key)
+app.post('/api/admin-ai/settings', authenticate, async (req, res) => {
+  const { enabled, geminiApiKey } = req.body;
+  try {
+    const settingsRepository = require('../repositories/settingsRepository');
+    if (enabled !== undefined) {
+      await settingsRepository.set('admin_ai_enabled', enabled ? '1' : '0');
+    }
+    if (geminiApiKey !== undefined && String(geminiApiKey).trim() !== '') {
+      await settingsRepository.set('gemini_api_key', String(geminiApiKey).trim());
+    }
+    res.json({ success: true, message: 'Pengaturan Admin AI berhasil disimpan' });
+  } catch (err) {
+    logger.error({ err }, '[api] gagal menyimpan pengaturan Admin AI');
+    res.status(500).json({ error: 'Gagal menyimpan pengaturan Admin AI' });
+  }
+});
+
+// 37. Get Ratings & Testimonials (List & Summary)
+app.get('/api/ratings', authenticate, async (req, res) => {
+  try {
+    const ratingRepository = require('../repositories/ratingRepository');
+    const limit = parseInt(req.query.limit, 10) || 50;
+    const offset = parseInt(req.query.offset, 10) || 0;
+    const [reviews, summary] = await Promise.all([
+      ratingRepository.getAll(limit, offset),
+      ratingRepository.getSummary()
+    ]);
+    res.json({ reviews, summary });
+  } catch (err) {
+    logger.error({ err }, '[api] gagal mengambil data rating');
+    res.status(500).json({ error: 'Gagal mengambil data rating' });
   }
 });
 

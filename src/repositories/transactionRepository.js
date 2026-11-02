@@ -3,8 +3,45 @@
  * transactionRepository.js — CRUD & statistik untuk tabel transactions
  */
 const { connectDatabase } = require('../database/connection');
+const { expiryFrom, warrantyStatus } = require('../services/warrantyService');
+
+async function getByPaymentMessage(groupId, paymentMessageId) {
+  if (!paymentMessageId) return null;
+  const db = await connectDatabase();
+  return db.get('SELECT * FROM transactions WHERE group_id = ? AND payment_message_id = ?', [groupId, paymentMessageId]);
+}
+
+async function markPaymentStatus(groupId, paymentMessageId, customerJid, status) {
+  if (!paymentMessageId) return null;
+  const db = await connectDatabase();
+  const row = await getByPaymentMessage(groupId, paymentMessageId);
+  if (!row || row.customer_jid !== customerJid) return null;
+  const now = new Date().toISOString();
+  await db.run('UPDATE transactions SET status = ?, done_at = CASE WHEN ? = \'done\' THEN COALESCE(done_at, ?) ELSE NULL END, updated_at = ? WHERE trx_id = ?', [status, status, now, now, row.trx_id]);
+  return row.trx_id;
+}
+
+async function listWarranties(userId, isOwner, limit = 200, offset = 0) {
+  const db = await connectDatabase();
+  const rows = await db.all(`SELECT t.*, c.name AS customer_name FROM transactions t
+    LEFT JOIN contacts c ON t.customer_jid = c.jid
+    WHERE (? = 1 OR EXISTS (SELECT 1 FROM user_groups ug WHERE ug.user_id = ? AND ug.group_id = t.group_id))
+    ORDER BY t.created_at DESC LIMIT ? OFFSET ?`,
+  [isOwner ? 1 : 0, userId, Math.min(Math.max(Number(limit) || 200, 1), 500), Math.max(Number(offset) || 0, 0)]);
+  return rows.map(row => ({
+    trx_id: row.trx_id, group_name: row.group_name, group_id: row.group_id,
+    customer_name: row.customer_name || row.customer_jid?.split('@')[0] || '-',
+    product: row.product, duration_label: row.duration_label,
+    started_at: row.started_at, expires_at: row.expires_at,
+    status: row.status, warranty_status: warrantyStatus(row),
+  }));
+}
+
 
 module.exports = {
+  getByPaymentMessage,
+  markPaymentStatus,
+  listWarranties,
   /**
    * Simpan transaksi baru
    * @param {object} data
@@ -14,8 +51,10 @@ module.exports = {
     const now = new Date().toISOString();
     await db.run(
       `INSERT INTO transactions
-        (trx_id, group_id, group_name, customer_jid, admin_jid, product, amount, status, image_path, ocr_raw, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (trx_id, group_id, group_name, customer_jid, admin_jid, product, amount, status, image_path, ocr_raw,
+         payment_message_id, duration_value, duration_unit, duration_label, started_at, expires_at, done_at,
+         created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.trxId,
         data.groupId,
@@ -27,11 +66,46 @@ module.exports = {
         data.status || 'pending',
         data.imagePath || '',
         data.ocrRaw || '',
+        data.paymentMessageId || null,
+        data.durationValue ?? null,
+        data.durationUnit || null,
+        data.durationLabel || null,
+        data.startedAt || null,
+        data.expiresAt || null,
+        data.doneAt || null,
         data.createdAt || now,
         now,
       ]
     );
     return data.trxId;
+  },
+
+  /**
+   * Update durasi transaksi
+   */
+  async updateDuration(trxId, duration, startedAt) {
+    const db = await connectDatabase();
+    const now = new Date().toISOString();
+    const expiresAt = expiryFrom(startedAt, duration);
+    await db.run(
+      `UPDATE transactions SET
+         duration_value = ?,
+         duration_unit = ?,
+         duration_label = ?,
+         started_at = ?,
+         expires_at = ?,
+         updated_at = ?
+       WHERE trx_id = ?`,
+      [
+        duration ? duration.value : null,
+        duration ? duration.unit : null,
+        duration ? duration.label : null,
+        startedAt,
+        expiresAt,
+        now,
+        trxId,
+      ]
+    );
   },
 
   /**

@@ -3,7 +3,7 @@
  * Connects to the Express backend running on the Bot VM.
  */
 
-export const API_BASE = import.meta.env.VITE_API_URL || "https://blocked-operator-salary-promotion.trycloudflare.com/api";
+export const API_BASE = "https://church-paperback-bent-registrar.trycloudflare.com/api";
 
 export interface Product {
   id: string;
@@ -519,6 +519,34 @@ export async function addGroupMember(groupToken: string, phone: string): Promise
   }
 }
 
+// ─── Warranty API ─────────────────────────────────────────────────────────────
+
+export interface WarrantyRecord {
+  trx_id: string;
+  group_name: string | null;
+  customer_name: string | null;
+  product: string | null;
+  duration_label: string | null;
+  started_at: string | null;
+  expires_at: string | null;
+  status: string;
+  warranty_status: string | null;
+}
+
+export async function fetchWarranties(groupToken: string): Promise<WarrantyRecord[]> {
+  const params = new URLSearchParams({ groupToken });
+  const res = await fetch(`${API_BASE}/warranties?${params}`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Gagal mengambil masa aktif dan garansi");
+  }
+  const data: { items: WarrantyRecord[] } = await res.json();
+  if (!Array.isArray(data.items)) throw new Error("Format data garansi tidak valid");
+  return data.items;
+}
+
 // ─── Transaction API ──────────────────────────────────────────────────────────
 
 export interface Transaction {
@@ -644,5 +672,50 @@ export async function clearAllTransactions(groupToken: string): Promise<void> {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.error || "Gagal menghapus data transaksi");
   }
+}
+
+export interface AdminAiStatus {
+  connected: boolean;
+  phoneNumber?: string | null;
+  qrCodeUrl?: string | null;
+  connectionState: "DISCONNECTED" | "CONNECTING" | "CONNECTED" | "QR_READY";
+  aiEnabled: boolean;
+}
+
+export async function fetchAdminAiStatus(): Promise<AdminAiStatus> {
+  const res = await fetch(`${API_BASE}/admin-ai/status`, {
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) throw new Error("Gagal mengambil status WA Admin CS");
+  return res.json();
+}
+
+export async function connectAdminAi(): Promise<AdminAiStatus> {
+  const res = await fetch(`${API_BASE}/admin-ai/connect`, {
+    method: "POST",
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) throw new Error("Gagal menghubungkan WA Admin CS");
+  const data = await res.json();
+  return data.status;
+}
+
+export async function disconnectAdminAi(): Promise<AdminAiStatus> {
+  const res = await fetch(`${API_BASE}/admin-ai/disconnect`, {
+    method: "POST",
+    headers: getAuthHeader(),
+  });
+  if (!res.ok) throw new Error("Gagal memutuskan WA Admin CS");
+  const data = await res.json();
+  return data.status;
+}
+
+export async function saveAdminAiSettings(enabled: boolean, geminiApiKey?: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/admin-ai/settings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    body: JSON.stringify({ enabled, geminiApiKey }),
+  });
+  if (!res.ok) throw new Error("Gagal menyimpan pengaturan Admin AI");
 }
 

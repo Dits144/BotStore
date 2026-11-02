@@ -31,6 +31,13 @@ async function processTransaction(opts) {
     adminJid = '',
     product = '',
     status = 'pending',
+    paymentMessageId = null,
+    durationValue = null,
+    durationUnit = null,
+    durationLabel = null,
+    startedAt = null,
+    expiresAt = null,
+    doneAt = null,
   } = opts;
 
   // 1. OCR
@@ -52,6 +59,13 @@ async function processTransaction(opts) {
     amount,
     status,
     ocrRaw,
+    paymentMessageId,
+    durationValue,
+    durationUnit,
+    durationLabel,
+    startedAt,
+    expiresAt,
+    doneAt,
     createdAt: now.toISOString(),
   });
 

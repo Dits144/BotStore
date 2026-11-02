@@ -13,6 +13,8 @@ async function ensureColumn(db, table, column, ddl) {
 async function migrate() {
   const db = await connectDatabase();
 
+  // Warranty fields are nullable for historical transactions. Never retroactively
+  // treat an old DONE row as proof that a particular P receipt was completed.
   await db.exec(`
     CREATE TABLE IF NOT EXISTS owners (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -109,6 +111,18 @@ async function migrate() {
     CREATE INDEX IF NOT EXISTS idx_trx_group   ON transactions(group_id);
     CREATE INDEX IF NOT EXISTS idx_trx_created ON transactions(created_at);
     CREATE INDEX IF NOT EXISTS idx_trx_status  ON transactions(status);
+
+    CREATE TABLE IF NOT EXISTS ratings (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_jid TEXT    NOT NULL,
+      customer_name TEXT   NOT NULL DEFAULT '',
+      rating       INTEGER NOT NULL,
+      comment      TEXT    NOT NULL DEFAULT '',
+      created_at   TEXT    NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_ratings_created ON ratings(created_at);
+    CREATE INDEX IF NOT EXISTS idx_ratings_rating  ON ratings(rating);
   `);
 
   await ensureColumn(db, 'catalogues', 'media_path', 'media_path TEXT NOT NULL DEFAULT ""');
@@ -158,6 +172,17 @@ async function migrate() {
   } catch (err) {
     logger.warn({ err: err.message }, 'Failed to clean global payment_caption');
   }
+
+  for (const [column, ddl] of [
+    ['payment_message_id', 'payment_message_id TEXT'],
+    ['duration_value', 'duration_value INTEGER'],
+    ['duration_unit', 'duration_unit TEXT'],
+    ['duration_label', 'duration_label TEXT'],
+    ['started_at', 'started_at TEXT'],
+    ['expires_at', 'expires_at TEXT'],
+    ['done_at', 'done_at TEXT'],
+  ]) await ensureColumn(db, 'transactions', column, ddl);
+  await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_trx_payment_message ON transactions(group_id, payment_message_id) WHERE payment_message_id IS NOT NULL');
 
   logger.info('database initialized');
 }

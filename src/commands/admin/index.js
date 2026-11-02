@@ -1,5 +1,4 @@
 const crypto = require('crypto');
-const baileys = require('@whiskeysockets/baileys');
 const { canManageCatalogue } = require('../../middlewares/roleGuard');
 const { formatWrongExample, renderMentionText } = require('../../utils/messageFormatter');
 const groupSettingsRepository = require('../../repositories/groupSettingsRepository');
@@ -19,6 +18,9 @@ const {
 const { styled, sans } = require('../../utils/styledText');
 const { recordSuccess } = require('../customer');
 const { processTransaction } = require('../../services/transactionService');
+const transactionRepository = require('../../repositories/transactionRepository');
+const { connectDatabase } = require('../../database/connection');
+const { durationForCommand, expiryFrom } = require('../../services/warrantyService');
 
 // ─── Pending clone sessions (in-memory) ───────────────────────────────────────
 // Key: `${groupId}:${senderJid}` → { sourceGroupId, ts }
@@ -40,7 +42,7 @@ async function handle(ctx, parsed) {
   if (parsed.command === 'welcome') return setWelcomeStatus(ctx, parsed);
   if (parsed.command === 'setwelcome') return setWelcomeTemplate(ctx, parsed);
   if (['h', 'hall', 'wptagall', 'everyone'].includes(parsed.command)) return broadcast(ctx, parsed);
-  if (['p', 'd', 'r', 'b'].includes(parsed.command)) return transactionNote(ctx, parsed.command);
+  if (['p', 'd', 'r', 'b'].includes(parsed.command)) return transactionNote(ctx, parsed.command, parsed.args);
   if (parsed.command === 'clone') return cloneList(ctx, parsed);
   if (parsed.command === 'clearall') return clearAllGroupData(ctx);
 
@@ -198,6 +200,7 @@ async function cloneList(ctx, parsed) {
 
 async function getImageBuffer(ctx) {
   const directImage = ctx.msg?.message?.imageMessage;
+  const baileys = await import('@whiskeysockets/baileys');
   if (directImage) {
     if (typeof ctx.sock.downloadMediaMessage === 'function') {
       return await ctx.sock.downloadMediaMessage(ctx.msg, 'buffer', {}, {});
@@ -231,10 +234,11 @@ async function getImageBuffer(ctx) {
 // broadcast — HIDDEN TAG-ALL
 // ─────────────────────────────────────────────────────────────────────────────
 async function broadcast(ctx, parsed) {
-  let text = parsed.raw.slice(parsed.command.length).trim();
+  let rawText = ctx.body || parsed.raw || '';
+  let text = rawText.replace(/^[./#!]?(h|hall|wptagall|everyone)\s*/i, '').trim();
 
-  // Bersihkan dari mention manual dan spasi berlebih
-  text = text.replace(/@\d+/g, '').replace(/\s{2,}/g, ' ').trim();
+  // Bersihkan dari mention manual dan spasi horizontal berlebih (preservasi paragraf/newline)
+  text = text.replace(/@\d+/g, '').replace(/[ \t]{2,}/g, ' ').trim();
 
   let imageBuffer = null;
   try {
@@ -321,7 +325,7 @@ async function broadcast(ctx, parsed) {
 //   r (Refund)  → 🔄 Refund sedang diproses  lalu @mention
 //   b (Batal)   → ❌ Transaksi Batal  lalu @mention
 // ─────────────────────────────────────────────────────────────────────────────
-async function transactionNote(ctx, statusCode) {
+async function transactionNote(ctx, statusCode, args = []) {
   // Ambil contextInfo dari semua tipe pesan yang mungkin membawa reply
   const msgContent = ctx.msg.message || {};
   const contextInfo =
@@ -373,6 +377,20 @@ async function transactionNote(ctx, statusCode) {
   // Ambil baris pertama sebagai nama produk (misalnya "capcut", "ml", dll)
   const productGuess = noteText.split(/\n/)[0].trim().slice(0, 80);
 
+  const paymentMessageId = contextInfo?.stanzaId || null;
+
+  // Durasi: jika p, cek args dan teks caption
+  let duration = null;
+  if (statusCode === 'p') {
+    try {
+      const overrideArg = Array.isArray(args) ? args.join(' ').trim() : '';
+      duration = durationForCommand(overrideArg, noteText);
+    } catch (err) {
+      await sendMinimalError(ctx.sock, ctx.from, `❌ ${sans(err.message)}`);
+      return;
+    }
+  }
+
   const now = nowJakarta();
 
   // Ambil data level customer
@@ -385,31 +403,124 @@ async function transactionNote(ctx, statusCode) {
     groupName = meta.subject || groupName;
   } catch (_) {}
 
-  // ── OCR: coba baca nominal dari gambar quoted ──────────────────────────────
   let trxId = '';
   let ocrAmount = 0;
-  try {
-    // Download gambar dari pesan yang di-reply (jika ada)
-    let imageBuffer = null;
-    try { imageBuffer = await getImageBuffer(ctx); } catch (_) {}
+  let finalDurationLabel = duration?.label || null;
+  const startedAt = now.toISOString();
+  const expiresAt = duration ? expiryFrom(startedAt, duration) : null;
 
-    const result = await processTransaction({
-      imageBuffer,          // Buffer gambar — dipakai OCR, TIDAK disimpan ke DB
-      captionText: noteText, // Fallback regex dari teks
-      groupId: ctx.from,
-      groupName,
-      customerJid: userJid,
-      adminJid: ctx.sender,
-      product: productGuess,
-      status: statusDb,
-    });
-    trxId     = result.trxId;
-    ocrAmount = result.amount;
-    logger.info({ trxId, ocrAmount, groupId: ctx.from }, '[transactionNote] transaksi tersimpan');
+  try {
+    const db = await connectDatabase();
+
+    if (statusCode === 'p') {
+      // Cek apakah bukti TF ini sudah pernah diproses sebelumnya (misal koreksi P 1 Bulan)
+      const existing = paymentMessageId
+        ? await transactionRepository.getByPaymentMessage(ctx.from, paymentMessageId)
+        : null;
+
+      if (existing) {
+        trxId = existing.trx_id;
+        ocrAmount = existing.amount;
+        if (duration) {
+          await transactionRepository.updateDuration(existing.trx_id, duration, existing.started_at || startedAt);
+          finalDurationLabel = duration.label;
+        } else {
+          finalDurationLabel = existing.duration_label;
+        }
+        logger.info({ trxId, groupId: ctx.from }, '[transactionNote] transaksi durasi diperbarui');
+      } else {
+        // Download gambar dari pesan yang di-reply (jika ada)
+        let imageBuffer = null;
+        try { imageBuffer = await getImageBuffer(ctx); } catch (_) {}
+
+        const result = await processTransaction({
+          imageBuffer,
+          captionText: noteText,
+          groupId: ctx.from,
+          groupName,
+          customerJid: userJid,
+          adminJid: ctx.sender,
+          product: productGuess,
+          status: 'pending',
+          paymentMessageId,
+          durationValue: duration?.value || null,
+          durationUnit: duration?.unit || null,
+          durationLabel: duration?.label || null,
+          startedAt,
+          expiresAt,
+          doneAt: null,
+        });
+        trxId = result.trxId;
+        ocrAmount = result.amount;
+        logger.info({ trxId, ocrAmount, groupId: ctx.from }, '[transactionNote] transaksi baru tersimpan');
+      }
+    } else {
+      // statusCode is 'd', 'r', or 'b'
+      // 1. Coba cari berdasarkan paymentMessageId yang di-reply
+      let targetTrx = paymentMessageId
+        ? await transactionRepository.getByPaymentMessage(ctx.from, paymentMessageId)
+        : null;
+
+      // 2. Coba cari dari teks quoted jika me-reply nota (TRX-...)
+      if (!targetTrx) {
+        const matchTrx = noteText.match(/TRX-\d{8}-\d{4}/i);
+        if (matchTrx) {
+          targetTrx = await db.get(
+            'SELECT * FROM transactions WHERE trx_id = ? AND group_id = ?',
+            [matchTrx[0], ctx.from]
+          );
+        }
+      }
+
+      // 3. Fallback: ambil transaksi pending terakhir untuk customer ini di grup
+      if (!targetTrx) {
+        targetTrx = await db.get(
+          'SELECT * FROM transactions WHERE group_id = ? AND customer_jid = ? AND status = "pending" ORDER BY created_at DESC LIMIT 1',
+          [ctx.from, userJid]
+        );
+      }
+
+      if (targetTrx) {
+        trxId = targetTrx.trx_id;
+        ocrAmount = targetTrx.amount;
+        finalDurationLabel = targetTrx.duration_label;
+        const nowIso = now.toISOString();
+        const doneAtVal = statusCode === 'd' ? (targetTrx.done_at || nowIso) : null;
+        await db.run(
+          'UPDATE transactions SET status = ?, done_at = ?, updated_at = ? WHERE trx_id = ?',
+          [statusDb, doneAtVal, nowIso, targetTrx.trx_id]
+        );
+        logger.info({ trxId, statusDb, groupId: ctx.from }, '[transactionNote] status transaksi diperbarui');
+      } else {
+        // Fallback simpan transaksi baru jika belum ada riwayat sebelumnya
+        let imageBuffer = null;
+        try { imageBuffer = await getImageBuffer(ctx); } catch (_) {}
+        const result = await processTransaction({
+          imageBuffer,
+          captionText: noteText,
+          groupId: ctx.from,
+          groupName,
+          customerJid: userJid,
+          adminJid: ctx.sender,
+          product: productGuess,
+          status: statusDb,
+          paymentMessageId,
+          durationValue: null,
+          durationUnit: null,
+          durationLabel: null,
+          startedAt: null,
+          expiresAt: null,
+          doneAt: statusCode === 'd' ? now.toISOString() : null,
+        });
+        trxId = result.trxId;
+        ocrAmount = result.amount;
+      }
+    }
   } catch (err) {
-    logger.error({ err, groupId: ctx.from }, '[transactionNote] gagal proses OCR/simpan transaksi');
-    // Generate fallback trxId agar struk tetap terkirim
-    trxId = `TRX-${now.format('YYYYMMDD')}-${crypto.randomInt(1000, 9999)}`;
+    logger.error({ err, groupId: ctx.from }, '[transactionNote] gagal proses transaksi');
+    if (!trxId) {
+      trxId = `TRX-${now.format('YYYYMMDD')}-${crypto.randomInt(1000, 9999)}`;
+    }
   }
   // ──────────────────────────────────────────────────────────────────────────
 
@@ -421,6 +532,11 @@ async function transactionNote(ctx, statusCode) {
   // Baris nominal (hanya tampilkan jika OCR berhasil)
   const nominalLine = ocrAmount > 0
     ? `💰 Nominal : Rp${ocrAmount.toLocaleString('id-ID')}\n`
+    : '';
+
+  // Baris durasi jika ada durasi yang terdeteksi/diset
+  const durationLine = finalDurationLabel
+    ? `⏳ Durasi : ${finalDurationLabel}\n`
     : '';
 
   let statusText = '  Pesanan diproses';
@@ -441,6 +557,7 @@ async function transactionNote(ctx, statusCode) {
     `Time : ${formatTime(now)} WIB\n` +
     `Level : ${tier.name} ${tier.emoji}\n\n` +
     `📝 Produk : ${productGuess || '-'}\n` +
+    durationLine +
     nominalLine +
     `${SEP}\n` +
     `${statusText}\n` +
